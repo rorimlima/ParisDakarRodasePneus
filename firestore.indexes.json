@@ -44,11 +44,6 @@
       ]
     },
     {
-      "collectionGroup": "imports",
-      "queryScope": "COLLECTION",
-      "fields": [{ "fieldPath": "iniciadoEm", "order": "DESCENDING" }]
-    },
-    {
       "collectionGroup": "inquiries",
       "queryScope": "COLLECTION",
       "fields": [
