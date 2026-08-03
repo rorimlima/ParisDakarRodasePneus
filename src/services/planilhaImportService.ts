@@ -100,6 +100,51 @@ export async function lerPlanilha(arquivo: File): Promise<PlanilhaLida> {
   return lerPlanilhaDeBuffer(await arquivo.arrayBuffer(), arquivo.name);
 }
 
+// ---------------------------------------------------------------------------
+// Mapeamento tolerante de colunas do ERP (RPR053 Lista de Preço)
+// ---------------------------------------------------------------------------
+
+const MAPEAMENTO_SINONIMOS: Record<string, string[]> = {
+  codigo: ['Produto_Codigo', 'PRODUTO_CODIGO', 'Codigo', 'Código', 'Cod', 'SKU', 'ProdutoCodigo', 'ID'],
+  descricao: ['Produto_Descricao', 'PRODUTO_DESCRICAO', 'Descricao', 'Descrição', 'ProdutoDescricao', 'Nome', 'Produto'],
+  tipoProduto: ['TipoProduto_Descricao', 'TIPOPRODUTO_DESCRICAO', 'TipoProduto', 'Tipo_Produto', 'Categoria', 'GrupoProduto_Descricao'],
+  unidade: ['Unidade_Sigla', 'UNIDADE_SIGLA', 'Unidade', 'Sigla', 'UN'],
+  quantidade: ['ProdutoEstoque_QtdeDisponivel', 'PRODUTOESTOQUE_QTDEDISPONIVEL', 'QtdeDisponivel', 'Qtde_Disponivel', 'Quantidade', 'Estoque', 'Qtde'],
+  valorReposicao: ['ValorReposicao', 'VALORREPOSICAO', 'Valor_Reposicao', 'Custo', 'ValorCusto', 'PrecoCusto'],
+  valorVenda: ['ValorVenda', 'VALORVENDA', 'Valor_Venda', 'PrecoVenda', 'Preco', 'Preço'],
+  referencia: ['ProdutoMarca_Referencia', 'Referencia', 'Referência', 'Ref'],
+  descricaoDetalhada: ['Produto_DescricaoDetalhada', 'DescricaoDetalhada', 'DescriçãoDetalhada', 'Detalhes'],
+  localizacao: ['LocalizacaoProduto_Identificad', 'LocalizacaoProduto_Identificacao', 'Localizacao', 'Localização'],
+  grupoProduto: ['GrupoProduto_Codigo', 'GrupoProduto'],
+  valorPublicoSugerido: ['ValorPublicoSugerido', 'ValorSugerido', 'PrecoSugerido'],
+  valorGarantia: ['ValorGarantia', 'Garantia'],
+  empresa: ['Empresa_Nome', 'Empresa'],
+  estoque: ['Estoque_Descricao', 'Estoque']
+};
+
+function resolverColuna(colunasPlanilha: string[], chavePropriedade: string): string | undefined {
+  const sinonimos = MAPEAMENTO_SINONIMOS[chavePropriedade] || [];
+  const normalizar = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+  const disponiveis = colunasPlanilha.map((col) => ({
+    original: col,
+    normal: normalizar(col)
+  }));
+
+  for (const s of sinonimos) {
+    const sNorm = normalizar(s);
+    const achado = disponiveis.find((c) => c.normal === sNorm);
+    if (achado) return achado.original;
+  }
+
+  return undefined;
+}
+
 /**
  * Núcleo da leitura, sem dependência de `File` — serve tanto ao navegador quanto
  * ao script Node de importação (`scripts/import-planilha.ts`).
@@ -145,8 +190,28 @@ export async function lerPlanilhaDeBuffer(
   }
 
   const colunas = Object.keys(bruto[0]).map((c) => c.trim());
-  const faltantes = COLUNAS_OBRIGATORIAS.filter((c) => !colunas.includes(c));
-  if (faltantes.length > 0) {
+
+  // Resolver mapeamentos flexíveis
+  const colCodigo = resolverColuna(colunas, 'codigo');
+  const colDescricao = resolverColuna(colunas, 'descricao');
+  const colTipoProduto = resolverColuna(colunas, 'tipoProduto');
+  const colUnidade = resolverColuna(colunas, 'unidade');
+  const colQuantidade = resolverColuna(colunas, 'quantidade');
+  const colValorReposicao = resolverColuna(colunas, 'valorReposicao');
+  const colValorVenda = resolverColuna(colunas, 'valorVenda');
+  const colReferencia = resolverColuna(colunas, 'referencia');
+  const colDescricaoDetalhada = resolverColuna(colunas, 'descricaoDetalhada');
+  const colLocalizacao = resolverColuna(colunas, 'localizacao');
+  const colGrupoProduto = resolverColuna(colunas, 'grupoProduto');
+  const colValorPublicoSugerido = resolverColuna(colunas, 'valorPublicoSugerido');
+  const colValorGarantia = resolverColuna(colunas, 'valorGarantia');
+  const colEmpresa = resolverColuna(colunas, 'empresa');
+  const colEstoque = resolverColuna(colunas, 'estoque');
+
+  if (!colCodigo || !colDescricao) {
+    const faltantes: string[] = [];
+    if (!colCodigo) faltantes.push('Produto_Codigo');
+    if (!colDescricao) faltantes.push('Produto_Descricao');
     throw new ErroImportacao(
       `Planilha fora do layout esperado. Colunas obrigatórias ausentes: ${faltantes.join(', ')}. ` +
         `Exporte novamente o relatório RPR053 (Lista de Preço) do ERP.`
@@ -168,9 +233,9 @@ export async function lerPlanilhaDeBuffer(
     const registro = bruto[i];
     const numeroLinha = i + 2; // +1 do índice zero, +1 do cabeçalho
 
-    const codigo = sanitizarTexto(registro[COLUNAS_PLANILHA.codigo], 40);
-    const descricao = sanitizarTexto(registro[COLUNAS_PLANILHA.descricao], 200);
-    const tipoProduto = sanitizarTexto(registro[COLUNAS_PLANILHA.tipoProduto], 80);
+    const codigo = sanitizarTexto(colCodigo ? registro[colCodigo] : '', 40);
+    const descricao = sanitizarTexto(colDescricao ? registro[colDescricao] : '', 200);
+    const tipoProduto = sanitizarTexto(colTipoProduto ? registro[colTipoProduto] : '', 80) || 'Outros';
 
     if (!codigo) {
       erros.push(`Linha ${numeroLinha}: Produto_Codigo vazio — linha ignorada.`);
@@ -178,12 +243,6 @@ export async function lerPlanilhaDeBuffer(
     }
     if (!descricao) {
       erros.push(`Linha ${numeroLinha} (código ${codigo}): Produto_Descricao vazia — linha ignorada.`);
-      continue;
-    }
-    if (!tipoProduto) {
-      erros.push(
-        `Linha ${numeroLinha} (código ${codigo}): TipoProduto_Descricao vazio — sem categoria, linha ignorada.`
-      );
       continue;
     }
 
@@ -196,22 +255,25 @@ export async function lerPlanilhaDeBuffer(
     }
     codigosVistos.set(codigo, numeroLinha);
 
+    const valorVendaNum = colValorVenda ? Math.max(0, paraNumero(registro[colValorVenda])) : 0;
+    const valorReposicaoNum = colValorReposicao ? Math.max(0, paraNumero(registro[colValorReposicao])) : 0;
+
     linhas.push({
       codigo,
       descricao,
-      descricaoDetalhada: sanitizarTexto(registro[COLUNAS_PLANILHA.descricaoDetalhada], 500) || descricao,
-      referencia: sanitizarTexto(registro[COLUNAS_PLANILHA.referencia], 60),
+      descricaoDetalhada: sanitizarTexto(colDescricaoDetalhada ? registro[colDescricaoDetalhada] : '', 500) || descricao,
+      referencia: sanitizarTexto(colReferencia ? registro[colReferencia] : '', 60),
       tipoProduto,
-      unidade: sanitizarTexto(registro[COLUNAS_PLANILHA.unidade], 6).toUpperCase() || 'UN',
-      quantidade: Math.max(0, paraNumero(registro[COLUNAS_PLANILHA.quantidade])),
-      valorReposicao: Math.max(0, paraNumero(registro[COLUNAS_PLANILHA.valorReposicao])),
-      valorVenda: Math.max(0, paraNumero(registro[COLUNAS_PLANILHA.valorVenda])),
-      valorPublicoSugerido: Math.max(0, paraNumero(registro[COLUNAS_PLANILHA.valorPublicoSugerido])),
-      valorGarantia: Math.max(0, paraNumero(registro[COLUNAS_PLANILHA.valorGarantia])),
-      localizacao: sanitizarTexto(registro[COLUNAS_PLANILHA.localizacao], 60),
-      grupoProdutoCodigo: sanitizarTexto(registro[COLUNAS_PLANILHA.grupoProduto], 20),
-      estoqueDescricao: sanitizarTexto(registro[COLUNAS_PLANILHA.estoque], 80),
-      empresa: sanitizarTexto(registro[COLUNAS_PLANILHA.empresa], 80),
+      unidade: sanitizarTexto(colUnidade ? registro[colUnidade] : '', 6).toUpperCase() || 'UN',
+      quantidade: colQuantidade ? Math.max(0, paraNumero(registro[colQuantidade])) : 0,
+      valorReposicao: valorReposicaoNum,
+      valorVenda: valorVendaNum,
+      valorPublicoSugerido: colValorPublicoSugerido ? Math.max(0, paraNumero(registro[colValorPublicoSugerido])) : 0,
+      valorGarantia: colValorGarantia ? Math.max(0, paraNumero(registro[colValorGarantia])) : 0,
+      localizacao: sanitizarTexto(colLocalizacao ? registro[colLocalizacao] : '', 60),
+      grupoProdutoCodigo: sanitizarTexto(colGrupoProduto ? registro[colGrupoProduto] : '', 20),
+      estoqueDescricao: sanitizarTexto(colEstoque ? registro[colEstoque] : '', 80),
+      empresa: sanitizarTexto(colEmpresa ? registro[colEmpresa] : '', 80),
       linha: numeroLinha
     });
   }

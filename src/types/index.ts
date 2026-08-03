@@ -154,6 +154,20 @@ export interface SiteSettings {
   phone: string;
   address: string;
   showStockStatus: boolean;
+  youtubeVideoUrl?: string;
+  siteLogo?: string;
+}
+
+// Vendedor / Atendimento WhatsApp
+export interface Vendedor {
+  id: string;
+  nome: string;
+  telefone: string;
+  email?: string;
+  cargo?: string;
+  fotoUrl?: string; // foto do vendedor ou logo em base64/URL
+  ativo: boolean;
+  createdAt: string;
 }
 
 // Customer Inquiry / Quote Request

@@ -26,6 +26,7 @@ interface HeaderProps {
   searchQuery: string;
   onConsultWhatsApp: (msg?: string) => void;
   announcementText?: string;
+  siteLogo?: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,7 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onSearchChange,
   searchQuery,
   onConsultWhatsApp,
-  announcementText
+  announcementText,
+  siteLogo
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -65,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Brand Logo */}
         <a href="#" className="flex items-center gap-2">
-          <ParisDakarLogo colorMode="default" height={40} />
+          <ParisDakarLogo colorMode="default" height={40} customLogoUrl={siteLogo} />
         </a>
 
         {/* Desktop Quick Search Bar */}
@@ -77,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Buscar por veículo (Hilux, Ranger, Ram), Aro ou Pneu..."
+            placeholder="Buscar por veículo, pneu ou referência (ex: 265/70R17, Mud-Terrain)..."
             className="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#141417] text-white border border-white/10 focus:outline-none focus:border-red-600/60 focus:ring-1 focus:ring-red-600/60 transition placeholder-zinc-500 font-normal"
           />
         </div>

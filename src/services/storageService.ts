@@ -5,7 +5,8 @@ import {
   CpfClient,
   AdminUser,
   UserSession,
-  InquiryLog
+  InquiryLog,
+  Vendedor
 } from '../types';
 import { MOCK_PRODUCTS } from '../data/mockProducts';
 
@@ -16,7 +17,8 @@ const STORAGE_KEYS = {
   CNPJ_USERS: 'pd_cnpj_users',
   ADMIN_USERS: 'pd_admin_users',
   USER_SESSION: 'pd_user_session',
-  INQUIRIES: 'pd_inquiries'
+  INQUIRIES: 'pd_inquiries',
+  VENDEDORES: 'pd_vendedores'
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -26,7 +28,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   whatsappNumber: '5511999998888',
   phone: '(11) 3456-7890',
   address: 'Av. das Nações Unidas, 12901 - Morumbi, São Paulo - SP',
-  showStockStatus: true
+  showStockStatus: true,
+  youtubeVideoUrl: 'https://www.youtube.com/embed/5qap5aO4i9A'
 };
 
 export const DEFAULT_SENIOR_ADMIN: AdminUser = {
@@ -311,6 +314,70 @@ class StorageService {
       localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(inquiries));
     }
     return inquiries;
+  }
+
+  // Vendedores / Equipe Comercial WhatsApp
+  getVendedores(): Vendedor[] {
+    const data = localStorage.getItem(STORAGE_KEYS.VENDEDORES);
+    if (!data) {
+      const initialSample: Vendedor[] = [
+        {
+          id: 'vend-001',
+          nome: 'Consultor Técnico Dakar',
+          telefone: '5511999998888',
+          email: 'vendas@parisdakarrodas.com.br',
+          cargo: 'Especialista em Rodas Forjadas e Pneus 4x4',
+          fotoUrl: '',
+          ativo: true,
+          createdAt: new Date().toISOString().split('T')[0]
+        }
+      ];
+      localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(initialSample));
+      return initialSample;
+    }
+    try {
+      return JSON.parse(data);
+    } catch {
+      return [];
+    }
+  }
+
+  saveVendedor(vendedor: Omit<Vendedor, 'id' | 'createdAt'> & { id?: string }): Vendedor[] {
+    const vendedores = this.getVendedores();
+    if (vendedor.id) {
+      const index = vendedores.findIndex((v) => v.id === vendedor.id);
+      if (index >= 0) {
+        vendedores[index] = {
+          ...vendedores[index],
+          ...vendedor
+        };
+      }
+    } else {
+      const newVendedor: Vendedor = {
+        ...vendedor,
+        id: `vend-${Date.now()}`,
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      vendedores.unshift(newVendedor);
+    }
+    localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(vendedores));
+    return vendedores;
+  }
+
+  deleteVendedor(id: string): Vendedor[] {
+    const vendedores = this.getVendedores().filter((v) => v.id !== id);
+    localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(vendedores));
+    return vendedores;
+  }
+
+  toggleVendedorStatus(id: string): Vendedor[] {
+    const vendedores = this.getVendedores();
+    const item = vendedores.find((v) => v.id === id);
+    if (item) {
+      item.ativo = !item.ativo;
+      localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(vendedores));
+    }
+    return vendedores;
   }
 }
 

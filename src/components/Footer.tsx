@@ -6,12 +6,14 @@ interface FooterProps {
   onConsultWhatsApp: (msg?: string) => void;
   onOpenB2BModal: () => void;
   onOpenArchitectureViewer: () => void;
+  siteLogo?: string;
 }
 
 export const Footer: React.FC<FooterProps> = ({
   onConsultWhatsApp,
   onOpenB2BModal,
-  onOpenArchitectureViewer
+  onOpenArchitectureViewer,
+  siteLogo
 }) => {
   return (
     <footer className="bg-black text-white border-t border-white/10 transition-colors shrink-0">
@@ -21,7 +23,7 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           
           <div className="flex items-center gap-4">
-            <ParisDakarLogo colorMode="white" height={42} />
+            <ParisDakarLogo colorMode="white" height={42} customLogoUrl={siteLogo} />
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4">

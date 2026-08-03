@@ -5,14 +5,28 @@ interface ParisDakarLogoProps {
   variant?: 'full' | 'stacked' | 'icon' | 'compact';
   colorMode?: 'default' | 'light' | 'white';
   height?: number | string;
+  customLogoUrl?: string;
 }
 
 export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
   className = '',
   variant = 'full',
   colorMode = 'default',
-  height = 48
+  height = 48,
+  customLogoUrl
 }) => {
+  if (customLogoUrl) {
+    return (
+      <div className={`inline-flex items-center select-none ${className}`}>
+        <img
+          src={customLogoUrl}
+          alt="Paris Dakar Rodas & Pneus"
+          style={{ height: typeof height === 'number' ? `${height}px` : height }}
+          className="object-contain max-h-16 w-auto transition-transform duration-300 hover:scale-105"
+        />
+      </div>
+    );
+  }
   // Brand Deep Burgundy Red (#8B0000)
   const brandRed = colorMode === 'white' ? '#FFFFFF' : '#8B0000';
   const subTextColor = colorMode === 'white' ? '#FFFFFF' : colorMode === 'light' ? '#1E293B' : '#8B0000';
