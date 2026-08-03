@@ -52,6 +52,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<ProductCategory | 'todos'>('todos');
   const [sizeFilter, setSizeFilter] = useState<SizeSearchFilter | null>(null);
+  const [activeBrand, setActiveBrand] = useState<string | null>(null);
 
   // Modals State
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -101,7 +102,6 @@ export default function App() {
   const filteredProducts = products.filter((product) => {
     // 1. Category Filter
     if (activeCategory !== 'todos' && product.category !== activeCategory) {
-
       return false;
     }
 
@@ -120,6 +120,16 @@ export default function App() {
       }
     }
 
+    // 3. Vehicle Brand Filter
+    if (activeBrand) {
+      const brandLower = activeBrand.toLowerCase();
+      const matchBrandName = product.brand.toLowerCase().includes(brandLower);
+      const matchCompatibleBrand = product.compatibleVehicles.some((v) => v.toLowerCase().includes(brandLower));
+
+      if (!matchBrandName && !matchCompatibleBrand) {
+        return false;
+      }
+    }
 
     // 4. Size Filter
     if (sizeFilter) {
@@ -157,7 +167,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 dark:bg-[#0A0A0A] text-slate-900 dark:text-white transition-colors duration-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-white transition-colors duration-250 flex flex-col font-sans">
       
       {/* 1. Header Navbar */}
       <Header
@@ -172,9 +182,13 @@ export default function App() {
         onConsultWhatsApp={handleConsultWhatsApp}
         announcementText={siteSettings.announcementText}
         siteLogo={siteSettings.siteLogo}
+        onSelectCategory={(cat) => {
+          setActiveCategory(cat);
+          setActiveBrand(null); // Reset brand selection when explicitly choosing a catalog category
+        }}
       />
 
-      {/* 2. YouTube Video Hero Section */}
+      {/* 2. Unified Hero Section (Simulador 3D + Video) */}
       <HeroSection
         onConsultWhatsApp={handleConsultWhatsApp}
         onExploreCatalog={() => {
@@ -193,16 +207,19 @@ export default function App() {
           activeCategory={activeCategory}
           onSelectCategory={(cat) => setActiveCategory(cat)}
           categorias={gruposComProdutos}
+          activeBrand={activeBrand}
+          onSelectBrand={setActiveBrand}
         />
 
         {/* Filter Feedback Banner */}
-        {(sizeFilter || searchQuery || activeCategory !== 'todos') && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-red-950/20 border border-red-800/40 text-xs text-red-300">
+        {(sizeFilter || searchQuery || activeCategory !== 'todos' || activeBrand) && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 text-xs text-red-700 dark:text-red-300">
             <div className="flex items-center gap-2 font-medium">
-              <Filter className="w-4 h-4 text-red-500" />
+              <Filter className="w-4 h-4 text-red-650 dark:text-red-550" />
               <span>
                 Filtros ativos:{' '}
                 {activeCategory !== 'todos' && <strong>[Categoria: {activeCategory}] </strong>}
+                {activeBrand && <strong>[Veículo: {activeBrand}] </strong>}
                 {sizeFilter?.aro && <strong>[Aro: {sizeFilter.aro}] </strong>}
                 {sizeFilter?.furacao && <strong>[Furação: {sizeFilter.furacao}] </strong>}
                 {searchQuery && <strong>[Busca: "{searchQuery}"] </strong>}
@@ -214,8 +231,9 @@ export default function App() {
                 setSizeFilter(null);
                 setSearchQuery('');
                 setActiveCategory('todos');
+                setActiveBrand(null);
               }}
-              className="text-white underline font-bold hover:text-amber-400"
+              className="text-red-700 dark:text-white underline font-bold hover:text-red-800 dark:hover:text-amber-400"
             >
               Limpar Todos os Filtros
             </button>
@@ -223,20 +241,20 @@ export default function App() {
         )}
 
         {/* Section Heading & Items Count */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2 font-heading">
-              <PackageCheck className="w-5 h-5 text-red-500" />
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2 font-heading">
+              <PackageCheck className="w-5 h-5 text-red-650 dark:text-red-500" />
               <span>Catálogo de Produtos em Pronta Entrega</span>
             </h2>
-            <p className="text-xs text-zinc-400 font-normal">
-              Exibindo <strong className="text-red-400 font-semibold">{filteredProducts.length}</strong> de{' '}
+            <p className="text-xs text-slate-500 dark:text-zinc-400 font-normal">
+              Exibindo <strong className="text-red-700 dark:text-red-400 font-semibold">{filteredProducts.length}</strong> de{' '}
               {products.length} produtos ativos em estoque com cotação direta via WhatsApp.
             </p>
           </div>
 
           {currentSession.type === 'b2b' && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111111] border border-amber-500/30 text-amber-400 text-xs font-bold">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#111111] border border-amber-500/35 text-amber-600 dark:text-amber-400 text-xs font-bold transition">
               <Building2 className="w-4 h-4" />
               <span>Pessoa Jurídica: {currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName}</span>
             </div>
@@ -248,7 +266,7 @@ export default function App() {
               className="px-3.5 py-1.5 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-black uppercase tracking-wider flex items-center gap-2 transition"
             >
               <Lock className="w-4 h-4" />
-              <span>Gerenciar Catálogo no Painel Admin</span>
+              <span>Painel Admin</span>
             </button>
           )}
         </div>
@@ -275,14 +293,14 @@ export default function App() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 px-4 rounded-2xl bg-[#111111] border border-white/10 space-y-4">
-            <div className="w-16 h-16 rounded-full bg-red-950/30 text-red-500 flex items-center justify-center mx-auto border border-red-800/40">
+          <div className="text-center py-16 px-4 rounded-2xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 space-y-4 shadow-sm transition">
+            <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30 text-red-650 dark:text-red-550 flex items-center justify-center mx-auto border border-red-200 dark:border-red-900/40">
               <Filter className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               Nenhum item encontrado para esta combinação de filtros
             </h3>
-            <p className="text-xs text-gray-400 max-w-md mx-auto">
+            <p className="text-xs text-slate-550 dark:text-gray-400 max-w-md mx-auto">
               Nossa equipe técnica pode encomendar conjuntos sob medida para a furação e offset exatos do seu projeto 4x4.
             </p>
             <button
@@ -301,7 +319,7 @@ export default function App() {
       <InstagramFeed siteSettings={siteSettings} />
 
       {/* 4.5. Google Maps Location Section */}
-      <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+      <section id="showroom-section" className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
         <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 rounded-2xl p-6 sm:p-8 shadow-lg dark:shadow-2xl transition-colors">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
@@ -315,7 +333,7 @@ export default function App() {
                   Showroom Principal
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
-                  Visite-nos para ver de perto nossa seleção exclusiva de rodas forjadas heavy-duty e pneus off-road. Nossa equipe de especialistas está pronta para orientar seu projeto 4x4.
+                  Visite-nos para ver de perto nossa selection exclusiva de rodas forjadas heavy-duty e pneus off-road. Nossa equipe de especialistas está pronta para orientar seu projeto 4x4.
                 </p>
               </div>
 
@@ -393,12 +411,14 @@ export default function App() {
       </section>
 
       {/* 5. Footer Section */}
-      <Footer
-        onConsultWhatsApp={handleConsultWhatsApp}
-        onOpenB2BModal={() => handleOpenAuthModal('b2b')}
-        onOpenArchitectureViewer={() => setIsArchitectureViewerOpen(true)}
-        siteLogo={siteSettings.siteLogo}
-      />
+      <div id="footer-section">
+        <Footer
+          onConsultWhatsApp={handleConsultWhatsApp}
+          onOpenB2BModal={() => handleOpenAuthModal('b2b')}
+          onOpenArchitectureViewer={() => setIsArchitectureViewerOpen(true)}
+          siteLogo={siteSettings.siteLogo}
+        />
+      </div>
 
       {/* Product Detail Modal */}
       <ProductDetailModal

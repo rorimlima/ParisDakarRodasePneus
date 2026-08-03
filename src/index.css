@@ -62,19 +62,20 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: var(--bg-main);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #7F1D1D;
+  background: var(--brand-red);
   border-radius: 3px;
+  opacity: 0.8;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #991B1B;
+  background: var(--brand-red-bright);
 }
 
-/* Custom Spec Table styling - Elegant Dark Theme */
+/* Custom Spec Table styling - Elegant and Theme Responsive */
 .clean-table {
   width: 100%;
   border-collapse: separate;
@@ -89,14 +90,14 @@ h1, h2, h3, h4, h5, h6, .font-heading {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-size: 0.6875rem;
-  color: #9CA3AF;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .clean-table td {
   padding: 8px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  color: #F3F4F6;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 
 .clean-table tr:last-child td {

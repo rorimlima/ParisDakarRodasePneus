@@ -54,19 +54,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       .filter(Boolean)
       .join(' | ');
 
-    const msg = `Olá equipe Paris Dakar! 🏁\n\nGostaria de fechar o pedido ou solicitar uma cotação técnica sobre o produto:\n\n*${product.name}*\nSKU: ${product.sku}\nEspecificações: ${specsSummary}\nPreço: ${formattedPrice}\n\nMeu veículo: ${vehicleQuery || 'A confirmar com especialista'}`;
-
     onConsultWhatsApp(msg);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-8 overflow-hidden text-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 dark:bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-4xl bg-white dark:bg-[#111111] rounded-2xl border border-slate-200 dark:border-white/10 shadow-2xl my-8 overflow-hidden text-slate-900 dark:text-white">
         
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-[#1a1a1a] text-gray-300 hover:bg-[#8B0000] hover:text-white transition border border-white/10"
+          className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-slate-100 dark:bg-[#1a1a1a] text-slate-600 dark:text-gray-300 hover:bg-[#8B0000] hover:text-white transition border border-slate-200 dark:border-white/10"
         >
           <X className="w-5 h-5" />
         </button>
@@ -75,7 +73,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           
           {/* Gallery Section */}
           <div className="space-y-4">
-            <div className="aspect-[4/3] w-full rounded-xl bg-[#1a1a1a] overflow-hidden border border-white/10">
+            <div className="aspect-[4/3] w-full rounded-xl bg-slate-100 dark:bg-[#1a1a1a] overflow-hidden border border-slate-200 dark:border-white/10">
               <img
                 src={selectedImage}
                 alt={product.name}
@@ -93,7 +91,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
                       selectedImage === img
                         ? 'border-[#8B0000]'
-                        : 'border-white/10 opacity-60 hover:opacity-100'
+                        : 'border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100'
                     }`}
                   >
                     <img src={img} alt="thumb" className="w-full h-full object-cover" />
@@ -103,12 +101,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             )}
 
             {/* Guarantees Box */}
-            <div className="p-4 rounded-xl bg-[#1a1a1a] border border-white/10 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <div className="p-4 rounded-xl bg-slate-100 dark:bg-[#1a1a1a] border border-slate-200 dark:border-white/10 space-y-2 text-xs">
+              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />
                 <span>Garantia de Fábrica Paris Dakar: {product.specs.garantia || '3 Anos'}</span>
               </div>
-              <div className="flex items-center gap-2 text-gray-400">
+              <div className="flex items-center gap-2 text-slate-500 dark:text-gray-400">
                 <Truck className="w-4 h-4 text-[#8B0000]" />
                 <span>Envio rápido via transportadora especializada para todo o Brasil.</span>
               </div>
@@ -120,22 +118,21 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             
             <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[#8B0000] uppercase tracking-widest">
+                <span className="font-bold text-[#8B0000] dark:text-red-400 uppercase tracking-widest">
                   {product.brand} // {product.category}
                 </span>
-                <span className="font-mono text-gray-400 text-[11px]">SKU: {product.sku}</span>
+                <span className="font-mono text-slate-500 dark:text-gray-400 text-[11px]">SKU: {product.sku}</span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-white leading-tight">
+              <h2 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-slate-900 dark:text-white leading-tight">
                 {product.name}
               </h2>
 
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-300 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-350 leading-relaxed font-normal">
                 {product.description}
               </p>
 
               {/* Specification Clean Table */}
-              {/* Ficha técnica completa — montada a partir do schema da categoria */}
               <div className="pt-2">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 flex items-center justify-between gap-2">
                   <span>Ficha Técnica Completa</span>
@@ -182,7 +179,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               {/* Vehicle Compatibility Checker */}
               <div className="pt-2 space-y-2">
                 <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase flex items-center gap-1.5">
-                  <Car className="w-4 h-4 text-red-600" />
+                  <Car className="w-4 h-4 text-red-600 dark:text-red-500" />
                   Verificar Compatibilidade no Seu Veículo:
                 </label>
                 <div className="flex gap-2">
@@ -191,17 +188,17 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     value={vehicleQuery}
                     onChange={(e) => setVehicleQuery(e.target.value)}
                     placeholder="Ex: Hilux 2022, Ranger, Wrangler..."
-                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-100"
+                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-150 dark:bg-zinc-950 border border-slate-250 dark:border-zinc-800 text-slate-900 dark:text-zinc-100"
                   />
                   <button
                     onClick={handleCheckCompatibility}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700"
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white text-xs font-bold"
                   >
                     Checar
                   </button>
                 </div>
                 {vehicleCheckResult && (
-                  <p className="text-xs p-2.5 rounded-lg bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 leading-normal">
+                  <p className="text-xs p-2.5 rounded-lg bg-slate-100 dark:bg-zinc-950 border border-slate-205 dark:border-zinc-800 leading-normal">
                     {vehicleCheckResult}
                   </p>
                 )}
@@ -213,13 +210,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             <div className="pt-4 border-t border-slate-200 dark:border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs text-slate-400 block">Valor Unitário / Jogo:</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">Valor Unitário / Jogo:</span>
                   <span className="text-2xl font-black text-slate-900 dark:text-white">
                     {formattedPrice}
                   </span>
                 </div>
 
-                <span className="text-xs text-emerald-500 font-bold bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-800/40">
+                <span className="text-xs text-emerald-600 dark:text-emerald-450 font-bold bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-250 dark:border-emerald-800/40">
                   Estoque Disponível
                 </span>
               </div>
@@ -228,7 +225,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 onClick={handleWhatsAppConsult}
                 className="btn-paris w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 shadow-xl"
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="w-5 h-5 animate-pulse" />
                 <span>Fechar Pedido / Consultar no WhatsApp</span>
               </button>
             </div>

@@ -135,7 +135,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {product.specs.medidaPneu && (
                   <tr>
                     <th>Medida</th>
-                    <td colSpan={3} className="font-medium font-mono text-red-400">
+                    <td colSpan={3} className="font-medium font-mono text-red-650 dark:text-red-400">
                       {product.specs.medidaPneu}
                     </td>
                   </tr>
@@ -143,7 +143,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {product.specs.acabamento && (
                   <tr>
                     <th>Acabamento</th>
-                    <td colSpan={3} className="truncate max-w-[140px] text-zinc-300">
+                    <td colSpan={3} className="truncate max-w-[140px] text-slate-700 dark:text-zinc-300">
                       {product.specs.acabamento}
                     </td>
                   </tr>
@@ -154,20 +154,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Price & WhatsApp Action Routing */}
-        <div className="pt-2.5 border-t border-white/5 space-y-2.5">
+        <div className="pt-2.5 border-t border-slate-100 dark:border-white/5 space-y-2.5">
           
           {/* Clean Pure Price Display */}
           <div className="flex items-baseline justify-between">
             <div>
               {formattedOriginalPrice && (
-                <span className="text-xs text-zinc-500 line-through mr-2">
+                <span className="text-xs text-slate-400 dark:text-zinc-500 line-through mr-2">
                   {formattedOriginalPrice}
                 </span>
               )}
-              <span className="text-base sm:text-lg font-bold text-white tracking-tight">
+              <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
                 {formattedPrice}
               </span>
-              <span className="text-[10px] text-zinc-400 block font-normal tracking-normal mt-0.5">
+              <span className="text-[10px] text-slate-500 dark:text-zinc-400 block font-normal tracking-normal mt-0.5">
                 Até 10x sem juros ou PIX
               </span>
             </div>
