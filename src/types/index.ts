@@ -183,3 +183,6 @@ export interface InquiryLog {
   status: 'Novo' | 'Em Atendimento' | 'Concluído';
   notes?: string;
 }
+
+export type Seller = Vendedor;
+
