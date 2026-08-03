@@ -29,7 +29,13 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   phone: '(11) 3456-7890',
   address: 'Av. das Nações Unidas, 12901 - Morumbi, São Paulo - SP',
   showStockStatus: true,
-  youtubeVideoUrl: 'https://www.youtube.com/embed/5qap5aO4i9A'
+  youtubeVideoUrl: 'https://www.youtube.com/embed/5qap5aO4i9A',
+  instagramReels: [
+    'https://www.instagram.com/reel/DF_L0z2Pv9d/',
+    'https://www.instagram.com/reel/DEd4WyxP7bX/',
+    'https://www.instagram.com/reel/DEtP3y0vNfW/',
+    'https://www.instagram.com/reel/DDy-H9mPF2k/'
+  ]
 };
 
 export const DEFAULT_SENIOR_ADMIN: AdminUser = {

@@ -156,6 +156,7 @@ export interface SiteSettings {
   showStockStatus: boolean;
   youtubeVideoUrl?: string;
   siteLogo?: string;
+  instagramReels?: string[];
 }
 
 // Vendedor / Atendimento WhatsApp

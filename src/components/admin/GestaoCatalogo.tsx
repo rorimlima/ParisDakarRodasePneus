@@ -29,6 +29,7 @@ import {
   ProdutoCusto
 } from '../../types/catalog';
 import { catalogService } from '../../services/catalogService';
+import { storageService } from '../../services/storageService';
 import { FichaTecnicaEditor } from './FichaTecnicaEditor';
 import {
   calcularMargem,
@@ -136,6 +137,97 @@ export const GestaoCatalogo: React.FC<GestaoCatalogoProps> = ({
     }
   };
 
+  const applyWatermark = (originalDataUrl: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const settings = storageService.getSiteSettings();
+      const logoUrl = settings.siteLogo;
+      const address = settings.address || '';
+
+      // Se não houver logo salva para carimbo, mantemos a imagem original
+      if (!logoUrl) {
+        resolve(originalDataUrl);
+        return;
+      }
+
+      const imgOriginal = new Image();
+      imgOriginal.crossOrigin = 'anonymous';
+      imgOriginal.onload = () => {
+        const imgLogo = new Image();
+        imgLogo.crossOrigin = 'anonymous';
+        imgLogo.onload = () => {
+          // Criar canvas do tamanho da imagem original
+          const canvas = document.createElement('canvas');
+          canvas.width = imgOriginal.width;
+          canvas.height = imgOriginal.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(originalDataUrl);
+            return;
+          }
+
+          // 1. Desenhar imagem de fundo original
+          ctx.drawImage(imgOriginal, 0, 0);
+
+          // 2. Definir proporções e posicionamento do carimbo
+          const padding = Math.max(15, canvas.width * 0.025);
+          
+          // O tamanho da logo será de 18% da largura da imagem original
+          const logoWidth = Math.max(100, canvas.width * 0.18);
+          const logoHeight = (imgLogo.height / imgLogo.width) * logoWidth;
+
+          // Posição da logo (canto inferior direito)
+          // Deixar espaço extra na altura para o endereço
+          const addressFontSize = Math.max(10, Math.floor(canvas.width * 0.016));
+          const addressPadding = addressFontSize * 0.6;
+          
+          const logoX = canvas.width - logoWidth - padding;
+          const logoY = canvas.height - logoHeight - padding - addressFontSize - addressPadding;
+
+          // Desenhar a logo sem fundo branco (a imagem PNG já não tem fundo)
+          ctx.globalAlpha = 0.85; // leve transparência elegante
+          ctx.drawImage(imgLogo, logoX, logoY, logoWidth, logoHeight);
+          ctx.globalAlpha = 1.0;
+
+          // 3. Desenhar endereço abaixo da logo
+          if (address) {
+            const cleanAddress = address.trim();
+            ctx.font = `bold ${addressFontSize}px sans-serif`;
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+
+            // Para garantir que o texto seja legível em qualquer fundo de foto:
+            // Desenhar contorno preto grosso
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = Math.max(2, addressFontSize * 0.25);
+            ctx.lineJoin = 'round';
+            
+            const textX = canvas.width - padding;
+            const textY = logoY + logoHeight + (addressPadding / 2);
+
+            // Contorno
+            ctx.strokeText(cleanAddress, textX, textY);
+            // Preenchimento branco
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(cleanAddress, textX, textY);
+          }
+
+          // Exportar como DataURL em qualidade máxima
+          resolve(canvas.toDataURL('image/jpeg', 0.92));
+        };
+        
+        imgLogo.onerror = () => {
+          resolve(originalDataUrl);
+        };
+        imgLogo.src = logoUrl;
+      };
+      
+      imgOriginal.onerror = () => {
+        resolve(originalDataUrl);
+      };
+      imgOriginal.src = originalDataUrl;
+    });
+  };
+
   const handleProductFilesUpload = (files: FileList | null) => {
     if (!files || !emEdicao) return;
     const fileList = Array.from(files);
@@ -147,18 +239,33 @@ export const GestaoCatalogo: React.FC<GestaoCatalogoProps> = ({
       }
 
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         if (e.target?.result) {
-          const newUrl = e.target.result as string;
-          setEmEdicao((prev) => {
-            if (!prev) return null;
-            const currentImagens = prev.imagens || [];
-            if (currentImagens.includes(newUrl)) return prev;
-            return {
-              ...prev,
-              imagens: [...currentImagens, newUrl].slice(0, 12)
-            };
-          });
+          const rawUrl = e.target.result as string;
+          try {
+            const watermarkedUrl = await applyWatermark(rawUrl);
+            setEmEdicao((prev) => {
+              if (!prev) return null;
+              const currentImagens = prev.imagens || [];
+              if (currentImagens.includes(watermarkedUrl)) return prev;
+              return {
+                ...prev,
+                imagens: [...currentImagens, watermarkedUrl].slice(0, 12)
+              };
+            });
+          } catch (err) {
+            console.error('Erro ao aplicar marca d\'água:', err);
+            // Fallback para imagem original caso ocorra erro
+            setEmEdicao((prev) => {
+              if (!prev) return null;
+              const currentImagens = prev.imagens || [];
+              if (currentImagens.includes(rawUrl)) return prev;
+              return {
+                ...prev,
+                imagens: [...currentImagens, rawUrl].slice(0, 12)
+              };
+            });
+          }
         }
       };
       reader.readAsDataURL(file);

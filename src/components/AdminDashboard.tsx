@@ -23,7 +23,8 @@ import {
   PhoneCall,
   Tv,
   Image,
-  Camera
+  Camera,
+  Instagram
 } from 'lucide-react';
 import {
   SiteSettings,
@@ -426,6 +427,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <p className="text-[10px] text-gray-500 mt-1">
                   Insira qualquer link do YouTube (ex: https://www.youtube.com/watch?v=... ou https://youtu.be/...). O player do topo do site será atualizado automaticamente.
                 </p>
+              </div>
+
+              {/* URLs dos Reels do Instagram */}
+              <div className="p-4 rounded-xl bg-[#18181c] border border-white/10 space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-amber-400 block flex items-center gap-1.5">
+                  <Instagram className="w-4 h-4 text-pink-500" />
+                  <span>Feed de Vídeos do Instagram (Reels Reais)</span>
+                </label>
+                <p className="text-[10px] text-gray-400">
+                  Insira as URLs de 4 Reels reais do seu Instagram (@parisdakarrodas) para exibir no rodapé do site. Cole o link completo do navegador (ex: https://www.instagram.com/reel/... ou https://www.instagram.com/p/...).
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div key={index}>
+                      <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                        Vídeo {index + 1} (Reel URL)
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsForm.instagramReels?.[index] || ''}
+                        onChange={(e) => {
+                          const updatedReels = [...(settingsForm.instagramReels || ['', '', '', ''])];
+                          while (updatedReels.length < 4) updatedReels.push('');
+                          updatedReels[index] = e.target.value;
+                          setSettingsForm({ ...settingsForm, instagramReels: updatedReels });
+                        }}
+                        placeholder="https://www.instagram.com/reel/C5abc123/"
+                        className="w-full px-3.5 py-2 rounded bg-black border border-white/10 text-white focus:outline-none focus:border-[#8B0000]"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div>

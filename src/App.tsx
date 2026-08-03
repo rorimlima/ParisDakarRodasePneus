@@ -15,7 +15,6 @@ import { useCatalogoPublico } from './hooks/useCatalogo';
 import {
   Product,
   ProductCategory,
-  VehicleSearchFilter,
   SizeSearchFilter,
   B2BUser,
   UserSession,
@@ -52,7 +51,6 @@ export default function App() {
   // Filters State
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<ProductCategory | 'todos'>('todos');
-  const [vehicleFilter, setVehicleFilter] = useState<VehicleSearchFilter | null>(null);
   const [sizeFilter, setSizeFilter] = useState<SizeSearchFilter | null>(null);
 
   // Modals State
@@ -122,16 +120,6 @@ export default function App() {
       }
     }
 
-    // 3. Vehicle Filter
-    if (vehicleFilter && vehicleFilter.marca) {
-      const matchBrandOrModel = product.compatibleVehicles.some((v) => {
-        const lowerV = v.toLowerCase();
-        const brandMatch = lowerV.includes(vehicleFilter.marca.toLowerCase());
-        const modelMatch = vehicleFilter.modelo ? lowerV.includes(vehicleFilter.modelo.toLowerCase()) : true;
-        return brandMatch && modelMatch;
-      });
-      if (!matchBrandOrModel) return false;
-    }
 
     // 4. Size Filter
     if (sizeFilter) {
@@ -201,7 +189,6 @@ export default function App() {
         
         {/* Search & Filter Dashboard */}
         <SearchDashboard
-          onApplyVehicleFilter={(filter) => setVehicleFilter(filter)}
           onApplySizeFilter={(filter) => setSizeFilter(filter)}
           activeCategory={activeCategory}
           onSelectCategory={(cat) => setActiveCategory(cat)}
@@ -209,14 +196,13 @@ export default function App() {
         />
 
         {/* Filter Feedback Banner */}
-        {(vehicleFilter || sizeFilter || searchQuery || activeCategory !== 'todos') && (
+        {(sizeFilter || searchQuery || activeCategory !== 'todos') && (
           <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-red-950/20 border border-red-800/40 text-xs text-red-300">
             <div className="flex items-center gap-2 font-medium">
               <Filter className="w-4 h-4 text-red-500" />
               <span>
                 Filtros ativos:{' '}
                 {activeCategory !== 'todos' && <strong>[Categoria: {activeCategory}] </strong>}
-                {vehicleFilter?.marca && <strong>[Veículo: {vehicleFilter.marca} {vehicleFilter.modelo}] </strong>}
                 {sizeFilter?.aro && <strong>[Aro: {sizeFilter.aro}] </strong>}
                 {sizeFilter?.furacao && <strong>[Furação: {sizeFilter.furacao}] </strong>}
                 {searchQuery && <strong>[Busca: "{searchQuery}"] </strong>}
@@ -225,7 +211,6 @@ export default function App() {
 
             <button
               onClick={() => {
-                setVehicleFilter(null);
                 setSizeFilter(null);
                 setSearchQuery('');
                 setActiveCategory('todos');
@@ -313,7 +298,7 @@ export default function App() {
       </main>
 
       {/* 4. Instagram Social Proof Showcase */}
-      <InstagramFeed />
+      <InstagramFeed siteSettings={siteSettings} />
 
       {/* 5. Footer Section */}
       <Footer
