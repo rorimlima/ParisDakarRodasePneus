@@ -1,0 +1,6 @@
+{
+  "name": "Paris Dakar - Rodas e Pneus",
+  "description": "E-commerce e catálogo B2B/B2C automotivo de alto padrão especializado em rodas, pneus off-road, kits de lift e acessórios com visualizador 3D e atendimento via WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -8,8 +8,12 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+node_modules/
 dist
+dist/
 dist-ssr
+build/
+coverage/
 *.local
 
 # Editor directories and files
@@ -28,3 +32,4 @@ dist-ssr
 .env.*
 !.env.example
 .firebase
+
