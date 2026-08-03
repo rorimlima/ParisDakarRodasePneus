@@ -238,7 +238,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     );
 
     const isMasterCredential =
-      cleanEmail === 'onaeror@gmail.com' && adminPassword === 'adminparisrodas';
+      (cleanEmail === 'admin@parisdakar.com.br' || cleanEmail === 'master@parisdakar.com.br') && adminPassword === 'adminparisrodas';
     const isLegacyAdmin =
       cleanEmail.includes('admin') && (adminPassword === 'adminparisrodas' || adminPassword === 'admin123');
 
@@ -246,7 +246,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const activeAdmin: AdminUser = {
         id: foundAdmin?.id || 'admin-senior-001',
         name: 'Master Supremo',
-        email: cleanEmail || 'onaeror@gmail.com',
+        email: cleanEmail || 'admin@parisdakar.com.br',
         role: 'senior',
         grantedBySenior: true,
         createdAt: foundAdmin?.createdAt || new Date().toISOString().split('T')[0]
@@ -260,7 +260,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       }, 800);
     } else {
-      setErrorMsg('Credenciais inválidas. Verifique o e-mail (onaeror@gmail.com) e a senha master.');
+      setErrorMsg('Credenciais inválidas. Verifique o e-mail de acesso admin e a senha master.');
     }
   };
 
@@ -269,11 +269,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     const seniorAdmin: AdminUser = {
       id: 'admin-senior-001',
       name: 'Master Supremo',
-      email: 'onaeror@gmail.com',
+      email: 'admin@parisdakar.com.br',
       role: 'senior',
       grantedBySenior: true,
       createdAt: '2026-01-01'
     };
+
 
     const session: UserSession = { type: 'admin', adminUser: seniorAdmin };
     storageService.saveUserSession(session);
@@ -788,8 +789,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   Painel de gestão administrativa e controle do catálogo Paris Dakar Rodas e Pneus.
                 </p>
                 <div className="pt-1 text-[11px] font-mono text-amber-400">
-                  <span>Usuário Master: <strong>onaeror@gmail.com</strong></span>
+                  <span>Usuário Master: <strong>admin@parisdakar.com.br</strong></span>
                 </div>
+
               </div>
 
               <form onSubmit={handleAdminLogin} className="space-y-4">
