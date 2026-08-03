@@ -19,7 +19,10 @@ import {
   ClipboardList,
   Wallet,
   Cloud,
-  CloudOff
+  CloudOff,
+  PhoneCall,
+  Tv,
+  Image
 } from 'lucide-react';
 import {
   SiteSettings,
@@ -34,6 +37,7 @@ import { useCatalogoAdmin } from '../hooks/useCatalogo';
 import { GestaoCatalogo } from './admin/GestaoCatalogo';
 import { GestaoCategorias } from './admin/GestaoCategorias';
 import { ImportacaoPlanilha } from './admin/ImportacaoPlanilha';
+import { GestaoVendedores } from './admin/GestaoVendedores';
 import { formatarBRL } from '../utils/pricing';
 
 interface AdminDashboardProps {
@@ -47,6 +51,7 @@ type AbaAdmin =
   | 'importacao'
   | 'categorias'
   | 'settings'
+  | 'vendedores'
   | 'clients'
   | 'admins'
   | 'inquiries';
@@ -105,6 +110,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onSiteSettingsUpdated(settingsForm);
     setSettingsSavedMsg('Configurações alteradas e salvas no banco do site!');
     setTimeout(() => setSettingsSavedMsg(''), 3000);
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      alert('A imagem da logo é muito grande. Escolha um arquivo de até 5MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setSettingsForm({ ...settingsForm, siteLogo: event.target!.result as string });
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // --- ADMIN USERS HANDLERS ---
@@ -273,9 +294,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             { id: 'importacao', rotulo: '2. Importar Planilha do ERP', Icone: Upload },
             { id: 'categorias', rotulo: `3. Categorias & Ficha Técnica (${categorias.length})`, Icone: Layers },
             { id: 'settings', rotulo: '4. Configurações do Site', Icone: Settings },
-            { id: 'clients', rotulo: '5. Clientes (CPF / CNPJ)', Icone: Users },
-            { id: 'inquiries', rotulo: `6. Cotações & Leads (${inquiries.length})`, Icone: MessageCircle },
-            { id: 'admins', rotulo: '7. Administradores', Icone: Lock }
+            { id: 'vendedores', rotulo: '5. Vendedores & WhatsApp', Icone: PhoneCall },
+            { id: 'clients', rotulo: '6. Clientes (CPF / CNPJ)', Icone: Users },
+            { id: 'inquiries', rotulo: `7. Cotações & Leads (${inquiries.length})`, Icone: MessageCircle },
+            { id: 'admins', rotulo: '8. Administradores', Icone: Lock }
           ] as Array<{ id: AbaAdmin; rotulo: string; Icone: typeof Package }>).map(({ id, rotulo, Icone }) => (
             <button
               key={id}
@@ -343,6 +365,62 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             )}
 
             <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
+              
+              {/* Espaço para subir a Logo do Computador ou Celular */}
+              <div className="p-4 rounded-xl bg-[#18181c] border border-white/10 space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-amber-400 block flex items-center gap-1.5">
+                  <Image className="w-4 h-4 text-amber-500" />
+                  <span>Logo Oficial do Site (Upload do Computador ou Celular)</span>
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  {settingsForm.siteLogo ? (
+                    <div className="p-2 bg-black rounded border border-white/10 shrink-0 flex items-center justify-center max-h-20">
+                      <img src={settingsForm.siteLogo} alt="Logo Previsto" className="max-h-14 w-auto object-contain" />
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-black rounded border border-dashed border-white/20 text-[11px] text-zinc-400 text-center">
+                      Logo Padrão Tuareg SVG (Nenhum arquivo enviado)
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-bold uppercase tracking-wider transition">
+                      <Upload className="w-4 h-4" />
+                      <span>Subir Foto/Logo do Computador ou Celular</span>
+                      <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                    </label>
+
+                    {settingsForm.siteLogo && (
+                      <button
+                        type="button"
+                        onClick={() => setSettingsForm({ ...settingsForm, siteLogo: '' })}
+                        className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-red-400 rounded text-xs font-bold uppercase"
+                      >
+                        Remover Logo
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* URL do Vídeo de Apresentação no YouTube */}
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1 flex items-center gap-1.5">
+                  <Tv className="w-3.5 h-3.5 text-red-500" />
+                  <span>Link / URL do Vídeo de Apresentação no YouTube (Hero da Tela Inicial)</span>
+                </label>
+                <input
+                  type="text"
+                  value={settingsForm.youtubeVideoUrl || ''}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, youtubeVideoUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=5qap5aO4i9A ou ID do vídeo"
+                  className="w-full px-3.5 py-2.5 rounded bg-[#1a1a1a] border border-white/10 text-white focus:outline-none focus:border-[#8B0000]"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Insira qualquer link do YouTube (ex: https://www.youtube.com/watch?v=... ou https://youtu.be/...). O player do topo do site será atualizado automaticamente.
+                </p>
+              </div>
+
               <div>
                 <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">
                   Texto do Banner Superior Anúncio (Barra de Notificações)
@@ -358,7 +436,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">
-                    Título Principal do Hero (Visualizador 3D)
+                    Título Principal do Hero (Apresentação)
                   </label>
                   <input
                     type="text"
@@ -429,6 +507,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
             </form>
           </div>
+        )}
+
+        {/* ABA: GESTÃO DE VENDEDORES */}
+        {activeTab === 'vendedores' && (
+          <GestaoVendedores onAviso={showToast} />
         )}
 
         {/* TAB 3: CLIENTS MANAGEMENT (CPF & CNPJ) */}

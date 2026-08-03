@@ -50,10 +50,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   return (
     <div
       onClick={() => onOpenDetails(product)}
-      className="group cursor-pointer flex flex-col bg-[#111111] border border-white/10 hover:border-[#8B0000] rounded-xl overflow-hidden shadow-lg transition-all duration-300 relative"
+      className="group cursor-pointer flex flex-col bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 hover:border-[#8B0000] rounded-xl overflow-hidden shadow-sm dark:shadow-lg transition-all duration-300 relative"
     >
       {/* Product Image & Badge Overlay */}
-      <div className="relative aspect-[4/3] w-full bg-[#1a1a1a] overflow-hidden flex items-center justify-center">
+      <div className="relative aspect-[4/3] w-full bg-slate-100 dark:bg-[#1a1a1a] overflow-hidden flex items-center justify-center">
         <img
           src={product.image}
           alt={product.name}
@@ -83,12 +83,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="space-y-1.5">
           {/* Categoria & código do produto (Produto_Codigo do ERP) */}
           <div className="flex items-center justify-between text-[10px] gap-2">
-            <span className="font-semibold uppercase tracking-wider text-red-400 truncate">
+            <span className="font-semibold uppercase tracking-wider text-red-600 dark:text-red-400 truncate">
               {product.categoriaNome || product.brand}
             </span>
 
             <span
-              className="shrink-0 font-mono font-medium text-zinc-400 bg-zinc-900 border border-white/10 px-1.5 py-0.5 rounded"
+              className="shrink-0 font-mono font-medium text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 px-1.5 py-0.5 rounded"
               title="Código do produto"
             >
               #{product.sku}
@@ -96,18 +96,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           {/* Product Title */}
-          <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-white line-clamp-2 leading-snug group-hover:text-red-400 transition-colors font-heading">
+          <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors font-heading">
             {product.name}
           </h3>
 
           {/* Clean Specification Table */}
           <div className="pt-1">
-            <table className="clean-table bg-zinc-900/70 rounded overflow-hidden">
+            <table className="clean-table bg-slate-100 dark:bg-zinc-900/70 rounded overflow-hidden">
               <tbody>
                 {product.specs.aro && (
                   <tr>
                     <th>Aro</th>
-                    <td className="font-medium font-mono text-white">{product.specs.aro}</td>
+                    <td className="font-medium font-mono text-slate-900 dark:text-white">{product.specs.aro}</td>
                     {product.specs.furacao && (
                       <>
                         <th>Furação</th>

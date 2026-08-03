@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
-import { Hero3DVisualizer } from './components/Hero3DVisualizer';
+import { HeroSection } from './components/HeroSection';
 import { SearchDashboard } from './components/SearchDashboard';
 import { ProductCard } from './components/ProductCard';
 import { ProductDetailModal } from './components/ProductDetailModal';
@@ -140,6 +140,14 @@ export default function App() {
       if (sizeFilter.furacao && product.specs.furacao && product.specs.furacao !== sizeFilter.furacao) {
         return false;
       }
+      if (sizeFilter.medidaPneu && sizeFilter.medidaPneu.trim()) {
+        const qMedida = sizeFilter.medidaPneu.toLowerCase().replace(/\s+/g, '');
+        const prodMedida = (product.specs.medidaPneu || '').toLowerCase().replace(/\s+/g, '');
+        const prodName = product.name.toLowerCase();
+        if (!prodMedida.includes(qMedida) && !prodName.includes(sizeFilter.medidaPneu.toLowerCase())) {
+          return false;
+        }
+      }
       if (sizeFilter.tipoPneu && product.specs.tipoPneu && product.specs.tipoPneu !== sizeFilter.tipoPneu) {
         return false;
       }
@@ -160,7 +168,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white transition-colors duration-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-100 dark:bg-[#0A0A0A] text-slate-900 dark:text-white transition-colors duration-200 flex flex-col font-sans">
       
       {/* 1. Header Navbar */}
       <Header
@@ -174,15 +182,17 @@ export default function App() {
         searchQuery={searchQuery}
         onConsultWhatsApp={handleConsultWhatsApp}
         announcementText={siteSettings.announcementText}
+        siteLogo={siteSettings.siteLogo}
       />
 
-      {/* 2. Interactive 3D Hero Section */}
-      <Hero3DVisualizer
+      {/* 2. YouTube Video Hero Section */}
+      <HeroSection
         onConsultWhatsApp={handleConsultWhatsApp}
         onExploreCatalog={() => {
           const section = document.getElementById('catalog-section');
           if (section) section.scrollIntoView({ behavior: 'smooth' });
         }}
+        siteSettings={siteSettings}
       />
 
       {/* 3. Main Catalog Section */}
@@ -309,6 +319,7 @@ export default function App() {
         onConsultWhatsApp={handleConsultWhatsApp}
         onOpenB2BModal={() => handleOpenAuthModal('b2b')}
         onOpenArchitectureViewer={() => setIsArchitectureViewerOpen(true)}
+        siteLogo={siteSettings.siteLogo}
       />
 
       {/* Product Detail Modal */}

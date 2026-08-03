@@ -16,10 +16,10 @@ export const Footer: React.FC<FooterProps> = ({
   siteLogo
 }) => {
   return (
-    <footer className="bg-black text-white border-t border-white/10 transition-colors shrink-0">
+    <footer className="bg-slate-900 dark:bg-black text-white border-t border-slate-800 dark:border-white/10 transition-colors shrink-0">
       
       {/* Top Banner Social & WhatsApp Route */}
-      <div className="border-b border-white/5 py-8 bg-[#0D0D0D]">
+      <div className="border-b border-slate-800 dark:border-white/5 py-8 bg-slate-950 dark:bg-[#0D0D0D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
           
           <div className="flex items-center gap-4">

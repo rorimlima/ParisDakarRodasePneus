@@ -45,19 +45,19 @@ export const Header: React.FC<HeaderProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-black/95 text-white border-b border-[#8B0000]/50 transition-colors duration-200">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-white/95 dark:bg-black/95 text-slate-900 dark:text-white border-b border-red-900/30 dark:border-[#8B0000]/50 transition-colors duration-200 shadow-sm dark:shadow-none">
       
       {/* Top Announcement Bar - Only Instagram */}
-      <div className="bg-[#0D0D10] text-zinc-300 text-[11px] py-1.5 px-4 font-medium border-b border-white/5">
+      <div className="bg-slate-100 dark:bg-[#0D0D10] text-slate-700 dark:text-zinc-300 text-[11px] py-1.5 px-4 font-medium border-b border-slate-200 dark:border-white/5">
         <div className="max-w-7xl mx-auto w-full flex justify-center items-center">
           <a
             href="https://www.instagram.com/parisdakarrodas/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-red-400 transition flex items-center gap-1.5 tracking-wide text-[11px]"
+            className="hover:text-red-600 dark:hover:text-red-400 transition flex items-center gap-1.5 tracking-wide text-[11px]"
           >
-            <Instagram className="w-3.5 h-3.5 text-red-500" />
-            <span>Siga nosso Instagram <strong className="text-white font-semibold">@parisdakarrodas</strong></span>
+            <Instagram className="w-3.5 h-3.5 text-red-600 dark:text-red-500" />
+            <span>Siga nosso Instagram <strong className="text-slate-900 dark:text-white font-semibold">@parisdakarrodas</strong></span>
           </a>
         </div>
       </div>
@@ -67,12 +67,12 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Brand Logo */}
         <a href="#" className="flex items-center gap-2">
-          <ParisDakarLogo colorMode="default" height={40} customLogoUrl={siteLogo} />
+          <ParisDakarLogo colorMode={darkMode ? "default" : "light"} height={40} customLogoUrl={siteLogo} />
         </a>
 
         {/* Desktop Quick Search Bar */}
         <div className="hidden md:flex flex-1 max-w-md relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
+          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 dark:text-zinc-500">
             <Search className="w-4 h-4" />
           </div>
           <input
@@ -80,7 +80,7 @@ export const Header: React.FC<HeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar por veículo, pneu ou referência (ex: 265/70R17, Mud-Terrain)..."
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#141417] text-white border border-white/10 focus:outline-none focus:border-red-600/60 focus:ring-1 focus:ring-red-600/60 transition placeholder-zinc-500 font-normal"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-slate-100 dark:bg-[#141417] text-slate-900 dark:text-white border border-slate-300 dark:border-white/10 focus:outline-none focus:border-red-600/60 focus:ring-1 focus:ring-red-600/60 transition placeholder-slate-400 dark:placeholder-zinc-500 font-normal"
           />
         </div>
 
@@ -90,10 +90,10 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Dark / Light Toggle */}
           <button
             onClick={onToggleDarkMode}
-            className="p-2 rounded-lg bg-[#141417] text-zinc-300 hover:bg-[#1C1C21] border border-white/10 transition"
+            className="p-2 rounded-lg bg-slate-100 dark:bg-[#141417] text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-[#1C1C21] border border-slate-300 dark:border-white/10 transition"
             title={darkMode ? "Mudar para Modo Claro" : "Mudar para Modo Escuro"}
           >
-            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-300" />}
+            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
           </button>
 
           {/* ADMIN ACTIVE BUTTON / PAINEL ADMIN TRIGGER */}

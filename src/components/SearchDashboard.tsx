@@ -36,6 +36,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
   // Size Search State
   const [selectedAro, setSelectedAro] = useState<string>('');
   const [selectedFuracao, setSelectedFuracao] = useState<string>('');
+  const [selectedMedidaPneu, setSelectedMedidaPneu] = useState<string>('');
   const [selectedTireType, setSelectedTireType] = useState<string>('');
 
   const availableModels = selectedBrand
@@ -61,7 +62,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
       category: activeCategory,
       aro: selectedAro,
       furacao: selectedFuracao,
-      medidaPneu: '',
+      medidaPneu: selectedMedidaPneu,
       tipoPneu: selectedTireType
     });
   };
@@ -72,6 +73,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
     setSelectedYear('');
     setSelectedAro('');
     setSelectedFuracao('');
+    setSelectedMedidaPneu('');
     setSelectedTireType('');
     onApplyVehicleFilter(null);
     onApplySizeFilter(null);
@@ -79,28 +81,28 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
   };
 
   return (
-    <div className="w-full bg-[#111111] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl transition-colors">
+    <div className="w-full bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-6 shadow-lg dark:shadow-2xl transition-colors">
       
       {/* Dashboard Top Mode Switcher */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-white/10">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
         <div>
-          <h2 className="text-sm font-semibold text-red-400 tracking-tight font-heading flex items-center gap-2 mb-1">
-            <SlidersHorizontal className="w-4 h-4 text-red-500" />
+          <h2 className="text-sm font-semibold text-red-700 dark:text-red-400 tracking-tight font-heading flex items-center gap-2 mb-1">
+            <SlidersHorizontal className="w-4 h-4 text-red-600 dark:text-red-500" />
             <span>Busca Técnica &amp; Filtros de Compatibilidade</span>
           </h2>
-          <p className="text-xs text-zinc-400 font-normal">
+          <p className="text-xs text-slate-600 dark:text-zinc-400 font-normal">
             Selecione por modelo do seu veículo ou por especificações de Aro, Furação e Pneu.
           </p>
         </div>
 
         {/* Tab Switch: Vehicle vs Size */}
-        <div className="flex bg-zinc-950 p-1 rounded-lg border border-white/10 w-full sm:w-auto">
+        <div className="flex bg-slate-100 dark:bg-zinc-950 p-1 rounded-lg border border-slate-200 dark:border-white/10 w-full sm:w-auto">
           <button
             onClick={() => setSearchMode('vehicle')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition ${
               searchMode === 'vehicle'
-                ? 'bg-zinc-800 text-white border border-red-600/40 shadow-sm'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-red-600/40 shadow-sm'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Car className="w-3.5 h-3.5" />
@@ -111,8 +113,8 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             onClick={() => setSearchMode('size')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition ${
               searchMode === 'size'
-                ? 'bg-zinc-800 text-white border border-red-600/40 shadow-sm'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-white dark:bg-zinc-800 text-slate-900 dark:text-white border border-red-600/40 shadow-sm'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             <Ruler className="w-3.5 h-3.5" />
@@ -220,12 +222,12 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
       {/* Mode B: Search by Size / Measurements */}
       {searchMode === 'size' && (
         <div className="pt-5 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             
             {/* Aro Selector */}
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
-                Aro
+                1. Aro
               </label>
               <select
                 value={selectedAro}
@@ -244,7 +246,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             {/* Furação Selector */}
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
-                Furação (PCD)
+                2. Furação (PCD)
               </label>
               <select
                 value={selectedFuracao}
@@ -260,10 +262,24 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
               </select>
             </div>
 
+            {/* Pneu & Referência Input */}
+            <div>
+              <label className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block mb-1.5">
+                3. Pneu / Referência do Pneu
+              </label>
+              <input
+                type="text"
+                value={selectedMedidaPneu}
+                onChange={(e) => setSelectedMedidaPneu(e.target.value)}
+                placeholder="Ex: 265/70R17, 285/75R16, 35x12.5"
+                className="w-full px-3 py-2.5 rounded bg-[#1a1a1a] text-white border border-white/10 text-xs font-medium focus:border-[#8B0000] outline-none placeholder-zinc-500"
+              />
+            </div>
+
             {/* Tire Type Selector */}
             <div>
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
-                Tipo de Pneu
+                4. Banda do Pneu
               </label>
               <select
                 value={selectedTireType}
