@@ -20,7 +20,7 @@ import {
   UserSession,
   SiteSettings
 } from './types';
-import { Filter, PackageCheck, Building2, PhoneCall, Lock, Loader2 } from 'lucide-react';
+import { Filter, PackageCheck, Building2, PhoneCall, Lock, Loader2, MapPin, Phone, Clock } from 'lucide-react';
 
 export default function App() {
   // Dark Mode State
@@ -299,6 +299,98 @@ export default function App() {
 
       {/* 4. Instagram Social Proof Showcase */}
       <InstagramFeed siteSettings={siteSettings} />
+
+      {/* 4.5. Google Maps Location Section */}
+      <section className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
+        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 rounded-2xl p-6 sm:p-8 shadow-lg dark:shadow-2xl transition-colors">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            {/* Info Column */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#8B0000] dark:text-red-500">
+                  Como nos encontrar
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-heading">
+                  Showroom Principal
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
+                  Visite-nos para ver de perto nossa seleção exclusiva de rodas forjadas heavy-duty e pneus off-road. Nossa equipe de especialistas está pronta para orientar seu projeto 4x4.
+                </p>
+              </div>
+
+              <div className="space-y-4 pt-2">
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-800/30 flex items-center justify-center text-[#8B0000] dark:text-red-500 shrink-0">
+                    <MapPin className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Endereço</h4>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">{siteSettings.address}</p>
+                  </div>
+                </div>
+
+                {siteSettings.phone && (
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                      <Phone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Telefone</h4>
+                      <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">{siteSettings.phone}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-start gap-3">
+                  <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/30 flex items-center justify-center text-amber-600 dark:text-amber-500 shrink-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Horário de Funcionamento</h4>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">Segunda a Sexta: 08h às 18h | Sábado: 08h às 12h</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex flex-col sm:flex-row gap-3">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteSettings.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-lg hover:shadow-red-900/35"
+                >
+                  <MapPin className="w-4 h-4" />
+                  Como Chegar (Google Maps)
+                </a>
+
+                <button
+                  onClick={() => handleConsultWhatsApp("Olá! Gostaria de agendar uma visita ao showroom para ver modelos de rodas e pneus.")}
+                  className="bg-transparent border border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/20 text-slate-800 dark:text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2"
+                >
+                  <PhoneCall className="w-4 h-4 text-emerald-500" />
+                  Agendar Visita
+                </button>
+              </div>
+            </div>
+
+            {/* Map Column */}
+            <div className="lg:col-span-7 h-[350px] sm:h-[400px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-inner relative group">
+              <iframe
+                title="Paris Dakar Localização"
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                style={{ border: 0 }}
+                src={`https://maps.google.com/maps?q=${encodeURIComponent(siteSettings.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                allowFullScreen
+                className="opacity-90 dark:opacity-80 dark:invert-[0.9] dark:hue-rotate-[180deg] transition-opacity duration-300 group-hover:opacity-100 group-hover:dark:opacity-90"
+              />
+            </div>
+
+          </div>
+        </div>
+      </section>
 
       {/* 5. Footer Section */}
       <Footer
