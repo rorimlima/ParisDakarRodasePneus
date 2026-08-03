@@ -10,7 +10,6 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { ArchitectureViewer } from './components/ArchitectureViewer';
 import { Footer } from './components/Footer';
 
-import { WhatsAppSellerModal } from './components/WhatsAppSellerModal';
 import { storageService } from './services/storageService';
 import { useCatalogoPublico } from './hooks/useCatalogo';
 import {
@@ -20,8 +19,7 @@ import {
   SizeSearchFilter,
   B2BUser,
   UserSession,
-  SiteSettings,
-  Seller
+  SiteSettings
 } from './types';
 import { Filter, PackageCheck, Building2, PhoneCall, Lock, Loader2 } from 'lucide-react';
 
