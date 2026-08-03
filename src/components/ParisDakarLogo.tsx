@@ -75,7 +75,8 @@ export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
   return (
     <div className={`inline-flex items-center gap-3 select-none ${className}`}>
       {TuaregIcon}
-      {variant !== 'icon' && (
+      {/* variantes 'icon' e 'stacked' já retornaram acima — aqui o texto sempre acompanha */}
+      {(
         <div className="flex flex-col justify-center leading-none">
           <span
             className="font-black tracking-wider text-lg sm:text-xl md:text-2xl font-serif uppercase leading-tight"

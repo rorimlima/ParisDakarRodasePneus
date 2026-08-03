@@ -6,3 +6,25 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Firebase
+.firebase/
+.firebaserc
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+functions/lib/
+functions/node_modules/
+
+# Credenciais — service account do Admin SDK dá acesso irrestrito ao projeto,
+# ignora Security Rules e não expira. Nunca versionar.
+service-account*.json
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# Planilhas do ERP — contêm ValorReposicao (custo) de todo o estoque.
+# Ficam fora do repositório; a importação é feita pelo painel ou pelo script.
+*.xlsx
+*.xlsm
+*.xls
+!docs/exemplo-*.xlsx

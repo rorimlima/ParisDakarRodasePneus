@@ -1,4 +1,12 @@
-export type ProductCategory = 'rodas' | 'pneus' | 'kits-lift' | 'acessorios' | 'combos';
+import type { GrupoCategoria } from './catalog';
+
+export * from './catalog';
+
+/**
+ * Categoria de apresentação no site. Acompanha os grupos do catálogo Firestore
+ * (`GrupoCategoria`) e mantém 'combos' para os conjuntos montados manualmente.
+ */
+export type ProductCategory = GrupoCategoria | 'combos';
 
 export type TireType = 'MT' | 'AT' | 'LT' | 'HT';
 export type WheelFinish = 'Preto Fosco' | 'Grafite Acetinado' | 'Bronze Off-Road' | 'Cromo Satinado' | 'Vermelho Dakar Accent';
@@ -27,6 +35,13 @@ export interface VehicleFitment {
   aroRecomendado: string;
 }
 
+/** Linha da ficha técnica renderizada no site, montada a partir do schema da categoria. */
+export interface LinhaFichaTecnica {
+  label: string;
+  valor: string;
+  destaque?: boolean;
+}
+
 export interface Product {
   id: string;
   sku: string;
@@ -48,6 +63,16 @@ export interface Product {
   stockQuantity: number;
   rating: number;
   reviewsCount: number;
+
+  // --- vindos do catálogo Firestore ---
+  /** Unidade de venda por extenso: "par", "jogo", "unidade"... */
+  unidadeLabel?: string;
+  /** Sigla original do ERP (UN, PR, JG, KT...). */
+  unidadeSigla?: string;
+  /** Ficha técnica completa, na ordem definida pela categoria. */
+  fichaTecnicaCompleta?: LinhaFichaTecnica[];
+  /** Nome da categoria de catálogo à qual o produto pertence. */
+  categoriaNome?: string;
 }
 
 export interface VehicleSearchFilter {
@@ -94,7 +119,12 @@ export interface CpfClient {
 }
 
 // Admin User
-export type AdminRole = 'senior' | 'admin';
+/**
+ * `senior`   — controle total, concede papéis.
+ * `gerencia` — opera o catálogo e enxerga ValorReposicao/margem.
+ * `admin`    — opera o catálogo sem acesso a custo.
+ */
+export type AdminRole = 'senior' | 'gerencia' | 'admin';
 
 export interface AdminUser {
   id: string;

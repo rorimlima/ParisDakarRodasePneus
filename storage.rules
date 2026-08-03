@@ -1,0 +1,57 @@
+rules_version = '2';
+
+// Storage — fotos de produto e planilhas de importação.
+//
+// Upload é o vetor clássico: SVG com <script> vira XSS armazenado quando servido
+// no mesmo domínio, e HTML disfarçado de imagem idem. Por isso a lista de tipos é
+// de permissão explícita e SVG fica de fora.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function papel() {
+      return request.auth != null && request.auth.token.role is string
+        ? request.auth.token.role
+        : 'visitante';
+    }
+
+    function equipeAdministrativa() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && papel() in ['senior', 'gerencia', 'admin'];
+    }
+
+    function imagemSegura() {
+      return request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType in [
+             'image/jpeg', 'image/png', 'image/webp', 'image/avif'
+           ];
+    }
+
+    // Fotos exibidas no site.
+    match /produtos/{codigo}/{arquivo} {
+      allow read: if true;
+      allow write: if equipeAdministrativa() && imagemSegura();
+      allow delete: if equipeAdministrativa();
+    }
+
+    // Planilhas do ERP. Nunca públicas: contêm ValorReposicao de todo o estoque.
+    match /importacoes/{arquivo} {
+      allow read: if request.auth != null
+        && request.auth.token.email_verified == true
+        && papel() in ['senior', 'gerencia'];
+      allow write: if equipeAdministrativa()
+        && request.resource.size < 25 * 1024 * 1024
+        && request.resource.contentType in [
+             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+             'application/vnd.ms-excel',
+             'text/csv'
+           ];
+      allow delete: if request.auth != null && papel() == 'senior';
+    }
+
+    match /{caminho=**} {
+      allow read, write: if false;
+    }
+  }
+}

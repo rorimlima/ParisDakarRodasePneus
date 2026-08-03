@@ -66,8 +66,17 @@ export const DEFAULT_SAMPLE_CPF: CpfClient = {
 
 // Storage Service Class
 class StorageService {
-  
-  // Products
+
+  // ---------------------------------------------------------------------
+  // Produtos — LEGADO.
+  //
+  // O catálogo real vive em `catalogService` (Firestore, com fallback local).
+  // Estes métodos permanecem apenas para não quebrar código antigo; nada no
+  // app os chama. Não escreva produto por aqui: esta via não aplica a regra
+  // "estoque zerado ⇒ fora do site" nem separa o custo do documento público.
+  // ---------------------------------------------------------------------
+
+  /** @deprecated use `catalogService.listarProdutos()` */
   getProducts(): Product[] {
     const data = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (!data) {
@@ -95,10 +104,12 @@ class StorageService {
     }
   }
 
+  /** @deprecated use `catalogService` */
   saveProducts(products: Product[]) {
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
   }
 
+  /** @deprecated use `catalogService` */
   saveProduct(product: Product): Product[] {
     const products = this.getProducts();
     const index = products.findIndex((p) => p.id === product.id);
@@ -111,6 +122,7 @@ class StorageService {
     return products;
   }
 
+  /** @deprecated use `catalogService` */
   deleteProduct(id: string): Product[] {
     const products = this.getProducts().filter((p) => p.id !== id);
     this.saveProducts(products);

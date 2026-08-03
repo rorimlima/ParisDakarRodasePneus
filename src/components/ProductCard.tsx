@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, ShieldCheck, Lock, ChevronRight, Eye, Star } from 'lucide-react';
+import { MessageCircle, Eye } from 'lucide-react';
 import { Product, B2BUser } from '../types';
 
 interface ProductCardProps {
@@ -81,17 +81,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
         
         <div className="space-y-2">
-          {/* Subcategory & Rating */}
-          <div className="flex items-center justify-between text-[10px]">
-            <span className="font-bold uppercase tracking-widest text-[#8B0000]">
-              {product.brand}
+          {/* Categoria & código do produto (Produto_Codigo do ERP) */}
+          <div className="flex items-center justify-between text-[10px] gap-2">
+            <span className="font-bold uppercase tracking-widest text-[#8B0000] truncate">
+              {product.categoriaNome || product.brand}
             </span>
 
-            <div className="flex items-center gap-1 text-amber-500 font-bold">
-              <Star className="w-3.5 h-3.5 fill-amber-500" />
-              <span>{product.rating}</span>
-              <span className="text-gray-500 font-normal">({product.reviewsCount})</span>
-            </div>
+            <span
+              className="shrink-0 font-mono font-bold text-gray-400 bg-[#1a1a1a] border border-white/10 px-1.5 py-0.5 rounded"
+              title="Código do produto"
+            >
+              #{product.sku}
+            </span>
           </div>
 
           {/* Product Title */}
@@ -171,9 +172,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </span>
             </div>
 
-            <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
-              Pronta Entrega
-            </span>
+            <div className="text-right shrink-0">
+              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40 block">
+                Pronta Entrega
+              </span>
+              {product.unidadeLabel && (
+                <span className="text-[9px] text-gray-500 block mt-1">
+                  {product.stockQuantity} {product.unidadeLabel}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* WhatsApp Routing Direct Button */}

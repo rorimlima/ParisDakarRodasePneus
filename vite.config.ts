@@ -11,6 +11,21 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      // Chunks estáveis por biblioteca: o navegador reaproveita o cache dessas
+      // dependências entre deploys, em vez de rebaixar tudo a cada build.
+      // `xlsx` já sai sozinho por import dinâmico — só o painel de importação o carrega.
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ['react', 'react-dom'],
+            firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/functions', 'firebase/storage'],
+            three: ['three'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 900,
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.

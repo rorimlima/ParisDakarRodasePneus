@@ -135,64 +135,48 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </p>
 
               {/* Specification Clean Table */}
+              {/* Ficha técnica completa — montada a partir do schema da categoria */}
               <div className="pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2">
-                  Especificações Técnicas
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2 flex items-center justify-between gap-2">
+                  <span>Ficha Técnica Completa</span>
+                  <span className="font-mono normal-case tracking-normal text-[10px] text-slate-400 dark:text-zinc-500">
+                    Código #{product.sku}
+                  </span>
                 </h4>
+
                 <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
                   <table className="clean-table">
                     <tbody>
-                      {product.specs.aro && (
+                      {(product.fichaTecnicaCompleta || []).map((linha) => (
+                        <tr key={linha.label}>
+                          <th>{linha.label}</th>
+                          <td className={linha.destaque ? 'font-bold' : ''}>{linha.valor}</td>
+                        </tr>
+                      ))}
+
+                      {product.categoriaNome && (
                         <tr>
-                          <th>Aro</th>
-                          <td className="font-bold">{product.specs.aro}</td>
+                          <th>Categoria</th>
+                          <td>{product.categoriaNome}</td>
                         </tr>
                       )}
-                      {product.specs.furacao && (
-                        <tr>
-                          <th>Furação (PCD)</th>
-                          <td className="font-bold">{product.specs.furacao}</td>
-                        </tr>
-                      )}
-                      {product.specs.offset && (
-                        <tr>
-                          <th>Offset (ET)</th>
-                          <td>{product.specs.offset}</td>
-                        </tr>
-                      )}
-                      {product.specs.tala && (
-                        <tr>
-                          <th>Tala (Largura)</th>
-                          <td>{product.specs.tala}</td>
-                        </tr>
-                      )}
-                      {product.specs.medidaPneu && (
-                        <tr>
-                          <th>Medida do Pneu</th>
-                          <td className="font-bold text-red-600">{product.specs.medidaPneu}</td>
-                        </tr>
-                      )}
-                      {product.specs.tipoPneu && (
-                        <tr>
-                          <th>Tipo de Banda</th>
-                          <td>{product.specs.tipoPneu}</td>
-                        </tr>
-                      )}
-                      {product.specs.acabamento && (
-                        <tr>
-                          <th>Acabamento</th>
-                          <td>{product.specs.acabamento}</td>
-                        </tr>
-                      )}
-                      {product.specs.peso && (
-                        <tr>
-                          <th>Peso do Item</th>
-                          <td>{product.specs.peso}</td>
-                        </tr>
-                      )}
+
+                      <tr>
+                        <th>Disponibilidade</th>
+                        <td className="font-bold text-emerald-600 dark:text-emerald-400">
+                          {product.stockQuantity} {product.unidadeLabel || 'em estoque'}
+                        </td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
+
+                {(product.fichaTecnicaCompleta || []).length <= 1 && (
+                  <p className="text-[11px] text-slate-500 dark:text-zinc-500 italic mt-2">
+                    Ficha técnica em complementação. Fale com um especialista no WhatsApp para
+                    confirmar medidas e compatibilidade.
+                  </p>
+                )}
               </div>
 
               {/* Vehicle Compatibility Checker */}

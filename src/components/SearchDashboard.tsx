@@ -3,18 +3,28 @@ import { Car, Ruler, SlidersHorizontal, RefreshCw, Check, Layers, Filter, Shield
 import { VEHICLE_BRANDS, ARO_OPTIONS, FURACAO_OPTIONS } from '../data/mockProducts';
 import { ProductCategory, VehicleSearchFilter, SizeSearchFilter } from '../types';
 
+/** Categoria com produtos publicados, vinda do Firestore. */
+export interface CategoriaDisponivel {
+  grupo: string;
+  label: string;
+  total: number;
+}
+
 interface SearchDashboardProps {
   onApplyVehicleFilter: (filter: VehicleSearchFilter | null) => void;
   onApplySizeFilter: (filter: SizeSearchFilter | null) => void;
   activeCategory: ProductCategory | 'todos';
   onSelectCategory: (cat: ProductCategory | 'todos') => void;
+  /** Preenchida pelo catálogo real; só entram categorias com produto no ar. */
+  categorias?: CategoriaDisponivel[];
 }
 
 export const SearchDashboard: React.FC<SearchDashboardProps> = ({
   onApplyVehicleFilter,
   onApplySizeFilter,
   activeCategory,
-  onSelectCategory
+  onSelectCategory,
+  categorias = []
 }) => {
   const [searchMode, setSearchMode] = useState<'vehicle' | 'size'>('vehicle');
 
@@ -297,16 +307,12 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
         </span>
 
         {[
-          { id: 'todos', label: 'Todos os Itens' },
-          { id: 'rodas', label: 'Rodas Off-Road' },
-          { id: 'pneus', label: 'Pneus (MT / AT / LT)' },
-          { id: 'kits-lift', label: 'Kits de Lift' },
-          { id: 'combos', label: 'Combos Prontos' },
-          { id: 'acessorios', label: 'Acessórios & Espaçadores' }
+          { id: 'todos', label: 'Todos os Itens', total: categorias.reduce((s, c) => s + c.total, 0) },
+          ...categorias.map((c) => ({ id: c.grupo, label: c.label, total: c.total }))
         ].map((cat) => (
           <button
             key={cat.id}
-            onClick={() => onSelectCategory(cat.id as any)}
+            onClick={() => onSelectCategory(cat.id as ProductCategory | 'todos')}
             className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition ${
               activeCategory === cat.id
                 ? 'bg-[#8B0000] text-white shadow-sm'
@@ -314,8 +320,15 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             }`}
           >
             {cat.label}
+            {cat.total > 0 && <span className="ml-1.5 opacity-60">{cat.total}</span>}
           </button>
         ))}
+
+        {categorias.length === 0 && (
+          <span className="text-[10px] text-gray-600 italic">
+            As categorias aparecem aqui conforme os produtos são publicados no painel.
+          </span>
+        )}
       </div>
 
     </div>

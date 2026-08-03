@@ -7,99 +7,77 @@ import {
   User,
   ShieldCheck,
   Plus,
-  Trash2,
-  Edit,
   Save,
-  X,
-  Search,
   CheckCircle2,
-  AlertCircle,
   FileSpreadsheet,
-  Phone,
   MessageCircle,
-  MapPin,
-  Eye,
-  RefreshCw,
-  LogOut,
   ArrowLeft,
-  DollarSign,
   Layers,
-  Sparkles,
   Lock,
-  Briefcase
+  Upload,
+  PackageCheck,
+  ClipboardList,
+  Wallet,
+  Cloud,
+  CloudOff
 } from 'lucide-react';
 import {
-  Product,
   SiteSettings,
   CpfClient,
   B2BUser,
   AdminUser,
   InquiryLog,
-  ProductCategory,
-  TaxRegime,
-  WheelFinish,
-  TireType
+  PapelUsuario
 } from '../types';
 import { storageService } from '../services/storageService';
-import { formatCNPJ, formatCPF } from '../utils/validation';
+import { useCatalogoAdmin } from '../hooks/useCatalogo';
+import { GestaoCatalogo } from './admin/GestaoCatalogo';
+import { GestaoCategorias } from './admin/GestaoCategorias';
+import { ImportacaoPlanilha } from './admin/ImportacaoPlanilha';
+import { formatarBRL } from '../utils/pricing';
 
 interface AdminDashboardProps {
   adminUser: AdminUser;
   onExitAdmin: () => void;
-  onProductsUpdated: (products: Product[]) => void;
   onSiteSettingsUpdated: (settings: SiteSettings) => void;
 }
+
+type AbaAdmin =
+  | 'catalogo'
+  | 'importacao'
+  | 'categorias'
+  | 'settings'
+  | 'clients'
+  | 'admins'
+  | 'inquiries';
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   adminUser,
   onExitAdmin,
-  onProductsUpdated,
   onSiteSettingsUpdated
 }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'clients' | 'admins' | 'inquiries'>('products');
+  const [activeTab, setActiveTab] = useState<AbaAdmin>('catalogo');
+
+  // Papel efetivo — decide o acesso a ValorReposicao e margem.
+  const papel: PapelUsuario = adminUser.role;
+
+  const {
+    produtos,
+    categorias,
+    custos,
+    podeVerCusto,
+    indicadores,
+    carregando: carregandoCatalogo,
+    recarregarCustos,
+    usandoFirebase
+  } = useCatalogoAdmin(papel);
 
   // Local state initialized from storageService
-  const [products, setProducts] = useState<Product[]>(storageService.getProducts());
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(storageService.getSiteSettings());
   const [cpfClients, setCpfClients] = useState<CpfClient[]>(storageService.getCpfUsers());
   const [cnpjClients, setCnpjClients] = useState<B2BUser[]>(storageService.getCnpjUsers());
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(storageService.getAdminUsers());
   const [inquiries, setInquiries] = useState<InquiryLog[]>(storageService.getInquiries());
-
-  // Search & Filter state for products
-  const [productSearch, setProductSearch] = useState('');
-  const [selectedCatFilter, setSelectedCatFilter] = useState<string>('todos');
-
-  // Product Editing / Adding State
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
-
-  // New Product Form State
-  const [newProdName, setNewProdName] = useState('');
-  const [newProdSku, setNewProdSku] = useState('');
-  const [newProdBrand, setNewProdBrand] = useState('Paris Dakar Custom');
-  const [newProdCat, setNewProdCat] = useState<ProductCategory>('rodas');
-  const [newProdSubcat, setNewProdSubcat] = useState('Off-Road');
-  const [newProdPrice, setNewProdPrice] = useState<number>(2500);
-  const [newProdB2bPrice, setNewProdB2bPrice] = useState<number>(2000);
-  const [newProdOrigPrice, setNewProdOrigPrice] = useState<number>(2800);
-  const [newProdStock, setNewProdStock] = useState<number>(10);
-  const [newProdInStock, setNewProdInStock] = useState(true);
-  const [newProdBadge, setNewProdBadge] = useState('NOVIDADE 2026');
-  const [newProdImg, setNewProdImg] = useState('https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=800&q=80');
-  const [newProdDesc, setNewProdDesc] = useState('');
-
-  // Product Specs Form State
-  const [specAro, setSpecAro] = useState('17"');
-  const [specFuracao, setSpecFuracao] = useState('6x139.7');
-  const [specOffset, setSpecOffset] = useState('ET -12');
-  const [specTala, setSpecTala] = useState('9.0"');
-  const [specAcabamento, setSpecAcabamento] = useState('Preto Fosco');
-  const [specMedidaPneu, setSpecMedidaPneu] = useState('285/70R17');
-  const [specTipoPneu, setSpecTipoPneu] = useState<TireType>('MT');
-  const [specGarantia, setSpecGarantia] = useState('3 Anos');
-  const [specPeso, setSpecPeso] = useState('14.0 kg');
-  const [specVehicles, setSpecVehicles] = useState('Toyota Hilux, Ford Ranger, Mitsubishi L200');
 
   // Site Settings Form State
   const [settingsForm, setSettingsForm] = useState<SiteSettings>(siteSettings);
@@ -108,7 +86,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Add Admin Form State
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
-  const [newAdminRole, setNewAdminRole] = useState<'senior' | 'admin'>('admin');
+  const [newAdminRole, setNewAdminRole] = useState<AdminUser['role']>('admin');
   const [adminSuccessMsg, setAdminSuccessMsg] = useState('');
 
   // Notification Banner
@@ -117,79 +95,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);
-  };
-
-  // --- CATALOG MANAGEMENT HANDLERS ---
-  const handleSaveNewProduct = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newProdName || !newProdSku) {
-      showToast('Preencha ao menos Nome e SKU do produto.');
-      return;
-    }
-
-    const newProd: Product = {
-      id: `pd-custom-${Date.now()}`,
-      sku: newProdSku,
-      name: newProdName,
-      brand: newProdBrand,
-      category: newProdCat,
-      subcategory: newProdSubcat,
-      price: Number(newProdPrice),
-      b2bPrice: Number(newProdB2bPrice),
-      originalPrice: Number(newProdOrigPrice),
-      isWholesaleOnly: false,
-      badge: newProdBadge,
-      image: newProdImg,
-      description: newProdDesc || 'Produto de alta performance Paris Dakar Off-Road.',
-      specs: {
-        aro: specAro,
-        furacao: specFuracao,
-        offset: specOffset,
-        tala: specTala,
-        acabamento: specAcabamento,
-        medidaPneu: specMedidaPneu,
-        tipoPneu: specTipoPneu,
-        garantia: specGarantia,
-        peso: specPeso
-      },
-      compatibleVehicles: specVehicles.split(',').map((v) => v.trim()),
-      inStock: newProdInStock,
-      stockQuantity: Number(newProdStock),
-      rating: 5.0,
-      reviewsCount: 1
-    };
-
-    const updatedList = storageService.saveProduct(newProd);
-    setProducts(updatedList);
-    onProductsUpdated(updatedList);
-    setIsAddProductModalOpen(false);
-    showToast('Novo produto adicionado ao catálogo com sucesso!');
-  };
-
-  const handleUpdateProduct = (prod: Product) => {
-    const updatedList = storageService.saveProduct(prod);
-    setProducts(updatedList);
-    onProductsUpdated(updatedList);
-    setEditingProduct(null);
-    showToast('Produto atualizado com sucesso!');
-  };
-
-  const handleDeleteProduct = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este produto do catálogo?')) {
-      const updatedList = storageService.deleteProduct(id);
-      setProducts(updatedList);
-      onProductsUpdated(updatedList);
-      showToast('Produto removido do catálogo.');
-    }
-  };
-
-  // Quick inline price / stock update
-  const handleQuickPriceUpdate = (id: string, newPrice: number, newStock: number) => {
-    const prod = products.find((p) => p.id === id);
-    if (prod) {
-      const updated = { ...prod, price: newPrice, stockQuantity: newStock, inStock: newStock > 0 };
-      handleUpdateProduct(updated);
-    }
   };
 
   // --- SITE SETTINGS HANDLERS ---
@@ -227,16 +132,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setInquiries(updated);
     showToast('Status da cotação atualizado!');
   };
-
-  // Filtered Products
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-      p.sku.toLowerCase().includes(productSearch.toLowerCase()) ||
-      p.brand.toLowerCase().includes(productSearch.toLowerCase());
-    const matchesCat = selectedCatFilter === 'todos' || p.category === selectedCatFilter;
-    return matchesSearch && matchesCat;
-  });
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col font-sans">
@@ -282,231 +177,149 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* Main Admin Body */}
       <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         
-        {/* KPI Analytics Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {/* Indicadores do catálogo */}
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
           <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Total Produtos</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Produtos no catálogo</span>
             <div className="text-xl font-black italic text-white flex items-center justify-between">
-              <span>{products.length}</span>
+              <span>{carregandoCatalogo ? '—' : indicadores.total}</span>
               <Package className="w-5 h-5 text-[#8B0000]" />
             </div>
           </div>
 
           <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Clientes Lojistas (CNPJ)</span>
-            <div className="text-xl font-black italic text-amber-400 flex items-center justify-between">
-              <span>{cnpjClients.length}</span>
-              <Building2 className="w-5 h-5 text-amber-500" />
-            </div>
-          </div>
-
-          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Clientes Finais (CPF)</span>
-            <div className="text-xl font-black italic text-sky-400 flex items-center justify-between">
-              <span>{cpfClients.length}</span>
-              <User className="w-5 h-5 text-sky-400" />
-            </div>
-          </div>
-
-          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Cotações / Leads</span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Publicados no site</span>
             <div className="text-xl font-black italic text-emerald-400 flex items-center justify-between">
-              <span>{inquiries.length}</span>
-              <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
+              <span>{indicadores.publicados}</span>
+              <PackageCheck className="w-5 h-5 text-emerald-500" />
             </div>
           </div>
 
           <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Administradores</span>
-            <div className="text-xl font-black italic text-[#8B0000] flex items-center justify-between">
-              <span>{adminUsers.length}</span>
-              <ShieldCheck className="w-5 h-5 text-[#8B0000]" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Estoque zerado</span>
+            <div className="text-xl font-black italic text-red-400 flex items-center justify-between">
+              <span>{indicadores.semEstoque}</span>
+              <Layers className="w-5 h-5 text-red-500" />
             </div>
+            <span className="text-[9px] text-gray-500 block">fora do site automaticamente</span>
+          </div>
+
+          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Ficha incompleta</span>
+            <div className="text-xl font-black italic text-amber-400 flex items-center justify-between">
+              <span>{indicadores.fichaIncompleta}</span>
+              <ClipboardList className="w-5 h-5 text-amber-500" />
+            </div>
+          </div>
+
+          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">
+              {podeVerCusto ? 'Estoque a preço de venda' : 'Cotações / Leads'}
+            </span>
+            <div className="text-lg font-black italic text-sky-400 flex items-center justify-between">
+              <span className="truncate">
+                {podeVerCusto ? formatarBRL(indicadores.valorEmEstoque) : inquiries.length}
+              </span>
+              {podeVerCusto ? (
+                <Wallet className="w-5 h-5 text-sky-400 shrink-0" />
+              ) : (
+                <MessageCircle className="w-5 h-5 text-sky-400 shrink-0" />
+              )}
+            </div>
+          </div>
+
+          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">
+              {podeVerCusto ? 'Estoque a custo (reposição)' : 'Clientes cadastrados'}
+            </span>
+            <div className="text-lg font-black italic text-[#8B0000] flex items-center justify-between">
+              <span className="truncate">
+                {podeVerCusto && indicadores.custoEmEstoque !== null
+                  ? formatarBRL(indicadores.custoEmEstoque)
+                  : cpfClients.length + cnpjClients.length}
+              </span>
+              {podeVerCusto ? (
+                <Lock className="w-5 h-5 text-[#8B0000] shrink-0" />
+              ) : (
+                <Users className="w-5 h-5 text-[#8B0000] shrink-0" />
+              )}
+            </div>
+            {podeVerCusto && (
+              <span className="text-[9px] text-amber-500/80 block">visível só para gerência</span>
+            )}
           </div>
         </div>
 
-        {/* Tab Selector Bar */}
+        {/* Origem dos dados */}
+        <div
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-bold uppercase tracking-widest ${
+            usandoFirebase
+              ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-300'
+              : 'bg-amber-950/30 border-amber-800/50 text-amber-300'
+          }`}
+        >
+          {usandoFirebase ? <Cloud className="w-3.5 h-3.5" /> : <CloudOff className="w-3.5 h-3.5" />}
+          <span>
+            {usandoFirebase
+              ? 'Conectado ao Firestore — catálogo em tempo real'
+              : 'Modo local (sem Firebase configurado) — dados só neste navegador'}
+          </span>
+        </div>
+
+        {/* Barra de abas */}
         <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
-              activeTab === 'products'
-                ? 'bg-[#8B0000] text-white shadow-md'
-                : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
-            }`}
-          >
-            <Package className="w-4 h-4" />
-            <span>1. Catálogo & Estoque ({products.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
-              activeTab === 'settings'
-                ? 'bg-[#8B0000] text-white shadow-md'
-                : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>2. Configurações do Site</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('clients')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
-              activeTab === 'clients'
-                ? 'bg-[#8B0000] text-white shadow-md'
-                : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>3. Clientes (CPF / CNPJ)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('inquiries')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
-              activeTab === 'inquiries'
-                ? 'bg-[#8B0000] text-white shadow-md'
-                : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
-            }`}
-          >
-            <MessageCircle className="w-4 h-4" />
-            <span>4. Cotações & Leads</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('admins')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
-              activeTab === 'admins'
-                ? 'bg-[#8B0000] text-white shadow-md'
-                : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
-            }`}
-          >
-            <Lock className="w-4 h-4" />
-            <span>5. Administradores do Sistema</span>
-          </button>
+          {([
+            { id: 'catalogo', rotulo: `1. Catálogo & Estoque (${indicadores.total})`, Icone: Package },
+            { id: 'importacao', rotulo: '2. Importar Planilha do ERP', Icone: Upload },
+            { id: 'categorias', rotulo: `3. Categorias & Ficha Técnica (${categorias.length})`, Icone: Layers },
+            { id: 'settings', rotulo: '4. Configurações do Site', Icone: Settings },
+            { id: 'clients', rotulo: '5. Clientes (CPF / CNPJ)', Icone: Users },
+            { id: 'inquiries', rotulo: `6. Cotações & Leads (${inquiries.length})`, Icone: MessageCircle },
+            { id: 'admins', rotulo: '7. Administradores', Icone: Lock }
+          ] as Array<{ id: AbaAdmin; rotulo: string; Icone: typeof Package }>).map(({ id, rotulo, Icone }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+                activeTab === id
+                  ? 'bg-[#8B0000] text-white shadow-md'
+                  : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
+              }`}
+            >
+              <Icone className="w-4 h-4" />
+              <span>{rotulo}</span>
+            </button>
+          ))}
         </div>
 
-        {/* TAB 1: CATALOG PRODUCTS MANAGEMENT */}
-        {activeTab === 'products' && (
-          <div className="space-y-6">
-            
-            {/* Action & Filter Toolbar */}
-            <div className="bg-[#111111] p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-                  <input
-                    type="text"
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    placeholder="Buscar por nome, SKU, marca..."
-                    className="w-full pl-9 pr-4 py-2 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
-                  />
-                </div>
+        {/* ABA 1: CATÁLOGO */}
+        {activeTab === 'catalogo' && (
+          <GestaoCatalogo
+            produtos={produtos}
+            categorias={categorias}
+            custos={custos}
+            papel={papel}
+            podeVerCusto={podeVerCusto}
+            onAviso={showToast}
+          />
+        )}
 
-                <select
-                  value={selectedCatFilter}
-                  onChange={(e) => setSelectedCatFilter(e.target.value)}
-                  className="px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none"
-                >
-                  <option value="todos">Todas Categorias</option>
-                  <option value="rodas">Rodas</option>
-                  <option value="pneus">Pneus</option>
-                  <option value="kits-lift">Kits de Lift</option>
-                  <option value="acessorios">Acessórios</option>
-                  <option value="combos">Combos</option>
-                </select>
-              </div>
+        {/* ABA 2: IMPORTAÇÃO DA PLANILHA */}
+        {activeTab === 'importacao' && (
+          <ImportacaoPlanilha
+            executadoPor={`${adminUser.name} <${adminUser.email}>`}
+            onConcluido={(resultado) => {
+              void recarregarCustos();
+              showToast(
+                `Importação concluída: ${resultado.criados} criados, ${resultado.atualizados} atualizados, ${resultado.desativados} desativados.`
+              );
+            }}
+          />
+        )}
 
-              <button
-                onClick={() => setIsAddProductModalOpen(true)}
-                className="bg-[#8B0000] hover:bg-red-800 text-white px-5 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 w-full sm:w-auto justify-center"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Adicionar Novo Produto</span>
-              </button>
-            </div>
-
-            {/* Products Data Table */}
-            <div className="bg-[#111111] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead>
-                    <tr className="bg-black border-b border-white/10 text-gray-400 uppercase text-[10px] tracking-wider font-bold">
-                      <th className="p-3">Imagem & Nome</th>
-                      <th className="p-3">SKU / Categoria</th>
-                      <th className="p-3">Preço B2C</th>
-                      <th className="p-3">Preço B2B (Atacado)</th>
-                      <th className="p-3">Estoque</th>
-                      <th className="p-3 text-center">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {filteredProducts.map((p) => (
-                      <tr key={p.id} className="hover:bg-[#1a1a1a] transition">
-                        <td className="p-3 flex items-center gap-3">
-                          <img src={p.image} alt={p.name} className="w-12 h-12 object-cover rounded bg-[#1a1a1a] shrink-0 border border-white/10" />
-                          <div>
-                            <span className="font-bold text-white uppercase italic block">{p.name}</span>
-                            <span className="text-[10px] text-[#8B0000] font-bold block uppercase">{p.brand}</span>
-                          </div>
-                        </td>
-
-                        <td className="p-3">
-                          <span className="font-mono text-gray-300 block">{p.sku}</span>
-                          <span className="text-[10px] text-gray-500 uppercase">{p.category} // {p.subcategory}</span>
-                        </td>
-
-                        <td className="p-3 font-bold font-mono text-emerald-400">
-                          R$ {p.price.toLocaleString('pt-BR')}
-                        </td>
-
-                        <td className="p-3 font-bold font-mono text-amber-400">
-                          R$ {(p.b2bPrice || p.price * 0.8).toLocaleString('pt-BR')}
-                        </td>
-
-                        <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              value={p.stockQuantity}
-                              onChange={(e) => handleQuickPriceUpdate(p.id, p.price, Number(e.target.value))}
-                              className="w-16 px-2 py-1 rounded bg-[#1a1a1a] border border-white/10 text-center text-xs text-white font-mono"
-                            />
-                            <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${
-                              p.inStock ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'
-                            }`}>
-                              {p.inStock ? 'EM ESTOQUE' : 'ESGOTADO'}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="p-3 text-center space-x-2">
-                          <button
-                            onClick={() => setEditingProduct(p)}
-                            className="p-2 rounded bg-[#1a1a1a] hover:bg-zinc-800 text-gray-300 hover:text-white transition"
-                            title="Editar especificações"
-                          >
-                            <Edit className="w-4 h-4 text-amber-400" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="p-2 rounded bg-red-950/60 hover:bg-red-900 text-red-400 hover:text-white transition"
-                            title="Remover produto"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
+        {/* ABA 3: CATEGORIAS */}
+        {activeTab === 'categorias' && (
+          <GestaoCategorias categorias={categorias} produtos={produtos} onAviso={showToast} />
         )}
 
         {/* TAB 2: SITE SETTINGS */}
@@ -882,12 +695,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </label>
                     <select
                       value={newAdminRole}
-                      onChange={(e) => setNewAdminRole(e.target.value as any)}
+                      onChange={(e) => setNewAdminRole(e.target.value as AdminUser['role'])}
                       className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
                     >
-                      <option value="admin">Administrador Operacional</option>
-                      <option value="senior">Sênior Master</option>
+                      <option value="admin">Administrador Operacional — opera o catálogo, sem custo</option>
+                      <option value="gerencia">Gerência — vê valor de reposição e margem</option>
+                      <option value="senior">Sênior Master — controle total</option>
                     </select>
+                    <p className="text-[10px] text-gray-500 mt-1 leading-snug">
+                      Somente <strong className="text-amber-400">Gerência</strong> e{' '}
+                      <strong className="text-amber-400">Sênior</strong> enxergam o
+                      ValorReposicao dos produtos.
+                    </p>
                   </div>
 
                   <div className="sm:col-span-3">
@@ -908,286 +727,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       </div>
 
-      {/* ADD PRODUCT MODAL */}
-      {isAddProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-3xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-8 overflow-hidden text-white p-6 space-y-4">
-            
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-black uppercase italic tracking-wider text-white">
-                Cadastrar Novo Produto no Catálogo
-              </h3>
-              <button
-                onClick={() => setIsAddProductModalOpen(false)}
-                className="p-2 rounded-full bg-[#1a1a1a] text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveNewProduct} className="space-y-4 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Nome do Produto *</label>
-                  <input
-                    type="text"
-                    value={newProdName}
-                    onChange={(e) => setNewProdName(e.target.value)}
-                    placeholder="Ex: Roda Forged Dakar Heavy-Duty 17x9"
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">SKU Único *</label>
-                  <input
-                    type="text"
-                    value={newProdSku}
-                    onChange={(e) => setNewProdSku(e.target.value)}
-                    placeholder="PD-DAKAR-1790-6139"
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white font-mono"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Categoria</label>
-                  <select
-                    value={newProdCat}
-                    onChange={(e) => setNewProdCat(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
-                  >
-                    <option value="rodas">Rodas</option>
-                    <option value="pneus">Pneus</option>
-                    <option value="kits-lift">Kits de Lift</option>
-                    <option value="acessorios">Acessórios</option>
-                    <option value="combos">Combos</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Subcategoria</label>
-                  <input
-                    type="text"
-                    value={newProdSubcat}
-                    onChange={(e) => setNewProdSubcat(e.target.value)}
-                    placeholder="Forjada Caminhonete 4x4"
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Selo / Badge</label>
-                  <input
-                    type="text"
-                    value={newProdBadge}
-                    onChange={(e) => setNewProdBadge(e.target.value)}
-                    placeholder="FORGED 4X4 HEAVY-DUTY"
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Preço B2C (R$)</label>
-                  <input
-                    type="number"
-                    value={newProdPrice}
-                    onChange={(e) => setNewProdPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-amber-400 block mb-1">Preço Atacado B2B (R$)</label>
-                  <input
-                    type="number"
-                    value={newProdB2bPrice}
-                    onChange={(e) => setNewProdB2bPrice(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Estoque Inicial</label>
-                  <input
-                    type="number"
-                    value={newProdStock}
-                    onChange={(e) => setNewProdStock(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Specs Grid */}
-              <div className="p-3 bg-[#181818] rounded border border-white/10 space-y-2">
-                <span className="text-[10px] font-bold uppercase text-amber-400 block">Tabela de Especificações Técnicas</span>
-                <div className="grid grid-cols-4 gap-2">
-                  <input
-                    type="text"
-                    value={specAro}
-                    onChange={(e) => setSpecAro(e.target.value)}
-                    placeholder='Aro (Ex: 17")'
-                    className="px-2 py-1 bg-[#0A0A0A] border border-white/10 rounded text-white text-[11px]"
-                  />
-                  <input
-                    type="text"
-                    value={specFuracao}
-                    onChange={(e) => setSpecFuracao(e.target.value)}
-                    placeholder="Furação (Ex: 6x139.7)"
-                    className="px-2 py-1 bg-[#0A0A0A] border border-white/10 rounded text-white text-[11px]"
-                  />
-                  <input
-                    type="text"
-                    value={specOffset}
-                    onChange={(e) => setSpecOffset(e.target.value)}
-                    placeholder="Offset (Ex: ET -12)"
-                    className="px-2 py-1 bg-[#0A0A0A] border border-white/10 rounded text-white text-[11px]"
-                  />
-                  <input
-                    type="text"
-                    value={specTala}
-                    onChange={(e) => setSpecTala(e.target.value)}
-                    placeholder='Tala (Ex: 9.0")'
-                    className="px-2 py-1 bg-[#0A0A0A] border border-white/10 rounded text-white text-[11px]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">URL da Imagem</label>
-                <input
-                  type="text"
-                  value={newProdImg}
-                  onChange={(e) => setNewProdImg(e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Veículos Compatíveis (Separados por vírgula)</label>
-                <input
-                  type="text"
-                  value={specVehicles}
-                  onChange={(e) => setSpecVehicles(e.target.value)}
-                  placeholder="Toyota Hilux, Ford Ranger, Chevrolet S10"
-                  className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
-                />
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddProductModalOpen(false)}
-                  className="px-4 py-2 rounded bg-[#1a1a1a] text-gray-300 font-bold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-2 rounded font-black uppercase text-xs tracking-widest shadow-lg"
-                >
-                  Salvar Produto no Banco
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      )}
-
-      {/* EDIT PRODUCT MODAL */}
-      {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-2xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-8 overflow-hidden text-white p-6 space-y-4">
-            
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-black uppercase italic tracking-wider text-white">
-                Editar Produto: {editingProduct.name}
-              </h3>
-              <button
-                onClick={() => setEditingProduct(null)}
-                className="p-2 rounded-full bg-[#1a1a1a] text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleUpdateProduct(editingProduct);
-              }}
-              className="space-y-4 text-xs"
-            >
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Nome do Produto</label>
-                  <input
-                    type="text"
-                    value={editingProduct.name}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Preço Venda B2C (R$)</label>
-                  <input
-                    type="number"
-                    value={editingProduct.price}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-amber-400 block mb-1">Preço Venda Atacado B2B (R$)</label>
-                  <input
-                    type="number"
-                    value={editingProduct.b2bPrice || editingProduct.price * 0.8}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, b2bPrice: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Quantidade em Estoque</label>
-                  <input
-                    type="number"
-                    value={editingProduct.stockQuantity}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, stockQuantity: Number(e.target.value), inStock: Number(e.target.value) > 0 })}
-                    className="w-full px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-white font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setEditingProduct(null)}
-                  className="px-4 py-2 rounded bg-[#1a1a1a] text-gray-300 font-bold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-2 rounded font-black uppercase text-xs tracking-widest"
-                >
-                  Salvar Edição
-                </button>
-              </div>
-            </form>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );

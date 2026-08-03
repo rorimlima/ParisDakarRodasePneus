@@ -11,6 +11,7 @@ import { ArchitectureViewer } from './components/ArchitectureViewer';
 import { Footer } from './components/Footer';
 
 import { storageService } from './services/storageService';
+import { useCatalogoPublico } from './hooks/useCatalogo';
 import {
   Product,
   ProductCategory,
@@ -20,14 +21,23 @@ import {
   UserSession,
   SiteSettings
 } from './types';
-import { ShieldCheck, Filter, PackageCheck, Building2, PhoneCall, Lock } from 'lucide-react';
+import { Filter, PackageCheck, Building2, PhoneCall, Lock, Loader2 } from 'lucide-react';
 
 export default function App() {
   // Dark Mode State
   const [darkMode, setDarkMode] = useState<boolean>(true);
 
-  // Persistent Storage States
-  const [products, setProducts] = useState<Product[]>(() => storageService.getProducts());
+  /**
+   * Catálogo público: o hook assina apenas produtos com `ativo == true`.
+   * Produto desativado ou com estoque zerado não chega sequer ao cliente —
+   * a restrição está na query, nas Security Rules e no filtro do hook.
+   */
+  const {
+    produtosExibicao: products,
+    gruposComProdutos,
+    carregando: carregandoCatalogo
+  } = useCatalogoPublico();
+
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
   const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
 
@@ -144,7 +154,6 @@ export default function App() {
       <AdminDashboard
         adminUser={currentSession.adminUser}
         onExitAdmin={() => setViewMode('store')}
-        onProductsUpdated={(updated) => setProducts(updated)}
         onSiteSettingsUpdated={(settings) => setSiteSettings(settings)}
       />
     );
@@ -185,6 +194,7 @@ export default function App() {
           onApplySizeFilter={(filter) => setSizeFilter(filter)}
           activeCategory={activeCategory}
           onSelectCategory={(cat) => setActiveCategory(cat)}
+          categorias={gruposComProdutos}
         />
 
         {/* Filter Feedback Banner */}
@@ -224,7 +234,9 @@ export default function App() {
               <span>Catálogo Paris Dakar // Pronta Entrega</span>
             </h2>
             <p className="text-xs text-gray-400">
-              Exibindo <strong className="text-red-400">{filteredProducts.length}</strong> itens cadastrados com suporte de cotação via WhatsApp.
+              Exibindo <strong className="text-red-400">{filteredProducts.length}</strong> de{' '}
+              {products.length} produtos ativos em estoque, com cotação via WhatsApp.
+              Itens sem estoque saem do site automaticamente.
             </p>
           </div>
 
@@ -247,7 +259,14 @@ export default function App() {
         </div>
 
         {/* Product Cards Grid */}
-        {filteredProducts.length > 0 ? (
+        {carregandoCatalogo ? (
+          <div className="text-center py-16 space-y-3">
+            <Loader2 className="w-8 h-8 mx-auto animate-spin text-[#8B0000]" />
+            <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">
+              Carregando catálogo...
+            </p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
               <ProductCard
