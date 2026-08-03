@@ -310,20 +310,20 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
           
           {/* Left Column: Typography & Conversion Copy */}
           <div className="lg:col-span-5 space-y-6 text-left z-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-950/80 border border-red-800/50 text-red-400 text-xs font-semibold tracking-wider uppercase">
-              <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '6s' }} />
-              Simulador 3D Interativo 360º
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/40 text-red-400 text-[11px] font-medium tracking-wide">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Simulador 3D Interativo 360º</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black font-serif uppercase tracking-tight text-white leading-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-white leading-tight font-heading">
               Paris Dakar <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-red-600 to-amber-500">
-                Rodas & Pneus para Caminhonetes 4x4
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-red-500 to-amber-400 font-semibold">
+                Rodas &amp; Pneus para Caminhonetes 4x4
               </span>
             </h1>
 
-            <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
-              Consulte e configure conjuntos de rodas forjadas heavy-duty, pneus Mud-Terrain / All-Terrain e kits de elevação de suspensão para caminhonetes 4x4 testados nos terrenos mais rigorosos do planeta.
+            <p className="text-zinc-400 text-xs sm:text-sm leading-relaxed font-normal">
+              Consulte e configure conjuntos de rodas forjadas, pneus Mud-Terrain / All-Terrain e kits de elevação de suspensão para caminhonetes 4x4.
             </p>
 
             {/* Quick Specs Badges */}

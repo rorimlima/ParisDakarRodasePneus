@@ -227,16 +227,15 @@ export default function App() {
         )}
 
         {/* Section Heading & Items Count */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+        <div className="flex items-center justify-between border-b border-white/10 pb-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <PackageCheck className="w-6 h-6 text-[#8B0000]" />
-              <span>Catálogo Paris Dakar // Pronta Entrega</span>
+            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight flex items-center gap-2 font-heading">
+              <PackageCheck className="w-5 h-5 text-red-500" />
+              <span>Catálogo de Produtos em Pronta Entrega</span>
             </h2>
-            <p className="text-xs text-gray-400">
-              Exibindo <strong className="text-red-400">{filteredProducts.length}</strong> de{' '}
-              {products.length} produtos ativos em estoque, com cotação via WhatsApp.
-              Itens sem estoque saem do site automaticamente.
+            <p className="text-xs text-zinc-400 font-normal">
+              Exibindo <strong className="text-red-400 font-semibold">{filteredProducts.length}</strong> de{' '}
+              {products.length} produtos ativos em estoque com cotação direta via WhatsApp.
             </p>
           </div>
 

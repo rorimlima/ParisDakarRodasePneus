@@ -82,25 +82,25 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
     <div className="w-full bg-[#111111] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl transition-colors">
       
       {/* Dashboard Top Mode Switcher */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-white/10">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-4 border-b border-white/10">
         <div>
-          <h2 className="text-xs font-bold text-[#8B0000] uppercase tracking-widest flex items-center gap-2 mb-1">
-            <SlidersHorizontal className="w-4 h-4 text-[#8B0000]" />
-            <span>Busca Inteligente & Filtros Técnicos</span>
+          <h2 className="text-sm font-semibold text-red-400 tracking-tight font-heading flex items-center gap-2 mb-1">
+            <SlidersHorizontal className="w-4 h-4 text-red-500" />
+            <span>Busca Técnica &amp; Filtros de Compatibilidade</span>
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-zinc-400 font-normal">
             Selecione por modelo do seu veículo ou por especificações de Aro, Furação e Pneu.
           </p>
         </div>
 
         {/* Tab Switch: Vehicle vs Size */}
-        <div className="flex bg-[#0A0A0A] p-1 rounded border border-white/10 w-full sm:w-auto">
+        <div className="flex bg-zinc-950 p-1 rounded-lg border border-white/10 w-full sm:w-auto">
           <button
             onClick={() => setSearchMode('vehicle')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded text-[11px] font-bold uppercase tracking-wider transition ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition ${
               searchMode === 'vehicle'
-                ? 'bg-[#1a1a1a] text-white border border-[#8B0000]/60 shadow-sm'
-                : 'text-gray-500 hover:text-white'
+                ? 'bg-zinc-800 text-white border border-red-600/40 shadow-sm'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Car className="w-3.5 h-3.5" />
@@ -109,10 +109,10 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
           <button
             onClick={() => setSearchMode('size')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded text-[11px] font-bold uppercase tracking-wider transition ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-md text-xs font-medium transition ${
               searchMode === 'size'
-                ? 'bg-[#1a1a1a] text-white border border-[#8B0000]/60 shadow-sm'
-                : 'text-gray-500 hover:text-white'
+                ? 'bg-zinc-800 text-white border border-red-600/40 shadow-sm'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Ruler className="w-3.5 h-3.5" />
@@ -123,12 +123,12 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
       {/* Mode A: Search by Vehicle */}
       {searchMode === 'vehicle' && (
-        <div className="pt-5 space-y-4">
+        <div className="pt-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             
             {/* Brand Dropdown */}
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+              <label className="text-xs font-medium text-zinc-300 block mb-1.5">
                 1. Marca do Veículo
               </label>
               <select

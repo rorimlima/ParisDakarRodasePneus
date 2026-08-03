@@ -63,32 +63,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Badge Overlay */}
         {product.badge && (
-          <div className="absolute top-3 left-3 bg-[#8B0000] text-white border border-[#8B0000]/50 px-2.5 py-1 rounded-sm text-[10px] font-black tracking-widest uppercase shadow-md">
+          <div className="absolute top-2.5 left-2.5 bg-red-900/90 text-white border border-red-700/60 px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase shadow-sm">
             {product.badge}
           </div>
         )}
 
         {/* Quick View Floating Button */}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <span className="px-4 py-2 rounded bg-black/90 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 border border-white/20 shadow-xl">
-            <Eye className="w-4 h-4 text-[#8B0000]" />
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <span className="px-3.5 py-1.5 rounded-lg bg-zinc-900/90 text-white text-xs font-medium tracking-wide flex items-center gap-1.5 border border-white/20 shadow-lg">
+            <Eye className="w-3.5 h-3.5 text-red-500" />
             Ver Especificações
           </span>
         </div>
       </div>
 
       {/* Card Content Body */}
-      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
+      <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5">
         
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {/* Categoria & código do produto (Produto_Codigo do ERP) */}
           <div className="flex items-center justify-between text-[10px] gap-2">
-            <span className="font-bold uppercase tracking-widest text-[#8B0000] truncate">
+            <span className="font-semibold uppercase tracking-wider text-red-400 truncate">
               {product.categoriaNome || product.brand}
             </span>
 
             <span
-              className="shrink-0 font-mono font-bold text-gray-400 bg-[#1a1a1a] border border-white/10 px-1.5 py-0.5 rounded"
+              className="shrink-0 font-mono font-medium text-zinc-400 bg-zinc-900 border border-white/10 px-1.5 py-0.5 rounded"
               title="Código do produto"
             >
               #{product.sku}
@@ -96,22 +96,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           {/* Product Title */}
-          <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-tight text-white line-clamp-2 leading-snug group-hover:text-[#8B0000] transition-colors">
+          <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-white line-clamp-2 leading-snug group-hover:text-red-400 transition-colors font-heading">
             {product.name}
           </h3>
 
           {/* Clean Specification Table */}
-          <div className="pt-2">
-            <table className="clean-table bg-[#1a1a1a] rounded overflow-hidden">
+          <div className="pt-1">
+            <table className="clean-table bg-zinc-900/70 rounded overflow-hidden">
               <tbody>
                 {product.specs.aro && (
                   <tr>
                     <th>Aro</th>
-                    <td className="font-bold font-mono text-white">{product.specs.aro}</td>
+                    <td className="font-medium font-mono text-white">{product.specs.aro}</td>
                     {product.specs.furacao && (
                       <>
                         <th>Furação</th>
-                        <td className="font-bold font-mono text-white">{product.specs.furacao}</td>
+                        <td className="font-medium font-mono text-white">{product.specs.furacao}</td>
                       </>
                     )}
                   </tr>
@@ -135,7 +135,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {product.specs.medidaPneu && (
                   <tr>
                     <th>Medida</th>
-                    <td colSpan={3} className="font-bold font-mono text-[#8B0000]">
+                    <td colSpan={3} className="font-medium font-mono text-red-400">
                       {product.specs.medidaPneu}
                     </td>
                   </tr>
@@ -143,7 +143,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {product.specs.acabamento && (
                   <tr>
                     <th>Acabamento</th>
-                    <td colSpan={3} className="truncate max-w-[140px] text-gray-300">
+                    <td colSpan={3} className="truncate max-w-[140px] text-zinc-300">
                       {product.specs.acabamento}
                     </td>
                   </tr>
@@ -154,30 +154,30 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Price & WhatsApp Action Routing */}
-        <div className="pt-3 border-t border-white/5 space-y-3">
+        <div className="pt-2.5 border-t border-white/5 space-y-2.5">
           
           {/* Clean Pure Price Display */}
           <div className="flex items-baseline justify-between">
             <div>
               {formattedOriginalPrice && (
-                <span className="text-xs text-gray-500 line-through mr-2">
+                <span className="text-xs text-zinc-500 line-through mr-2">
                   {formattedOriginalPrice}
                 </span>
               )}
-              <span className="text-base sm:text-lg font-black italic text-white">
+              <span className="text-base sm:text-lg font-bold text-white tracking-tight">
                 {formattedPrice}
               </span>
-              <span className="text-[9px] text-gray-500 block font-bold uppercase tracking-wider">
-                Em até 10x sem juros ou PIX
+              <span className="text-[10px] text-zinc-400 block font-normal tracking-normal mt-0.5">
+                Até 10x sem juros ou PIX
               </span>
             </div>
 
             <div className="text-right shrink-0">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40 block">
+              <span className="text-[10px] font-medium tracking-normal text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40 block">
                 Pronta Entrega
               </span>
               {product.unidadeLabel && (
-                <span className="text-[9px] text-gray-500 block mt-1">
+                <span className="text-[10px] text-zinc-500 block mt-0.5">
                   {product.stockQuantity} {product.unidadeLabel}
                 </span>
               )}
@@ -187,9 +187,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* WhatsApp Routing Direct Button */}
           <button
             onClick={handleWhatsAppRoute}
-            className="w-full bg-[#25D366] text-black hover:bg-[#1da851] py-3 rounded font-black uppercase text-xs flex items-center justify-center space-x-2 transition-all shadow-md"
+            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm"
           >
-            <MessageCircle className="w-4 h-4 fill-black text-black" />
+            <MessageCircle className="w-3.5 h-3.5" />
             <span>Falar com Especialista</span>
           </button>
 

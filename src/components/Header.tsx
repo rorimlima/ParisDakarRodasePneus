@@ -46,26 +46,26 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-black/95 text-white border-b border-[#8B0000]/50 transition-colors duration-200">
       
       {/* Top Announcement Bar - Only Instagram */}
-      <div className="bg-gradient-to-r from-black via-[#8B0000]/40 to-black text-white text-xs py-1.5 px-4 font-medium border-b border-[#8B0000]/30">
+      <div className="bg-[#0D0D10] text-zinc-300 text-[11px] py-1.5 px-4 font-medium border-b border-white/5">
         <div className="max-w-7xl mx-auto w-full flex justify-center items-center">
           <a
             href="https://www.instagram.com/parisdakarrodas/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-amber-300 transition flex items-center gap-1.5 font-bold tracking-wide text-xs"
+            className="hover:text-red-400 transition flex items-center gap-1.5 tracking-wide text-[11px]"
           >
-            <Instagram className="w-3.5 h-3.5 text-pink-500" />
-            <span>Siga nosso Instagram @parisdakarrodas</span>
+            <Instagram className="w-3.5 h-3.5 text-red-500" />
+            <span>Siga nosso Instagram <strong className="text-white font-semibold">@parisdakarrodas</strong></span>
           </a>
         </div>
       </div>
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-4">
         
         {/* Brand Logo */}
         <a href="#" className="flex items-center gap-2">
-          <ParisDakarLogo colorMode="default" height={44} />
+          <ParisDakarLogo colorMode="default" height={40} />
         </a>
 
         {/* Desktop Quick Search Bar */}
@@ -77,18 +77,18 @@ export const Header: React.FC<HeaderProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Caminhonetes (Hilux, Ranger, Ram, S10), Aro, Pneu (35x12.5)..."
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-xl bg-[#111111] text-white border border-white/10 focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] transition placeholder-zinc-500"
+            placeholder="Buscar por veículo (Hilux, Ranger, Ram), Aro ou Pneu..."
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-lg bg-[#141417] text-white border border-white/10 focus:outline-none focus:border-red-600/60 focus:ring-1 focus:ring-red-600/60 transition placeholder-zinc-500 font-normal"
           />
         </div>
 
         {/* Desktop Actions */}
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2.5">
           
           {/* Dark / Light Toggle */}
           <button
             onClick={onToggleDarkMode}
-            className="p-2.5 rounded-xl bg-[#111111] text-zinc-300 hover:bg-[#1a1a1a] border border-white/10 transition"
+            className="p-2 rounded-lg bg-[#141417] text-zinc-300 hover:bg-[#1C1C21] border border-white/10 transition"
             title={darkMode ? "Mudar para Modo Claro" : "Mudar para Modo Escuro"}
           >
             {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-300" />}
@@ -98,33 +98,33 @@ export const Header: React.FC<HeaderProps> = ({
           {currentSession.type === 'admin' ? (
             <button
               onClick={onOpenAdminDashboard}
-              className="bg-[#8B0000] hover:bg-red-800 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 border border-red-500/50 shadow-lg animate-pulse"
+              className="bg-red-950/80 hover:bg-red-900 text-red-200 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 border border-red-800/60 shadow-sm transition"
             >
-              <Lock className="w-4 h-4" />
-              <span>Painel Master Supremo</span>
+              <Lock className="w-3.5 h-3.5 text-red-400" />
+              <span>Painel Administrativo</span>
             </button>
           ) : currentSession.type === 'b2b' ? (
             <button
               onClick={() => onOpenAuthModal('b2b')}
-              className="bg-[#111111] text-amber-400 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
+              className="bg-[#141417] text-amber-400 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2"
             >
-              <Building2 className="w-4 h-4 text-amber-400" />
-              <span>{currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName || 'Conta Pessoa Jurídica'}</span>
+              <Building2 className="w-3.5 h-3.5 text-amber-400" />
+              <span>{currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName || 'Conta PJ'}</span>
             </button>
           ) : currentSession.type === 'b2c' ? (
             <button
               onClick={() => onOpenAuthModal('b2c')}
-              className="bg-[#111111] text-sky-400 border border-sky-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
+              className="bg-[#141417] text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2"
             >
-              <User className="w-4 h-4" />
+              <User className="w-3.5 h-3.5 text-sky-400" />
               <span>{currentSession.b2cUser?.fullName || 'Minha Conta'}</span>
             </button>
           ) : (
             <button
               onClick={() => onOpenAuthModal('b2c')}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#111111] text-zinc-200 border border-white/10 hover:border-[#8B0000] transition"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#141417] text-zinc-200 border border-white/10 hover:border-red-600/50 transition"
             >
-              <LogIn className="w-4 h-4 text-[#8B0000]" />
+              <LogIn className="w-3.5 h-3.5 text-red-500" />
               <span>Entrar / Cadastrar</span>
             </button>
           )}
@@ -132,9 +132,9 @@ export const Header: React.FC<HeaderProps> = ({
           {/* WhatsApp Direct Specialist Route Button */}
           <button
             onClick={() => onConsultWhatsApp("Olá equipe Paris Dakar! Gostaria de consultar rodas e pneus para minha caminhonete 4x4.")}
-            className="btn-paris flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold shadow-md uppercase tracking-wider"
+            className="btn-paris flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide shadow-sm"
           >
-            <MessageCircle className="w-4 h-4" />
+            <MessageCircle className="w-3.5 h-3.5" />
             <span>Atendimento WhatsApp</span>
           </button>
         </div>
