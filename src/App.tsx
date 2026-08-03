@@ -333,7 +333,7 @@ export default function App() {
                   Showroom Principal
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
-                  Visite-nos para ver de perto nossa selection exclusiva de rodas forjadas heavy-duty e pneus off-road. Nossa equipe de especialistas está pronta para orientar seu projeto 4x4.
+                  Visite-nos para ver de perto nossa seleção exclusiva de rodas forjadas heavy-duty e pneus off-road. Nossa equipe de especialistas está pronta para orientar seu projeto 4x4.
                 </p>
               </div>
 
@@ -373,13 +373,13 @@ export default function App() {
 
               <div className="pt-4 flex flex-col sm:flex-row gap-3">
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(siteSettings.address)}`}
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(siteSettings.address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-lg hover:shadow-red-900/35"
                 >
                   <MapPin className="w-4 h-4" />
-                  Como Chegar (Google Maps)
+                  <span>Traçar Rota no Google Maps</span>
                 </a>
 
                 <button
@@ -392,8 +392,15 @@ export default function App() {
               </div>
             </div>
 
-            {/* Map Column */}
-            <div className="lg:col-span-7 h-[350px] sm:h-[400px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-inner relative group">
+            {/* Map Column (Clickable to calculate route directly) */}
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(siteSettings.address)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lg:col-span-7 h-[350px] sm:h-[400px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-inner relative group block cursor-pointer"
+              title="Clique para calcular a rota da sua localização até a nossa loja no Google Maps"
+            >
+              {/* Map Iframe */}
               <iframe
                 title="Paris Dakar Localização"
                 width="100%"
@@ -402,9 +409,15 @@ export default function App() {
                 style={{ border: 0 }}
                 src={`https://maps.google.com/maps?q=${encodeURIComponent(siteSettings.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                 allowFullScreen
-                className="opacity-90 dark:opacity-80 dark:invert-[0.9] dark:hue-rotate-[180deg] transition-opacity duration-300 group-hover:opacity-100 group-hover:dark:opacity-90"
+                className="w-full h-full opacity-90 dark:opacity-80 dark:invert-[0.9] dark:hue-rotate-[180deg] transition-all duration-300 group-hover:opacity-100 group-hover:scale-105 pointer-events-none"
               />
-            </div>
+
+              {/* Hover Badge Overlay */}
+              <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-xl group-hover:bg-red-700 transition">
+                <MapPin className="w-3.5 h-3.5 text-red-400 group-hover:text-white animate-bounce" />
+                <span>Clique para Traçar Rota</span>
+              </div>
+            </a>
 
           </div>
         </div>
