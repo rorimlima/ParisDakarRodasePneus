@@ -22,7 +22,8 @@ import {
   CloudOff,
   PhoneCall,
   Tv,
-  Image
+  Image,
+  Camera
 } from 'lucide-react';
 import {
   SiteSettings,
@@ -384,10 +385,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   )}
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-bold uppercase tracking-wider transition">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-bold uppercase tracking-wider transition shadow">
                       <Upload className="w-4 h-4" />
-                      <span>Subir Foto/Logo do Computador ou Celular</span>
+                      <span>Escolher Logo (Galeria/Computador)</span>
                       <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                    </label>
+
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-amber-500/30 rounded text-xs font-bold uppercase tracking-wider transition shadow">
+                      <Camera className="w-4 h-4 text-amber-400" />
+                      <span>Tirar Foto com a Câmera</span>
+                      <input type="file" accept="image/*" capture="user" onChange={handleLogoUpload} className="hidden" />
                     </label>
 
                     {settingsForm.siteLogo && (

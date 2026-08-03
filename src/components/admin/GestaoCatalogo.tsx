@@ -16,7 +16,9 @@ import {
   EyeOff,
   Image as ImageIcon,
   Trash2,
-  Star
+  Star,
+  Upload,
+  Camera
 } from 'lucide-react';
 
 import {
@@ -132,6 +134,35 @@ export const GestaoCatalogo: React.FC<GestaoCatalogoProps> = ({
     } finally {
       setSalvando(false);
     }
+  };
+
+  const handleProductFilesUpload = (files: FileList | null) => {
+    if (!files || !emEdicao) return;
+    const fileList = Array.from(files);
+
+    fileList.forEach((file) => {
+      if (file.size > 8 * 1024 * 1024) {
+        onAviso(`A imagem ${file.name} excede 8MB. Escolha imagens menores.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          const newUrl = e.target.result as string;
+          setEmEdicao((prev) => {
+            if (!prev) return null;
+            const currentImagens = prev.imagens || [];
+            if (currentImagens.includes(newUrl)) return prev;
+            return {
+              ...prev,
+              imagens: [...currentImagens, newUrl].slice(0, 12)
+            };
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const excluir = async (produto: ProdutoCatalogo) => {
@@ -702,36 +733,99 @@ export const GestaoCatalogo: React.FC<GestaoCatalogoProps> = ({
                   </label>
                 </div>
 
-                <div className="sm:col-span-2 space-y-1">
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 flex items-center gap-1.5">
-                    <ImageIcon className="w-3 h-3" />
-                    Imagens (uma URL https por linha)
-                  </label>
-                  <textarea
-                    value={(emEdicao.imagens || []).join('\n')}
-                    onChange={(e) =>
-                      setEmEdicao({
-                        ...emEdicao,
-                        imagens: e.target.value
+                <div className="sm:col-span-2 space-y-3 p-4 rounded-xl bg-[#0D0D10] border border-white/10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-amber-500" />
+                      <span>Imagens do Produto (Computador, Celular, Câmera ou URL)</span>
+                    </label>
+                    <span className="text-[10px] text-gray-400">
+                      {(emEdicao.imagens || []).length} de 12 imagens cadastradas
+                    </span>
+                  </div>
+
+                  {/* Dual Upload Buttons: Gallery/File vs Mobile Camera */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Option A: Upload Files from Computer or Mobile Gallery */}
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-bold uppercase tracking-wider transition shadow">
+                      <Upload className="w-4 h-4" />
+                      <span>Escolher Fotos (Galeria/Computador)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleProductFilesUpload(e.target.files)}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {/* Option B: Take Photo directly with Device Camera */}
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-amber-500/30 rounded text-xs font-bold uppercase tracking-wider transition shadow">
+                      <Camera className="w-4 h-4 text-amber-400" />
+                      <span>Tirar Foto com a Câmera</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={(e) => handleProductFilesUpload(e.target.files)}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Manual URL input option (collapsible/textarea) */}
+                  <div className="pt-2">
+                    <label className="text-[9px] font-bold uppercase tracking-widest text-gray-500 block mb-1">
+                      Ou insira URLs externas de imagem (uma por linha):
+                    </label>
+                    <textarea
+                      value={(emEdicao.imagens || []).filter((i) => i.startsWith('http')).join('\n')}
+                      onChange={(e) => {
+                        const urls = e.target.value
                           .split('\n')
                           .map((l) => l.trim())
-                          .filter(Boolean)
-                          .slice(0, 12)
-                      })
-                    }
-                    rows={3}
-                    placeholder="https://..."
-                    className="w-full px-3 py-2 rounded bg-[#0A0A0A] border border-white/10 text-white text-[11px] font-mono focus:outline-none focus:border-[#8B0000]"
-                  />
+                          .filter(Boolean);
+                        const localBase64 = (emEdicao.imagens || []).filter((i) => !i.startsWith('http'));
+                        setEmEdicao({
+                          ...emEdicao,
+                          imagens: [...urls, ...localBase64].slice(0, 12)
+                        });
+                      }}
+                      rows={2}
+                      placeholder="https://..."
+                      className="w-full px-3 py-1.5 rounded bg-[#0A0A0A] border border-white/10 text-white text-[11px] font-mono focus:outline-none focus:border-[#8B0000]"
+                    />
+                  </div>
+
+                  {/* Image Thumbnails Gallery Grid with Remove Action */}
                   {(emEdicao.imagens || []).length > 0 && (
-                    <div className="flex gap-2 pt-1 flex-wrap">
-                      {emEdicao.imagens.slice(0, 6).map((url, i) => (
-                        <img
-                          key={i}
-                          src={urlDeImagemSegura(url, emEdicao.grupo)}
-                          alt=""
-                          className="w-14 h-14 object-cover rounded border border-white/10"
-                        />
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 pt-2">
+                      {emEdicao.imagens.map((url, i) => (
+                        <div key={i} className="relative group rounded-lg overflow-hidden border border-white/10 bg-black aspect-square">
+                          <img
+                            src={url.startsWith('data:') ? url : urlDeImagemSegura(url, emEdicao.grupo)}
+                            alt={`Imagem ${i + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEmEdicao({
+                                  ...emEdicao,
+                                  imagens: emEdicao.imagens?.filter((_, idx) => idx !== i)
+                                });
+                              }}
+                              className="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-full transition shadow"
+                              title="Remover Imagem"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <span className="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] font-mono px-1 rounded">
+                            #{i + 1}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   )}

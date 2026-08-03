@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Vendedor } from '../../types';
 import { storageService } from '../../services/storageService';
-import { PhoneCall, UserPlus, Trash2, CheckCircle2, XCircle, Upload, Image, User, Phone, Mail, Award, Shield } from 'lucide-react';
+import { PhoneCall, UserPlus, Trash2, CheckCircle2, XCircle, Upload, Camera, Image, User, Phone, Mail, Award, Shield } from 'lucide-react';
 
 interface GestaoVendedoresProps {
   onAviso: (msg: string) => void;
@@ -214,12 +214,24 @@ export const GestaoVendedores: React.FC<GestaoVendedoresProps> = ({ onAviso }) =
                   Selecione uma foto de perfil do vendedor ou a logo da loja a partir do seu <strong>computador ou celular</strong>.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-bold uppercase tracking-wider transition">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-bold uppercase tracking-wider transition shadow">
                     <Upload className="w-4 h-4" />
-                    <span>Escolher Imagem do Dispositivo</span>
+                    <span>Escolher Imagem (Galeria/Computador)</span>
                     <input
                       type="file"
                       accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-amber-500/30 rounded text-xs font-bold uppercase tracking-wider transition shadow">
+                    <Camera className="w-4 h-4 text-amber-400" />
+                    <span>Tirar Foto com a Câmera</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="user"
                       onChange={handleFileUpload}
                       className="hidden"
                     />
