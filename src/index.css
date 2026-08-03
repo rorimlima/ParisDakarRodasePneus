@@ -131,3 +131,19 @@ h1, h2, h3, h4, h5, h6, .font-heading {
 .animate-pulse-red {
   animation: redPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Custom animation for title wheels background glow */
+@keyframes bgShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-glow-shift {
+  background-size: 200% 200%;
+  animation: bgShift 6s ease infinite;
+}
+

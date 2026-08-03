@@ -16,23 +16,39 @@ function getYouTubeEmbedUrl(urlOrId?: string): string {
     return 'https://www.youtube.com/embed/5qap5aO4i9A?autoplay=0&rel=0';
   }
 
-  const raw = urlOrId.trim();
-
-  // Se já for iframe embed direto
-  if (raw.includes('youtube.com/embed/')) {
-    const cleanUrl = raw.split('?')[0];
-    return `${cleanUrl}?autoplay=0&rel=0`;
+  let raw = urlOrId.trim();
+  
+  // Se contiver tag de iframe, extrair a URL do src
+  if (raw.includes('<iframe') && raw.includes('src=')) {
+    const srcMatch = raw.match(/src=["']([^"']+)["']/);
+    if (srcMatch && srcMatch[1]) {
+      raw = srcMatch[1];
+    }
   }
 
-  // Se for link comum youtube.com/watch?v=ID
-  const matchWatch = raw.match(/(?:v=|\/embed\/|\/1080\/|\/720\/|youtu\.be\/|\/v\/|\/e\/|watch\?v=|\?v=)([^#&?]*)/);
-  if (matchWatch && matchWatch[1] && matchWatch[1].length === 11) {
-    return `https://www.youtube.com/embed/${matchWatch[1]}?autoplay=0&rel=0`;
-  }
-
-  // Se for apenas o ID direto
-  if (raw.length === 11 && !raw.includes('/')) {
+  // Se for apenas o ID de 11 caracteres
+  if (raw.length === 11 && !raw.includes('/') && !raw.includes('.')) {
     return `https://www.youtube.com/embed/${raw}?autoplay=0&rel=0`;
+  }
+
+  // Regexes para extrair o ID do YouTube em diferentes formatos
+  const patterns = [
+    /youtube\.com\/watch\?v=([^#&?]+)/,
+    /youtu\.be\/([^#&?]+)/,
+    /youtube\.com\/embed\/([^#&?]+)/,
+    /youtube\.com\/shorts\/([^#&?]+)/,
+    /youtube\.com\/v\/([^#&?]+)/,
+    /youtube\.com\/e\/([^#&?]+)/
+  ];
+
+  for (const pattern of patterns) {
+    const match = raw.match(pattern);
+    if (match && match[1]) {
+      const id = match[1].trim();
+      if (id.length === 11) {
+        return `https://www.youtube.com/embed/${id}?autoplay=0&rel=0`;
+      }
+    }
   }
 
   return raw;
@@ -67,9 +83,16 @@ export const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
             {/* Main Headline */}
             <div className="space-y-3">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-none font-serif">
-                <span className="text-slate-900 dark:text-white block">Paris Dakar</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-red-700 to-amber-600 dark:from-red-500 dark:via-red-600 dark:to-amber-500">
-                  Rodas &amp; Pneus 4x4
+                <span className="text-slate-900 dark:text-white block mb-1">Paris Dakar</span>
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="relative inline-block px-3.5 py-1 rounded-xl bg-gradient-to-r from-red-600/30 via-amber-500/15 to-red-600/30 border border-red-600/30 shadow-lg shadow-red-950/20 overflow-hidden animate-glow-shift">
+                    <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-amber-500 dark:from-red-500 dark:to-amber-400">
+                      Rodas
+                    </span>
+                  </span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-red-700 to-amber-600 dark:from-red-500 dark:via-red-600 dark:to-amber-500">
+                    &amp; Pneus
+                  </span>
                 </span>
               </h1>
 
@@ -131,7 +154,7 @@ export const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
                   <div className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
                   <span className="text-[11px] font-bold text-slate-800 dark:text-zinc-300 uppercase tracking-widest flex items-center gap-1.5">
                     <Tv className="w-3.5 h-3.5 text-red-500" />
-                    VÍDEO DE APRESENTAÇÃO // PARIS DAKAR 4X4
+                    VÍDEO DE APRESENTAÇÃO // PARIS DAKAR RODAS
                   </span>
                 </div>
                 <span className="text-[10px] text-slate-600 dark:text-zinc-400 font-mono bg-slate-200 dark:bg-black/40 px-2 py-0.5 rounded border border-slate-300 dark:border-white/5">
@@ -143,7 +166,7 @@ export const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
               <div className="relative w-full aspect-video bg-black">
                 <iframe
                   src={embedUrl}
-                  title="Vídeo de Apresentação Paris Dakar Rodas & Pneus 4x4"
+                  title="Vídeo de Apresentação Paris Dakar Rodas & Pneus"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                   className="w-full h-full border-0"
@@ -154,10 +177,10 @@ export const HeroVideoSection: React.FC<HeroVideoSectionProps> = ({
               <div className="p-3 bg-[#121215] border-t border-white/5 flex items-center justify-between text-xs text-zinc-400">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  <span className="text-[11px]">Conheça os testes e projetos de rodas forjadas e pneus 4x4</span>
+                  <span className="text-[11px]">Conheça os testes e projetos de rodas forjadas e pneus</span>
                 </div>
                 <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
-                  Paris Dakar Off-Road
+                  Paris Dakar Rodas
                 </span>
               </div>
 
