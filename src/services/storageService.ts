@@ -5,7 +5,8 @@ import {
   CpfClient,
   AdminUser,
   UserSession,
-  InquiryLog
+  InquiryLog,
+  Seller
 } from '../types';
 import { MOCK_PRODUCTS } from '../data/mockProducts';
 
@@ -16,8 +17,33 @@ const STORAGE_KEYS = {
   CNPJ_USERS: 'pd_cnpj_users',
   ADMIN_USERS: 'pd_admin_users',
   USER_SESSION: 'pd_user_session',
-  INQUIRIES: 'pd_inquiries'
+  INQUIRIES: 'pd_inquiries',
+  SELLERS: 'pd_sellers'
 };
+
+export const DEFAULT_SELLERS: Seller[] = [
+  {
+    id: 'seller-001',
+    name: 'Rodrigo Lima',
+    phone: '(11) 99999-8888',
+    email: 'rodrigo.vendas@parisdakar.com.br',
+    specialty: 'Consultor Técnico 4x4 & Rodas Heavy-Duty',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+    createdAt: '2026-01-15'
+  },
+  {
+    id: 'seller-002',
+    name: 'Eduardo Dakar',
+    phone: '(11) 98888-7777',
+    email: 'eduardo.dakar@parisdakar.com.br',
+    specialty: 'Especialista em Pneus Off-Road & Lift Kits',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+    createdAt: '2026-02-01'
+  }
+];
+
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   heroTitle: 'Especialistas em Caminhonetes 4x4',
@@ -32,11 +58,12 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 export const DEFAULT_SENIOR_ADMIN: AdminUser = {
   id: 'admin-senior-001',
   name: 'Master Supremo',
-  email: 'onaeror@gmail.com',
+  email: 'admin@parisdakar.com.br',
   role: 'senior',
   grantedBySenior: true,
   createdAt: '2026-01-01'
 };
+
 
 export const DEFAULT_SAMPLE_B2B: B2BUser = {
   id: 'b2b-001',
@@ -300,6 +327,60 @@ class StorageService {
     }
     return inquiries;
   }
+
+  // Sellers Management
+  getSellers(): Seller[] {
+    const data = localStorage.getItem(STORAGE_KEYS.SELLERS);
+    if (!data) {
+      localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(DEFAULT_SELLERS));
+      return DEFAULT_SELLERS;
+    }
+    try {
+      return JSON.parse(data);
+    } catch {
+      return DEFAULT_SELLERS;
+    }
+  }
+
+  saveSellers(sellers: Seller[]): Seller[] {
+    localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(sellers));
+    return sellers;
+  }
+
+  addSeller(sellerData: Omit<Seller, 'id' | 'createdAt'>): Seller[] {
+    const sellers = this.getSellers();
+    const newSeller: Seller = {
+      ...sellerData,
+      id: `seller-${Date.now()}`,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    sellers.unshift(newSeller);
+    return this.saveSellers(sellers);
+  }
+
+  updateSeller(updatedSeller: Seller): Seller[] {
+    const sellers = this.getSellers();
+    const index = sellers.findIndex((s) => s.id === updatedSeller.id);
+    if (index >= 0) {
+      sellers[index] = updatedSeller;
+    }
+    return this.saveSellers(sellers);
+  }
+
+  deleteSeller(id: string): Seller[] {
+    const sellers = this.getSellers().filter((s) => s.id !== id);
+    return this.saveSellers(sellers);
+  }
+
+  toggleSellerStatus(id: string): Seller[] {
+    const sellers = this.getSellers();
+    const seller = sellers.find((s) => s.id === id);
+    if (seller) {
+      seller.isActive = !seller.isActive;
+    }
+    return this.saveSellers(sellers);
+  }
 }
 
 export const storageService = new StorageService();
+

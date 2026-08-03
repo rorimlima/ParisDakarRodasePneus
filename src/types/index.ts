@@ -48,7 +48,9 @@ export interface Product {
   stockQuantity: number;
   rating: number;
   reviewsCount: number;
+  isActive?: boolean; // Se false, o produto fica oculto no site público (desativado)
 }
+
 
 export interface VehicleSearchFilter {
   marca: string;
@@ -138,4 +140,18 @@ export interface InquiryLog {
   date: string;
   status: 'Novo' | 'Em Atendimento' | 'Concluído';
   notes?: string;
+  assignedSeller?: string;
 }
+
+// Seller / Sales Consultant
+export interface Seller {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  specialty?: string;
+  avatarUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+

@@ -10,6 +10,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { ArchitectureViewer } from './components/ArchitectureViewer';
 import { Footer } from './components/Footer';
 
+import { WhatsAppSellerModal } from './components/WhatsAppSellerModal';
 import { storageService } from './services/storageService';
 import {
   Product,
@@ -18,7 +19,8 @@ import {
   SizeSearchFilter,
   B2BUser,
   UserSession,
-  SiteSettings
+  SiteSettings,
+  Seller
 } from './types';
 import { ShieldCheck, Filter, PackageCheck, Building2, PhoneCall, Lock } from 'lucide-react';
 
@@ -30,6 +32,7 @@ export default function App() {
   const [products, setProducts] = useState<Product[]>(() => storageService.getProducts());
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
   const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
+  const [sellers, setSellers] = useState<Seller[]>(() => storageService.getSellers());
 
   // View Mode ('store' or 'admin')
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
@@ -50,6 +53,9 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<'b2c' | 'b2b' | 'admin'>('b2c');
   const [isArchitectureViewerOpen, setIsArchitectureViewerOpen] = useState<boolean>(false);
+  const [isSellerModalOpen, setIsSellerModalOpen] = useState<boolean>(false);
+  const [pendingWhatsAppMsg, setPendingWhatsAppMsg] = useState<string | undefined>(undefined);
+  const [pendingProductContext, setPendingProductContext] = useState<Product | undefined>(undefined);
 
   // Sync Dark Mode class with HTML root element
   useEffect(() => {
@@ -66,14 +72,15 @@ export default function App() {
     setIsAuthModalOpen(true);
   };
 
-  // WhatsApp Consultation Handler
-  const handleConsultWhatsApp = (messageText?: string, productContext?: Product) => {
-    const rawNumber = siteSettings.whatsappNumber || '5511999998888';
-    const cleanNumber = rawNumber.replace(/\D/g, '');
-    const defaultMsg = 'Olá equipe Paris Dakar! Gostaria de consultar rodas e pneus para meu veículo.';
+  // Execute WhatsApp redirection to a specific seller
+  const executeWhatsAppOpen = (seller: Seller, messageText?: string, productContext?: Product) => {
+    let cleanNumber = seller.phone.replace(/\D/g, '');
+    if (!cleanNumber.startsWith('55') && cleanNumber.length <= 11) {
+      cleanNumber = '55' + cleanNumber;
+    }
+    const defaultMsg = `Olá ${seller.name}! Gostaria de consultar rodas e pneus na Paris Dakar.`;
     const encoded = encodeURIComponent(messageText || defaultMsg);
 
-    // Log lead inquiry if productContext is passed
     if (productContext) {
       storageService.addInquiry({
         clientName: currentSession.b2cUser?.fullName || currentSession.b2bUser?.companyName || 'Cliente Visitante',
@@ -82,17 +89,69 @@ export default function App() {
         clientPhone: currentSession.b2cUser?.phone || currentSession.b2bUser?.phone || 'WhatsApp',
         productName: productContext.name,
         productSku: productContext.sku,
-        notes: `Consulta enviada via WhatsApp pelo site.`
+        notes: `Atendimento direcionado para o vendedor: ${seller.name} (${seller.phone})`,
+        assignedSeller: seller.name
       });
     }
 
     window.open(`https://wa.me/${cleanNumber}?text=${encoded}`, '_blank');
+    setIsSellerModalOpen(false);
+  };
+
+  // Execute WhatsApp redirection to Central number
+  const executeWhatsAppCentral = (messageText?: string, productContext?: Product) => {
+    const rawNumber = siteSettings.whatsappNumber || '5511999998888';
+    let cleanNumber = rawNumber.replace(/\D/g, '');
+    if (!cleanNumber.startsWith('55') && cleanNumber.length <= 11) {
+      cleanNumber = '55' + cleanNumber;
+    }
+    const defaultMsg = 'Olá equipe Paris Dakar! Gostaria de consultar rodas e pneus para meu veículo.';
+    const encoded = encodeURIComponent(messageText || defaultMsg);
+
+    if (productContext) {
+      storageService.addInquiry({
+        clientName: currentSession.b2cUser?.fullName || currentSession.b2bUser?.companyName || 'Cliente Visitante',
+        clientType: currentSession.type === 'b2b' ? 'CNPJ' : 'CPF',
+        clientDocument: currentSession.b2cUser?.cpf || currentSession.b2bUser?.cnpj || 'Não Informado',
+        clientPhone: currentSession.b2cUser?.phone || currentSession.b2bUser?.phone || 'WhatsApp',
+        productName: productContext.name,
+        productSku: productContext.sku,
+        notes: `Consulta enviada via WhatsApp Central.`
+      });
+    }
+
+    window.open(`https://wa.me/${cleanNumber}?text=${encoded}`, '_blank');
+    setIsSellerModalOpen(false);
+  };
+
+  // WhatsApp Consultation Handler
+  const handleConsultWhatsApp = (messageText?: string, productContext?: Product) => {
+    const activeSellers = sellers.filter((s) => s.isActive);
+
+    if (activeSellers.length > 1) {
+      // Open modal so customer can select seller
+      setPendingWhatsAppMsg(messageText);
+      setPendingProductContext(productContext);
+      setIsSellerModalOpen(true);
+    } else if (activeSellers.length === 1) {
+      // Direct open to single active seller
+      executeWhatsAppOpen(activeSellers[0], messageText, productContext);
+    } else {
+      // Fallback to central number
+      executeWhatsAppCentral(messageText, productContext);
+    }
   };
 
   // Filter Products Logic
   const filteredProducts = products.filter((product) => {
+    // 0. Active status (Se desativado pelo Admin, oculta do site público)
+    if (product.isActive === false) {
+      return false;
+    }
+
     // 1. Category Filter
     if (activeCategory !== 'todos' && product.category !== activeCategory) {
+
       return false;
     }
 
@@ -146,6 +205,7 @@ export default function App() {
         onExitAdmin={() => setViewMode('store')}
         onProductsUpdated={(updated) => setProducts(updated)}
         onSiteSettingsUpdated={(settings) => setSiteSettings(settings)}
+        onSellersUpdated={(updated) => setSellers(updated)}
       />
     );
   }
@@ -320,6 +380,16 @@ export default function App() {
       {isArchitectureViewerOpen && (
         <ArchitectureViewer onClose={() => setIsArchitectureViewerOpen(false)} />
       )}
+
+      {/* WhatsApp Sellers Choice Modal */}
+      <WhatsAppSellerModal
+        isOpen={isSellerModalOpen}
+        onClose={() => setIsSellerModalOpen(false)}
+        sellers={sellers}
+        productName={pendingProductContext?.name}
+        onSelectSeller={(seller) => executeWhatsAppOpen(seller, pendingWhatsAppMsg, pendingProductContext)}
+        onFallbackCentral={() => executeWhatsAppCentral(pendingWhatsAppMsg, pendingProductContext)}
+      />
 
     </div>
   );

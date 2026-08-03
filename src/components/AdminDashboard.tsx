@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as XLSX from 'xlsx';
 import {
   Package,
   Settings,
@@ -19,6 +20,11 @@ import {
   MessageCircle,
   MapPin,
   Eye,
+  EyeOff,
+  Upload,
+  Download,
+  ToggleLeft,
+  ToggleRight,
   RefreshCw,
   LogOut,
   ArrowLeft,
@@ -26,8 +32,11 @@ import {
   Layers,
   Sparkles,
   Lock,
-  Briefcase
+  Briefcase,
+  Headphones,
+  UserCheck
 } from 'lucide-react';
+
 import {
   Product,
   SiteSettings,
@@ -38,7 +47,8 @@ import {
   ProductCategory,
   TaxRegime,
   WheelFinish,
-  TireType
+  TireType,
+  Seller
 } from '../types';
 import { storageService } from '../services/storageService';
 import { formatCNPJ, formatCPF } from '../utils/validation';
@@ -48,15 +58,17 @@ interface AdminDashboardProps {
   onExitAdmin: () => void;
   onProductsUpdated: (products: Product[]) => void;
   onSiteSettingsUpdated: (settings: SiteSettings) => void;
+  onSellersUpdated?: (sellers: Seller[]) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   adminUser,
   onExitAdmin,
   onProductsUpdated,
-  onSiteSettingsUpdated
+  onSiteSettingsUpdated,
+  onSellersUpdated
 }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'clients' | 'admins' | 'inquiries'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'clients' | 'admins' | 'inquiries' | 'sellers'>('products');
 
   // Local state initialized from storageService
   const [products, setProducts] = useState<Product[]>(storageService.getProducts());
@@ -65,14 +77,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [cnpjClients, setCnpjClients] = useState<B2BUser[]>(storageService.getCnpjUsers());
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(storageService.getAdminUsers());
   const [inquiries, setInquiries] = useState<InquiryLog[]>(storageService.getInquiries());
+  const [sellers, setSellers] = useState<Seller[]>(storageService.getSellers());
+
+  // Sellers Management Form State
+  const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
+  const [editingSeller, setEditingSeller] = useState<Seller | null>(null);
+  const [sellerName, setSellerName] = useState('');
+  const [sellerPhone, setSellerPhone] = useState('');
+  const [sellerEmail, setSellerEmail] = useState('');
+  const [sellerSpecialty, setSellerSpecialty] = useState('Consultor Técnico 4x4');
+  const [sellerAvatarUrl, setSellerAvatarUrl] = useState('');
+  const [sellerIsActive, setSellerIsActive] = useState(true);
+  const [sellerSearch, setSellerSearch] = useState('');
 
   // Search & Filter state for products
   const [productSearch, setProductSearch] = useState('');
   const [selectedCatFilter, setSelectedCatFilter] = useState<string>('todos');
 
-  // Product Editing / Adding State
+  // Product Editing / Adding / Import State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [newProdIsActive, setNewProdIsActive] = useState(true);
 
   // New Product Form State
   const [newProdName, setNewProdName] = useState('');
@@ -119,6 +145,149 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setToastMsg(''), 3000);
   };
 
+  // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE) ---
+  const handleToggleProductActive = (id: string) => {
+    const prod = products.find((p) => p.id === id);
+    if (prod) {
+      const newStatus = prod.isActive === false ? true : false;
+      const updated = { ...prod, isActive: newStatus };
+      const updatedList = storageService.saveProduct(updated);
+      setProducts(updatedList);
+      onProductsUpdated(updatedList);
+      showToast(
+        newStatus
+          ? `✓ Produto "${prod.name}" ATIVADO e exposto no site!`
+          : `⚡ Produto "${prod.name}" DESATIVADO (Ocultado do site público).`
+      );
+    }
+  };
+
+  // --- SPREADSHEET IMPORT HANDLERS (EXCEL / CSV) ---
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+
+        if (!rawRows || rawRows.length === 0) {
+          showToast('A planilha enviada está vazia.');
+          return;
+        }
+
+        let createdCount = 0;
+        let updatedCount = 0;
+        let currentProducts = [...products];
+
+        rawRows.forEach((row, idx) => {
+          const normRow: Record<string, any> = {};
+          Object.keys(row).forEach((key) => {
+            const cleanKey = key.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            if (cleanKey.includes('sku') || cleanKey.includes('cod')) normRow['sku'] = String(row[key]).trim();
+            else if (cleanKey.includes('nome') || cleanKey.includes('produto') || cleanKey.includes('desc')) normRow['name'] = String(row[key]).trim();
+            else if (cleanKey.includes('categoria') || cleanKey.includes('tipo')) normRow['category'] = String(row[key]).trim().toLowerCase();
+            else if (cleanKey.includes('marca') || cleanKey.includes('fabricante')) normRow['brand'] = String(row[key]).trim();
+            else if (cleanKey.includes('preco_b2c') || cleanKey === 'preco' || cleanKey === 'valor') normRow['price'] = Number(row[key]) || 0;
+            else if (cleanKey.includes('b2b') || cleanKey.includes('atacado')) normRow['b2bPrice'] = Number(row[key]) || 0;
+            else if (cleanKey.includes('estoque') || cleanKey.includes('qtd')) normRow['stockQuantity'] = Number(row[key]) || 0;
+            else if (cleanKey.includes('aro')) normRow['aro'] = String(row[key]).trim();
+            else if (cleanKey.includes('furacao')) normRow['furacao'] = String(row[key]).trim();
+            else if (cleanKey.includes('offset')) normRow['offset'] = String(row[key]).trim();
+            else if (cleanKey.includes('tala')) normRow['tala'] = String(row[key]).trim();
+            else if (cleanKey.includes('pneu')) normRow['medidaPneu'] = String(row[key]).trim();
+          });
+
+          const sku = normRow['sku'] || `PD-IMP-${Date.now()}-${idx}`;
+          const existingIdx = currentProducts.findIndex((p) => p.sku.toLowerCase() === sku.toLowerCase());
+
+          if (existingIdx >= 0) {
+            const existing = currentProducts[existingIdx];
+            currentProducts[existingIdx] = {
+              ...existing,
+              name: normRow['name'] || existing.name,
+              brand: normRow['brand'] || existing.brand,
+              price: normRow['price'] > 0 ? normRow['price'] : existing.price,
+              b2bPrice: normRow['b2bPrice'] > 0 ? normRow['b2bPrice'] : existing.b2bPrice,
+              stockQuantity: normRow['stockQuantity'] >= 0 ? normRow['stockQuantity'] : existing.stockQuantity,
+              inStock: (normRow['stockQuantity'] ?? existing.stockQuantity) > 0,
+              isActive: true,
+              specs: {
+                ...existing.specs,
+                aro: normRow['aro'] || existing.specs.aro,
+                furacao: normRow['furacao'] || existing.specs.furacao,
+                offset: normRow['offset'] || existing.specs.offset,
+                tala: normRow['tala'] || existing.specs.tala,
+                medidaPneu: normRow['medidaPneu'] || existing.specs.medidaPneu
+              }
+            };
+            updatedCount++;
+          } else {
+            const validCats = ['rodas', 'pneus', 'kits-lift', 'acessorios', 'combos'];
+            const cat = (validCats.includes(normRow['category']) ? normRow['category'] : 'rodas') as ProductCategory;
+
+            const newP: Product = {
+              id: `pd-imp-${Date.now()}-${idx}`,
+              sku,
+              name: normRow['name'] || `Produto Importado ${sku}`,
+              brand: normRow['brand'] || 'Paris Dakar Custom',
+              category: cat,
+              subcategory: 'Importado via Planilha',
+              price: normRow['price'] || 2000,
+              b2bPrice: normRow['b2bPrice'] || 1600,
+              stockQuantity: normRow['stockQuantity'] || 10,
+              inStock: (normRow['stockQuantity'] || 10) > 0,
+              isActive: true,
+              badge: 'PLANILHA 2026',
+              image: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=800&q=80',
+              description: 'Produto cadastrado via importação de planilha.',
+              specs: {
+                aro: normRow['aro'] || '17"',
+                furacao: normRow['furacao'] || '6x139.7',
+                offset: normRow['offset'] || 'ET -12',
+                tala: normRow['tala'] || '9.0"',
+                medidaPneu: normRow['medidaPneu'] || '285/70R17'
+              },
+              compatibleVehicles: ['Toyota Hilux', 'Ford Ranger', 'Mitsubishi L200'],
+              rating: 5.0,
+              reviewsCount: 1
+            };
+            currentProducts.unshift(newP);
+            createdCount++;
+          }
+        });
+
+        storageService.saveProducts(currentProducts);
+        setProducts(currentProducts);
+        onProductsUpdated(currentProducts);
+        setIsImportModalOpen(false);
+        showToast(`Planilha importada com sucesso! ${createdCount} novos, ${updatedCount} atualizados.`);
+      } catch (err: any) {
+        alert('Erro ao processar arquivo da planilha: ' + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleDownloadTemplate = () => {
+    const csvHeader = "SKU;Nome;Marca;Categoria;Preco_B2C;Preco_B2B;Estoque;Aro;Furacao;Offset;Tala;Medida_Pneu\n";
+    const sampleRow1 = "PD-DAKAR-1790-6139;Roda Forged Dakar Heavy-Duty 17x9;Paris Dakar;rodas;2850;2280;12;17\";6x139.7;ET -12;9.0\";\n";
+    const sampleRow2 = "PD-MAX-35125-17;Pneu Dakar Mud-Terrain Extreme 35x12.5R17;Paris Dakar;pneus;1950;1560;20;17\";;;;35x12.5R17\n";
+    
+    const blob = new Blob([csvHeader + sampleRow1 + sampleRow2], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "modelo_importacao_planilha_paris_dakar.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // --- CATALOG MANAGEMENT HANDLERS ---
   const handleSaveNewProduct = (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,6 +324,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       compatibleVehicles: specVehicles.split(',').map((v) => v.trim()),
       inStock: newProdInStock,
       stockQuantity: Number(newProdStock),
+      isActive: newProdIsActive,
       rating: 5.0,
       reviewsCount: 1
     };
@@ -167,6 +337,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleUpdateProduct = (prod: Product) => {
+
     const updatedList = storageService.saveProduct(prod);
     setProducts(updatedList);
     onProductsUpdated(updatedList);
@@ -227,6 +398,83 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setInquiries(updated);
     showToast('Status da cotação atualizado!');
   };
+
+  // --- SELLERS HANDLERS ---
+  const handleOpenAddSeller = () => {
+    setEditingSeller(null);
+    setSellerName('');
+    setSellerPhone('');
+    setSellerEmail('');
+    setSellerSpecialty('Consultor Técnico 4x4 & Rodas Heavy-Duty');
+    setSellerAvatarUrl('');
+    setSellerIsActive(true);
+    setIsSellerModalOpen(true);
+  };
+
+  const handleOpenEditSeller = (seller: Seller) => {
+    setEditingSeller(seller);
+    setSellerName(seller.name);
+    setSellerPhone(seller.phone);
+    setSellerEmail(seller.email || '');
+    setSellerSpecialty(seller.specialty || '');
+    setSellerAvatarUrl(seller.avatarUrl || '');
+    setSellerIsActive(seller.isActive);
+    setIsSellerModalOpen(true);
+  };
+
+  const handleSaveSeller = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sellerName || !sellerPhone) {
+      showToast('Preencha o Nome e WhatsApp do vendedor.');
+      return;
+    }
+
+    let updatedSellers: Seller[];
+    if (editingSeller) {
+      const updated: Seller = {
+        ...editingSeller,
+        name: sellerName,
+        phone: sellerPhone,
+        email: sellerEmail,
+        specialty: sellerSpecialty,
+        avatarUrl: sellerAvatarUrl,
+        isActive: sellerIsActive
+      };
+      updatedSellers = storageService.updateSeller(updated);
+      showToast(`Vendedor ${sellerName} atualizado com sucesso!`);
+    } else {
+      updatedSellers = storageService.addSeller({
+        name: sellerName,
+        phone: sellerPhone,
+        email: sellerEmail,
+        specialty: sellerSpecialty,
+        avatarUrl: sellerAvatarUrl,
+        isActive: sellerIsActive
+      });
+      showToast(`Vendedor ${sellerName} cadastrado com sucesso!`);
+    }
+
+    setSellers(updatedSellers);
+    if (onSellersUpdated) onSellersUpdated(updatedSellers);
+    setIsSellerModalOpen(false);
+  };
+
+  const handleToggleSellerStatus = (id: string) => {
+    const updatedSellers = storageService.toggleSellerStatus(id);
+    setSellers(updatedSellers);
+    if (onSellersUpdated) onSellersUpdated(updatedSellers);
+    showToast('Status do vendedor alterado!');
+  };
+
+  const handleDeleteSeller = (id: string, name: string) => {
+    if (window.confirm(`Deseja realmente remover o vendedor ${name}?`)) {
+      const updatedSellers = storageService.deleteSeller(id);
+      setSellers(updatedSellers);
+      if (onSellersUpdated) onSellersUpdated(updatedSellers);
+      showToast(`Vendedor ${name} removido.`);
+    }
+  };
+
 
   // Filtered Products
   const filteredProducts = products.filter((p) => {
@@ -384,7 +632,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <Lock className="w-4 h-4" />
-            <span>5. Administradores do Sistema</span>
+            <span>5. Administradores</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sellers')}
+            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+              activeTab === 'sellers'
+                ? 'bg-[#8B0000] text-white shadow-md'
+                : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
+            }`}
+          >
+            <Headphones className="w-4 h-4" />
+            <span>6. Equipe de Vendedores</span>
           </button>
         </div>
 
@@ -420,13 +680,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </select>
               </div>
 
-              <button
-                onClick={() => setIsAddProductModalOpen(true)}
-                className="bg-[#8B0000] hover:bg-red-800 text-white px-5 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 w-full sm:w-auto justify-center"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Adicionar Novo Produto</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className="bg-emerald-800 hover:bg-emerald-700 text-white px-4 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 justify-center"
+                  title="Importar catálogo em lote via planilha Excel ou CSV"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+                  <span>Importar Planilha (Excel/CSV)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsAddProductModalOpen(true)}
+                  className="bg-[#8B0000] hover:bg-red-800 text-white px-4 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 justify-center"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar Novo Produto</span>
+                </button>
+              </div>
             </div>
 
             {/* Products Data Table */}
@@ -440,12 +713,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <th className="p-3">Preço B2C</th>
                       <th className="p-3">Preço B2B (Atacado)</th>
                       <th className="p-3">Estoque</th>
+                      <th className="p-3 text-center">Exposição no Site</th>
                       <th className="p-3 text-center">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
                     {filteredProducts.map((p) => (
-                      <tr key={p.id} className="hover:bg-[#1a1a1a] transition">
+                      <tr key={p.id} className={`transition ${p.isActive === false ? 'opacity-50 bg-red-950/10' : 'hover:bg-[#1a1a1a]'}`}>
                         <td className="p-3 flex items-center gap-3">
                           <img src={p.image} alt={p.name} className="w-12 h-12 object-cover rounded bg-[#1a1a1a] shrink-0 border border-white/10" />
                           <div>
@@ -483,6 +757,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           </div>
                         </td>
 
+                        {/* BOTÃO ATIVAR / DESATIVAR EXPOSIÇÃO DO PRODUTO NO SITE */}
+                        <td className="p-3 text-center">
+                          {p.isActive !== false ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleProductActive(p.id)}
+                              className="px-3 py-1.5 rounded-lg bg-emerald-950/90 text-emerald-300 border border-emerald-700 text-[10px] font-black uppercase inline-flex items-center gap-1.5 hover:bg-emerald-900 transition shadow-sm"
+                              title="Clique para DESATIVAR e ocultar este produto do site público"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Ativo no Site</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleProductActive(p.id)}
+                              className="px-3 py-1.5 rounded-lg bg-red-950/90 text-red-300 border border-red-700 text-[10px] font-black uppercase inline-flex items-center gap-1.5 hover:bg-red-900 transition shadow-sm"
+                              title="Clique para ATIVAR e expor este produto no site público"
+                            >
+                              <EyeOff className="w-3.5 h-3.5 text-red-400" />
+                              <span>Oculto (Desativado)</span>
+                            </button>
+                          )}
+                        </td>
+
                         <td className="p-3 text-center space-x-2">
                           <button
                             onClick={() => setEditingProduct(p)}
@@ -504,6 +803,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tbody>
                 </table>
               </div>
+
             </div>
 
           </div>
@@ -906,7 +1206,117 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
+        {/* TAB 6: SELLERS MANAGEMENT */}
+        {activeTab === 'sellers' && (
+          <div className="space-y-6">
+            {/* Action & Search Toolbar */}
+            <div className="bg-[#111111] p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="relative flex-1 w-full sm:w-auto">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="text"
+                  value={sellerSearch}
+                  onChange={(e) => setSellerSearch(e.target.value)}
+                  placeholder="Buscar por nome, telefone ou especialidade do vendedor..."
+                  className="w-full pl-9 pr-4 py-2 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
+                />
+              </div>
+
+              <button
+                onClick={handleOpenAddSeller}
+                className="bg-[#8B0000] hover:bg-red-800 text-white px-5 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 w-full sm:w-auto justify-center"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Cadastrar Novo Vendedor</span>
+              </button>
+            </div>
+
+            {/* Sellers Data Table */}
+            <div className="bg-[#111111] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-black border-b border-white/10 text-gray-400 uppercase text-[10px] tracking-wider font-bold">
+                      <th className="p-3">Vendedor</th>
+                      <th className="p-3">WhatsApp / Telefone</th>
+                      <th className="p-3">Especialidade / Cargo</th>
+                      <th className="p-3">Email</th>
+                      <th className="p-3 text-center">Status no Site</th>
+                      <th className="p-3 text-center">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {sellers
+                      .filter((s) =>
+                        s.name.toLowerCase().includes(sellerSearch.toLowerCase()) ||
+                        s.phone.includes(sellerSearch) ||
+                        (s.specialty && s.specialty.toLowerCase().includes(sellerSearch.toLowerCase()))
+                      )
+                      .map((seller) => (
+                        <tr key={seller.id} className="hover:bg-white/[0.02] transition">
+                          <td className="p-3 flex items-center gap-3">
+                            {seller.avatarUrl ? (
+                              <img src={seller.avatarUrl} alt={seller.name} className="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-[#8B0000] text-white font-black text-xs flex items-center justify-center shrink-0">
+                                {seller.name.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-bold text-white text-sm">{seller.name}</div>
+                              <div className="text-[10px] text-gray-500">Desde: {seller.createdAt}</div>
+                            </div>
+                          </td>
+                          <td className="p-3 font-mono text-emerald-400 font-bold">
+                            {seller.phone}
+                          </td>
+                          <td className="p-3 text-gray-300">
+                            {seller.specialty || 'Consultor Técnico Paris Dakar'}
+                          </td>
+                          <td className="p-3 text-gray-400">
+                            {seller.email || '-'}
+                          </td>
+                          <td className="p-3 text-center">
+                            <button
+                              onClick={() => handleToggleSellerStatus(seller.id)}
+                              className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider transition ${
+                                seller.isActive
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30'
+                                  : 'bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30'
+                              }`}
+                            >
+                              {seller.isActive ? 'Ativo no WhatsApp' : 'Inativo (Oculto)'}
+                            </button>
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleOpenEditSeller(seller)}
+                                className="p-1.5 rounded bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition"
+                                title="Editar Vendedor"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteSeller(seller.id, seller.name)}
+                                className="p-1.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 transition"
+                                title="Excluir Vendedor"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
+
 
       {/* ADD PRODUCT MODAL */}
       {isAddProductModalOpen && (
@@ -1168,6 +1578,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+              {/* TOGGLE EXPOR NO SITE NO EDIT MODAL */}
+              <div className="p-3 bg-[#181818] rounded border border-white/10 flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-white block">Expor Produto no Site (Ativo / Visível)</span>
+                  <span className="text-[10px] text-gray-400 block">Se desativado, o produto é mantido no banco mas ocultado do catálogo público</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct({ ...editingProduct, isActive: editingProduct.isActive === false ? true : false })}
+                  className={`px-4 py-2 rounded font-black text-xs uppercase flex items-center gap-2 transition ${
+                    editingProduct.isActive !== false ? 'bg-emerald-950 text-emerald-400 border border-emerald-700' : 'bg-red-950 text-red-400 border border-red-700'
+                  }`}
+                >
+                  {editingProduct.isActive !== false ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  <span>{editingProduct.isActive !== false ? 'ATIVO NO SITE' : 'DESATIVADO'}</span>
+                </button>
+              </div>
+
               <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
                 <button
                   type="button"
@@ -1189,6 +1617,200 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
+      {/* SPREADSHEET IMPORT MODAL (EXCEL / CSV) */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-[#111111] rounded-2xl border border-emerald-600/40 shadow-2xl my-8 overflow-hidden text-white p-6 space-y-5">
+            
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-emerald-900/80 text-emerald-300 rounded flex items-center justify-center border border-emerald-600/50">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black uppercase italic tracking-wider text-white">
+                    Importação de Planilha (.XLSX / .CSV)
+                  </h3>
+                  <p className="text-[11px] text-gray-400">
+                    Cadastre ou atualize milhares de produtos de uma só vez por SKU com Upsert inteligente.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsImportModalOpen(false)}
+                className="p-2 rounded-full bg-[#1a1a1a] text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Instruction Card */}
+            <div className="p-4 bg-emerald-950/30 border border-emerald-800/50 rounded-xl text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Upload className="w-4 h-4" />
+                  Instruções da Planilha
+                </span>
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="px-3 py-1 bg-emerald-900 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60 rounded text-[10px] font-black uppercase transition inline-flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Baixar Planilha Modelo (.CSV)
+                </button>
+              </div>
+              <p className="text-gray-300 text-[11px]">
+                A planilha deve conter os cabeçalhos: <code className="text-amber-400 font-mono">SKU, Nome, Marca, Categoria, Preco_B2C, Preco_B2B, Estoque, Aro, Furacao, Offset, Tala, Medida_Pneu</code>.
+              </p>
+            </div>
+
+            {/* File Input */}
+            <div className="p-6 bg-[#181818] border-2 border-dashed border-emerald-600/40 rounded-xl text-center space-y-3">
+              <FileSpreadsheet className="w-10 h-10 text-emerald-400 mx-auto animate-pulse" />
+              <div>
+                <label className="text-xs font-bold text-white block mb-1">
+                  Selecione seu arquivo .xlsx, .xls ou .csv
+                </label>
+                <span className="text-[10px] text-gray-400 block">
+                  O sistema identificará produtos existentes pelo SKU e atualizará o estoque automaticamente.
+                </span>
+              </div>
+
+              <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                onChange={handleFileUpload}
+                className="block w-full text-xs text-gray-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-emerald-800 file:text-white hover:file:bg-emerald-700 cursor-pointer"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-white/10 pt-3">
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="px-4 py-2 rounded bg-[#1a1a1a] text-gray-300 font-bold text-xs"
+              >
+                Fechar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADD / EDIT SELLER */}
+      {isSellerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#111111] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
+                <Headphones className="w-5 h-5 text-[#8B0000]" />
+                <span>{editingSeller ? 'Editar Vendedor' : 'Cadastrar Novo Vendedor'}</span>
+              </h3>
+              <button
+                onClick={() => setIsSellerModalOpen(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSeller} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-gray-400 font-bold mb-1">Nome Completo *</label>
+                <input
+                  type="text"
+                  required
+                  value={sellerName}
+                  onChange={(e) => setSellerName(e.target.value)}
+                  placeholder="Ex: Rodrigo Lima"
+                  className="w-full p-2.5 rounded bg-[#1a1a1a] border border-white/10 text-white focus:outline-none focus:border-[#8B0000]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-400 font-bold mb-1">WhatsApp / Telefone (Com DDD) *</label>
+                <input
+                  type="text"
+                  required
+                  value={sellerPhone}
+                  onChange={(e) => setSellerPhone(e.target.value)}
+                  placeholder="Ex: (11) 99999-8888 ou 5511999998888"
+                  className="w-full p-2.5 rounded bg-[#1a1a1a] border border-white/10 text-white focus:outline-none focus:border-[#8B0000]"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">Este número será acionado ao cliente escolher o vendedor no WhatsApp.</p>
+              </div>
+
+              <div>
+                <label className="block text-gray-400 font-bold mb-1">Especialidade / Cargo</label>
+                <input
+                  type="text"
+                  value={sellerSpecialty}
+                  onChange={(e) => setSellerSpecialty(e.target.value)}
+                  placeholder="Ex: Consultor Técnico 4x4 & Rodas Heavy-Duty"
+                  className="w-full p-2.5 rounded bg-[#1a1a1a] border border-white/10 text-white focus:outline-none focus:border-[#8B0000]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-400 font-bold mb-1">Email de Contato (Opcional)</label>
+                <input
+                  type="email"
+                  value={sellerEmail}
+                  onChange={(e) => setSellerEmail(e.target.value)}
+                  placeholder="Ex: vendedor@parisdakar.com.br"
+                  className="w-full p-2.5 rounded bg-[#1a1a1a] border border-white/10 text-white focus:outline-none focus:border-[#8B0000]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-400 font-bold mb-1">URL da Foto de Perfil (Opcional)</label>
+                <input
+                  type="url"
+                  value={sellerAvatarUrl}
+                  onChange={(e) => setSellerAvatarUrl(e.target.value)}
+                  placeholder="https://exemplo.com/foto.jpg"
+                  className="w-full p-2.5 rounded bg-[#1a1a1a] border border-white/10 text-white focus:outline-none focus:border-[#8B0000]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  id="sellerIsActive"
+                  checked={sellerIsActive}
+                  onChange={(e) => setSellerIsActive(e.target.checked)}
+                  className="rounded bg-[#1a1a1a] border-white/10 text-[#8B0000] focus:ring-0"
+                />
+                <label htmlFor="sellerIsActive" className="text-gray-300 font-bold cursor-pointer">
+                  Vendedor Ativo no WhatsApp (Aparecer como opção para os clientes)
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsSellerModalOpen(false)}
+                  className="px-4 py-2 rounded bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded bg-[#8B0000] hover:bg-red-800 text-white text-xs font-black uppercase tracking-wider transition flex items-center gap-2 shadow-lg"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Salvar Vendedor</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
+
+
