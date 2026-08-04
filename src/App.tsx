@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { SearchDashboard } from './components/SearchDashboard';
@@ -9,6 +9,7 @@ import { Footer } from './components/Footer';
 import { useTheme } from './hooks/useTheme';
 import { useCatalog } from './hooks/useCatalog';
 import { storageService } from './services/storageService';
+import { authService } from './services/authService';
 import {
   Product,
   ProductCategory,
@@ -62,7 +63,20 @@ export default function App() {
   // Catálogo vem da API (Firestore). O resto ainda é local — ver README.
   const { products, status: catalogStatus, error: catalogError, reload: reloadCatalog, setProducts } = useCatalog();
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
-  const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
+  /*
+   * A sessão de administrador NUNCA é restaurada do localStorage: qualquer
+   * visitante pode editar esse armazenamento e se declarar admin. Só o
+   * Firebase Auth, logo abaixo, é capaz de conceder acesso ao painel.
+   * Sessões de cliente (CPF/CNPJ) seguem locais — são só preferências.
+   */
+  const [currentSession, setCurrentSession] = useState<UserSession>(() => {
+    const stored = storageService.getUserSession();
+    if (stored.type === 'admin') {
+      storageService.clearUserSession();
+      return { type: null };
+    }
+    return stored;
+  });
   const [sellers, setSellers] = useState<Seller[]>(() => storageService.getSellers());
 
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
@@ -84,6 +98,35 @@ export default function App() {
   const [isSellerModalOpen, setIsSellerModalOpen] = useState<boolean>(false);
   const [pendingWhatsAppMsg, setPendingWhatsAppMsg] = useState<string | undefined>(undefined);
   const [pendingProductContext, setPendingProductContext] = useState<Product | undefined>(undefined);
+
+  // Fonte única de verdade do acesso administrativo: o token do Firebase.
+  // Se ele expirar ou for revogado, o painel fecha sozinho.
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
+
+    void authService
+      .observeAdmin((admin) => {
+        if (cancelled) return;
+
+        setCurrentSession((prev) => {
+          if (admin) return { type: 'admin', adminUser: admin };
+          if (prev.type === 'admin') return { type: null };
+          return prev;
+        });
+
+        if (!admin) setViewMode('store');
+      })
+      .then((unsub) => {
+        if (cancelled) unsub();
+        else unsubscribe = unsub;
+      });
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, []);
 
   const handleOpenAuthModal = useCallback((tab: 'b2c' | 'b2b' | 'admin' = 'b2c') => {
     setAuthModalTab(tab);

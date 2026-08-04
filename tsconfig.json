@@ -19,7 +19,8 @@
     "src/components/**",
     "src/hooks/**",
     "src/services/storageService.ts",
-    "src/services/apiClient.ts"
+    "src/services/apiClient.ts",
+    "src/services/authService.ts"
   ]
 }
 

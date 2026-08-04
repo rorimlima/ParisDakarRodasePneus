@@ -16,7 +16,8 @@ mas **desligada por padrão**.
 | API de catálogo | ✅ `GET /api/v1/products` — pública, com ETag e delta sync |
 | API de escrita | ✅ `PUT/DELETE /api/v1/products/admin` — exige token Firebase com role `admin` |
 | Vitrine do site | ⚙️ Atrás da chave `VITE_USE_API_CATALOG` (padrão: `localStorage`) |
-| Painel admin | ❌ Ainda grava no `localStorage` — depende do login real (ver abaixo) |
+| Login administrativo | ✅ Firebase Auth com claim `role: admin` |
+| Painel admin | ❌ Ainda grava no `localStorage` — falta trocar as chamadas pela API |
 | Vendedores, configurações, leads | ❌ Ainda no `localStorage` |
 
 ## Por que a chave existe
@@ -80,20 +81,52 @@ de build (no workflow do GitHub Actions, em `env:`) e faça o deploy.
 **Para reverter:** volte a chave para `false` e publique. A loja retoma o
 `localStorage` na hora.
 
+## Criar o administrador
+
+O login antigo era falso: as senhas estavam no código do navegador e havia um
+botão que concedia acesso sem senha alguma. Isso foi removido. Agora o acesso
+depende de uma conta real com a claim `role: admin`.
+
+**1. Habilite o provedor.** Firebase Console → Authentication → Sign-in method
+→ ative *E-mail/senha*.
+
+**2. Crie a conta.** Authentication → Users → Add user. Use um e-mail real e
+uma senha forte, gerada por gerenciador de senhas. Copie o **UID**.
+
+**3. Conceda a permissão de administrador:**
+
+```bash
+npm run set-admin <UID_COPIADO>
+```
+
+Sem esse passo a conta autentica mas **não** abre o painel — é o que impede
+que qualquer usuário do projeto vire administrador.
+
+**4. Publique com a config Web** (Console → Configurações do projeto → Seus
+apps → Web). Estas variáveis entram no build:
+
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=paris-dakar-rodas-pneus.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=paris-dakar-rodas-pneus
+```
+
+Elas são públicas por design e ficam visíveis no bundle — não são segredo. O
+que protege o painel é a claim, que só o Admin SDK atribui. Sem elas, o login
+administrativo aparece indisponível na tela.
+
+> Para revogar um acesso: Authentication → Users → desativar ou excluir a
+> conta. O painel fecha sozinho na sessão aberta, porque o token deixa de ser
+> válido.
+
 ## O que falta
 
-**O painel admin ainda grava no `localStorage`.** Enquanto isso não mudar, o
-que você cadastrar no painel não vai para o Firestore nem aparece para os
-visitantes com a chave ligada.
+**O painel admin ainda grava no `localStorage`.** As rotas de escrita da API já
+existem e já exigem token, e o `authService.getIdToken()` já fornece esse token
+— falta trocar as chamadas do `storageService` por `catalogApi` dentro do
+`AdminDashboard`.
 
-Isso não é acidente de escopo: as rotas de escrita exigem um token Firebase
-com a claim `admin`, e hoje o login de administrador é falso — as senhas estão
-no código do navegador (`AuthModal.tsx`), e existe um botão que concede acesso
-sem senha nenhuma. Qualquer visitante que abra o DevTools vira administrador.
-
-Ligar o painel na API exige, antes, trocar esse login por Firebase Auth real e
-atribuir a claim de role com `npm run set-admin`. É a próxima etapa, e ela
-fecha a falha de segurança junto.
+Vendedores, configurações do site e leads também continuam locais.
 
 ## Desenvolvimento local
 

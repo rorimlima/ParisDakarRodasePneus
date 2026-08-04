@@ -16,6 +16,7 @@ import {
 import { B2BUser, CpfClient, AdminUser, UserSession, TaxRegime } from '../types';
 import { formatCPF, formatCNPJ, validateCPF, validateCNPJ, isAlphanumericCNPJ } from '../utils/validation';
 import { storageService } from '../services/storageService';
+import { AuthError, authService, isAuthConfigured } from '../services/authService';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialTab = 'b2c'
 }) => {
   const [activeTab, setActiveTab] = useState<'b2c' | 'b2b' | 'admin'>(initialTab);
+  const [adminSubmitting, setAdminSubmitting] = useState(false);
   const [mode, setMode] = useState<'login' | 'register'>('login');
 
   // CPF Form state
@@ -227,65 +229,40 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // 5. Admin Login (Master Supremo)
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
 
-    const cleanEmail = adminEmail.trim().toLowerCase();
-    const adminUsers = storageService.getAdminUsers();
-    const foundAdmin = adminUsers.find(
-      (a) => a.email.toLowerCase() === cleanEmail
-    );
+    if (!adminEmail.trim() || !adminPassword) {
+      setErrorMsg('Informe e-mail e senha.');
+      return;
+    }
 
-    const isMasterCredential =
-      (cleanEmail === 'admin@parisdakar.com.br' || cleanEmail === 'master@parisdakar.com.br') && adminPassword === 'adminparisrodas';
-    const isLegacyAdmin =
-      cleanEmail.includes('admin') && (adminPassword === 'adminparisrodas' || adminPassword === 'admin123');
+    setAdminSubmitting(true);
+    try {
+      // A verificação acontece no Firebase. O app não conhece nenhuma senha.
+      const adminUser = await authService.signInAdmin(adminEmail, adminPassword);
 
-    if (isMasterCredential || isLegacyAdmin || foundAdmin) {
-      const activeAdmin: AdminUser = {
-        id: foundAdmin?.id || 'admin-senior-001',
-        name: 'Master Supremo',
-        email: cleanEmail || 'admin@parisdakar.com.br',
-        role: 'senior',
-        grantedBySenior: true,
-        createdAt: foundAdmin?.createdAt || new Date().toISOString().split('T')[0]
-      };
-
-      const session: UserSession = { type: 'admin', adminUser: activeAdmin };
-      storageService.saveUserSession(session);
-      setSuccessMsg('Autenticação de Administrador Master Supremo realizada com sucesso!');
+      setAdminPassword('');
+      setSuccessMsg('Acesso autorizado.');
+      const session: UserSession = { type: 'admin', adminUser };
       setTimeout(() => {
         onLoginSuccess(session);
         onClose();
-      }, 800);
-    } else {
-      setErrorMsg('Credenciais inválidas. Verifique o e-mail de acesso admin e a senha master.');
+      }, 500);
+    } catch (error) {
+      setErrorMsg(
+        error instanceof AuthError ? error.message : 'Não foi possível concluir o login.'
+      );
+    } finally {
+      setAdminSubmitting(false);
     }
   };
 
-  // Direct Master Supremo Access Trigger
-  const handleSeniorBypass = () => {
-    const seniorAdmin: AdminUser = {
-      id: 'admin-senior-001',
-      name: 'Master Supremo',
-      email: 'admin@parisdakar.com.br',
-      role: 'senior',
-      grantedBySenior: true,
-      createdAt: '2026-01-01'
-    };
-
-
-    const session: UserSession = { type: 'admin', adminUser: seniorAdmin };
-    storageService.saveUserSession(session);
-    setSuccessMsg('Acesso Master Supremo Concedido!');
-    setTimeout(() => {
-      onLoginSuccess(session);
-      onClose();
-    }, 500);
-  };
-
   const handleLogout = () => {
+    // Sessão de admin vive no Firebase; limpar só o localStorage não desloga.
+    void authService.signOut();
     storageService.clearUserSession();
     onLoginSuccess({ type: null });
     setSuccessMsg('Sessão encerrada com sucesso.');
@@ -780,66 +757,68 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {/* TAB 3: LOGIN ADMINISTRATIVO (ADMIN) */}
           {activeTab === 'admin' && (
             <div className="space-y-4">
-              <div className="p-4 bg-red-950/40 border border-red-800/60 rounded text-xs space-y-1">
+              <div className="p-4 pd-surface-2 border pd-border rounded-xl text-xs space-y-1.5">
                 <div className="flex items-center gap-2 pd-brand-text font-bold uppercase tracking-wider">
-                  <ShieldCheck className="w-4 h-4 pd-brand-text" />
-                  <span>Acesso Restrito - Master Supremo</span>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Acesso restrito</span>
                 </div>
-                <p className="pd-text-2">
-                  Painel de gestão administrativa e controle do catálogo Paris Dakar Rodas e Pneus.
+                <p className="pd-text-2 leading-relaxed">
+                  Área de gestão do catálogo. O acesso é individual e registrado.
                 </p>
-                <div className="pt-1 text-[11px] font-mono pd-gold-text">
-                  <span>Usuário Master: <strong>admin@parisdakar.com.br</strong></span>
-                </div>
-
               </div>
+
+              {!isAuthConfigured && (
+                <div className="p-3 pd-surface-2 border pd-border rounded-lg text-xs pd-text-2 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 pd-brand-text shrink-0 mt-0.5" />
+                  <span>
+                    Login administrativo indisponível: este build não recebeu as variáveis
+                    <strong className="pd-mono"> VITE_FIREBASE_*</strong>.
+                  </span>
+                </div>
+              )}
 
               <form onSubmit={handleAdminLogin} className="space-y-4">
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                    E-mail do Administrador Master
+                  <label className="pd-label" htmlFor="admin-email">
+                    E-mail
                   </label>
                   <input
+                    id="admin-email"
                     type="email"
+                    autoComplete="username"
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
-                    placeholder="onaeror@gmail.com"
-                    className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                    className="pd-input"
+                    disabled={!isAuthConfigured || adminSubmitting}
+                    required
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                    Senha de Segurança
+                  <label className="pd-label" htmlFor="admin-password">
+                    Senha
                   </label>
                   <input
+                    id="admin-password"
                     type="password"
+                    autoComplete="current-password"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
-                    placeholder="adminparisrodas"
-                    className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                    className="pd-input"
+                    disabled={!isAuthConfigured || adminSubmitting}
+                    required
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
+                  className="btn btn-primary btn-block btn-lg"
+                  disabled={!isAuthConfigured || adminSubmitting}
                 >
                   <KeyRound className="w-4 h-4" />
-                  Entrar como Master Supremo
+                  {adminSubmitting ? 'Verificando...' : 'Entrar'}
                 </button>
               </form>
-
-              {/* Direct Senior Master Access Trigger */}
-              <div className="pt-3 border-t pd-border text-center">
-                <button
-                  type="button"
-                  onClick={handleSeniorBypass}
-                  className="px-4 py-2 pd-surface-2 pd-row-hover pd-gold-text border border-amber-500/30 rounded text-[10px] font-bold uppercase tracking-widest transition"
-                >
-                  ⚡ Acesso Direto Master Supremo (onaeror@gmail.com)
-                </button>
-              </div>
             </div>
           )}
 
