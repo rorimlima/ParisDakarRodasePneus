@@ -28,6 +28,14 @@ const initFirebaseAdmin = (): admin.app.App => {
 
   const firebaseSdk = getFirebaseAdminInstance();
 
+  // Contra o emulador não existe credencial para validar: exigir uma chave de
+  // serviço aqui só obrigaria a inventar um PEM falso para rodar local.
+  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    return firebaseSdk.initializeApp({
+      projectId: process.env.FIREBASE_PROJECT_ID || process.env.GOOGLE_CLOUD_PROJECT || 'demo-paris-dakar'
+    });
+  }
+
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY

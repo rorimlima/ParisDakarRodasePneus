@@ -1,5 +1,6 @@
 import admin from 'firebase-admin';
 import { firebaseApp } from '../config/firebase.js';
+import { isUsingEmulator } from '../config/firestore.js';
 import { dbClient } from './dbClient.js';
 
 export type DbStatus = 'ok' | 'degraded' | 'down';
@@ -15,7 +16,7 @@ export interface DbHealthReport {
   status: DbStatus;
   checkedAt: string;
   /** Onde os produtos realmente estão guardados neste momento. */
-  activeStore: 'in-memory' | 'firestore';
+  activeStore: 'firestore' | 'firestore-emulator';
   persistent: boolean;
   checks: DbCheck[];
   warnings: string[];
@@ -81,15 +82,25 @@ const checkFirestore = async (): Promise<DbCheck> => {
 
 /** Estado do armazenamento que a API usa de fato hoje. */
 const checkActiveStore = async (): Promise<DbCheck> => {
-  const started = Date.now();
-  const skus = await dbClient.getAllSkusMap();
+  try {
+    const latencyMs = await dbClient.ping();
+    const skus = await dbClient.getAllSkusMap();
 
-  return {
-    name: 'catalogo-ativo',
-    status: 'degraded',
-    detail: `Armazenamento em memória (Map) com ${skus.size} SKU(s). Os dados são perdidos a cada reinício do processo ou cold start da Cloud Function, e cada instância tem a sua própria cópia.`,
-    latencyMs: Date.now() - started
-  };
+    return {
+      name: 'catalogo-ativo',
+      status: 'ok',
+      detail: `Catálogo persistido no Firestore (coleção "products") com ${skus.size} SKU(s)${
+        isUsingEmulator ? ' — apontando para o EMULADOR, não para o banco de produção' : ''
+      }.`,
+      latencyMs
+    };
+  } catch (error) {
+    return {
+      name: 'catalogo-ativo',
+      status: 'down',
+      detail: `Não foi possível ler a coleção de produtos: ${(error as Error).message}`
+    };
+  }
 };
 
 /** DATABASE_URL existe no .env mas nenhum código do projeto abre essa conexão. */
@@ -113,8 +124,9 @@ const worstStatus = (checks: DbCheck[]): DbStatus => {
 /**
  * Diagnóstico da camada de persistência.
  *
- * Reporta o que está realmente acontecendo, sem mascarar: hoje o catálogo vive
- * em memória, então mesmo com o Firestore acessível o resultado é "degraded".
+ * Reporta o que está realmente acontecendo, sem mascarar. Um item em falha
+ * derruba o status geral, então "ok" aqui significa que a API consegue mesmo
+ * ler e gravar o catálogo.
  */
 export const getDatabaseHealth = async (): Promise<DbHealthReport> => {
   const credentials = checkCredentials();
@@ -136,20 +148,29 @@ export const getDatabaseHealth = async (): Promise<DbHealthReport> => {
   const declaredUrl = checkDeclaredDatabaseUrl();
   if (declaredUrl) checks.push(declaredUrl);
 
-  const warnings: string[] = [
-    'O catálogo servido pela API vem de um Map em memória (src/services/dbClient.ts), não de um banco de dados.',
-    'O site público lê e grava produtos, usuários e leads no localStorage do navegador — os dados ficam só no dispositivo do visitante.'
-  ];
+  const warnings: string[] = [];
+
+  if (isUsingEmulator) {
+    warnings.push(
+      `FIRESTORE_EMULATOR_HOST está definido (${process.env.FIRESTORE_EMULATOR_HOST}): esta instância grava no emulador, não no banco real.`
+    );
+  }
+
+  warnings.push(
+    'O site público ainda lê e grava produtos, usuários e leads no localStorage do navegador. A troca do localStorage pelas chamadas à API é a etapa seguinte.'
+  );
 
   if (credentials.status !== 'ok') {
     warnings.push('Sem credenciais de serviço, a verificação de tokens JWT do Firebase Auth também falha.');
   }
 
+  const storeCheck = checks.find((c) => c.name === 'catalogo-ativo');
+
   return {
     status: worstStatus(checks),
     checkedAt: new Date().toISOString(),
-    activeStore: 'in-memory',
-    persistent: false,
+    activeStore: isUsingEmulator ? 'firestore-emulator' : 'firestore',
+    persistent: storeCheck?.status === 'ok',
     checks,
     warnings
   };

@@ -15,7 +15,8 @@
     "build:server": "tsc",
     "preview": "vite preview",
     "check:db": "tsx src/scripts/checkDatabase.ts",
-    "typecheck": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.json --noEmit",
+    "test:db": "tsx src/tests/testFirestoreRepository.ts"
   },
   "keywords": [
     "antigravity",

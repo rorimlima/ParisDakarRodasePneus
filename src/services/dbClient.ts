@@ -1,143 +1,188 @@
 import { ProductImportRow } from '../schemas/productSchema.js';
+import { Product, ProductCategory } from '../types/index.js';
+import { COLLECTIONS, firestore } from '../config/firestore.js';
 
-export interface ProductRecord extends ProductImportRow {
-  id: string;
+/**
+ * Produto como fica guardado no Firestore: o mesmo formato que a loja usa,
+ * mais os metadados de sincronização.
+ *
+ * O documento carrega o formato completo (specs, imagens, veículos
+ * compatíveis) e não o formato reduzido da planilha, porque é ele que
+ * alimenta o site. A importação de planilha preenche o que consegue e
+ * preserva o resto do que já estava gravado.
+ */
+export interface ProductRecord extends Product {
   createdAt: string;
   updatedAt: string;
   version: number;
 }
 
+/** A planilha traz RODA/PNEU/ACESSORIO; o catálogo usa as categorias da loja. */
+const IMPORT_CATEGORY_MAP: Record<string, ProductCategory> = {
+  RODA: 'rodas',
+  PNEU: 'pneus',
+  ACESSORIO: 'acessorios'
+};
+
 /**
- * Camada de Persistência e Banco de Dados Antigravity Engine
- * Implementa consultas parametrizadas imutáveis para total proteção contra SQL/NoSQL Injection.
+ * O SKU é a chave natural do produto e vira o id do documento, o que torna o
+ * upsert atômico sem precisar consultar antes. Barra e ponto têm significado
+ * em caminhos do Firestore, então são neutralizados.
  */
-class AntigravityDBClient {
-  private productsStore: Map<string, ProductRecord> = new Map();
+const skuToDocId = (sku: string): string => sku.trim().replace(/[/.#$[\]]/g, '_');
 
-  constructor() {
-    // Dados iniciais de demonstração pré-populados
-    const initialProducts: ProductRecord[] = [
-      {
-        id: 'prod-001',
-        sku: 'RODA-BBS-17-01',
-        name: 'Roda Esportiva BBS Aro 17 Furação 4x100 Grafite',
-        category: 'RODA',
-        brand: 'BBS',
-        price: 3890.0,
-        stockQuantity: 12,
-        rimSize: '17',
-        width: '7.5',
-        aspectRatio: undefined,
-        createdAt: new Date('2026-08-01T10:00:00.000Z').toISOString(),
-        updatedAt: new Date('2026-08-01T10:00:00.000Z').toISOString(),
-        version: 1,
-      },
-      {
-        id: 'prod-002',
-        sku: 'PNEU-MICHELIN-225-45-17',
-        name: 'Pneu Michelin Pilot Sport 5 225/45 R17 94Y',
-        category: 'PNEU',
-        brand: 'Michelin',
-        price: 850.0,
-        stockQuantity: 40,
-        rimSize: '17',
-        width: '225',
-        aspectRatio: '45',
-        createdAt: new Date('2026-08-01T11:00:00.000Z').toISOString(),
-        updatedAt: new Date('2026-08-01T11:00:00.000Z').toISOString(),
-        version: 1,
-      },
-    ];
-
-    initialProducts.forEach((p) => this.productsStore.set(p.sku, p));
+class FirestoreProductRepository {
+  private get collection() {
+    return firestore.collection(COLLECTIONS.PRODUCTS);
   }
 
-  /**
-   * Consulta parametrizada segura por SKU
-   */
   async findBySku(skuParam: string): Promise<ProductRecord | null> {
-    // Higienização contra caracteres de injeção em queries
-    const sanitizedSku = String(skuParam).trim();
-    const product = this.productsStore.get(sanitizedSku);
-    return product ? { ...product } : null;
+    const snapshot = await this.collection.doc(skuToDocId(String(skuParam))).get();
+    return snapshot.exists ? (snapshot.data() as ProductRecord) : null;
   }
 
   /**
-   * Operação de Upsert (Insert ou Update por SKU) atômica e parametrizada
+   * Insere ou atualiza um produto vindo da planilha, por SKU.
+   *
+   * Numa atualização, só os campos que a planilha realmente traz são
+   * sobrescritos: descrição, fotos, specs e compatibilidade cadastradas no
+   * painel continuam de pé, senão cada importação de estoque apagaria o
+   * trabalho de cadastro.
    */
-  async upsertBySku(data: ProductImportRow): Promise<{ action: 'CREATED' | 'UPDATED'; record: ProductRecord }> {
-    const existing = this.productsStore.get(data.sku);
+  async upsertBySku(
+    data: ProductImportRow
+  ): Promise<{ action: 'CREATED' | 'UPDATED'; record: ProductRecord }> {
+    const docRef = this.collection.doc(skuToDocId(data.sku));
     const nowIso = new Date().toISOString();
 
-    if (existing) {
-      // Atualização (UPDATE) mantendo id e aumentando versão
-      const updatedRecord: ProductRecord = {
-        ...existing,
-        name: data.name,
-        category: data.category,
-        brand: data.brand,
-        price: data.price,
-        stockQuantity: data.stockQuantity,
-        rimSize: data.rimSize ?? existing.rimSize,
-        width: data.width ?? existing.width,
-        aspectRatio: data.aspectRatio ?? existing.aspectRatio,
-        updatedAt: nowIso,
-        version: existing.version + 1,
-      };
+    return firestore.runTransaction(async (tx) => {
+      const snapshot = await tx.get(docRef);
+      const existing = snapshot.exists ? (snapshot.data() as ProductRecord) : null;
 
-      this.productsStore.set(data.sku, updatedRecord);
-      return { action: 'UPDATED', record: updatedRecord };
-    } else {
-      // Criação (INSERT) de novo registro de produto
-      const newRecord: ProductRecord = {
-        id: `prod-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      if (existing) {
+        const updated: ProductRecord = {
+          ...existing,
+          name: data.name,
+          brand: data.brand,
+          price: data.price,
+          stockQuantity: data.stockQuantity,
+          inStock: data.stockQuantity > 0,
+          category: IMPORT_CATEGORY_MAP[data.category] ?? existing.category,
+          specs: {
+            ...existing.specs,
+            aro: data.rimSize ?? existing.specs?.aro,
+            tala: data.width ?? existing.specs?.tala
+          },
+          updatedAt: nowIso,
+          version: existing.version + 1
+        };
+
+        tx.set(docRef, updated);
+        return { action: 'UPDATED' as const, record: updated };
+      }
+
+      const created: ProductRecord = {
+        id: docRef.id,
         sku: data.sku,
         name: data.name,
-        category: data.category,
         brand: data.brand,
+        category: IMPORT_CATEGORY_MAP[data.category] ?? 'acessorios',
         price: data.price,
         stockQuantity: data.stockQuantity,
-        rimSize: data.rimSize,
-        width: data.width,
-        aspectRatio: data.aspectRatio,
+        inStock: data.stockQuantity > 0,
+        description: '',
+        image: '',
+        specs: { aro: data.rimSize, tala: data.width },
+        compatibleVehicles: [],
+        rating: 0,
+        reviewsCount: 0,
+        isActive: true,
         createdAt: nowIso,
         updatedAt: nowIso,
-        version: 1,
+        version: 1
       };
 
-      this.productsStore.set(data.sku, newRecord);
-      return { action: 'CREATED', record: newRecord };
-    }
+      tx.set(docRef, created);
+      return { action: 'CREATED' as const, record: created };
+    });
+  }
+
+  /** Grava um produto completo vindo do painel administrativo. */
+  async saveProduct(product: Product): Promise<ProductRecord> {
+    const docRef = this.collection.doc(skuToDocId(product.sku));
+    const nowIso = new Date().toISOString();
+    const snapshot = await docRef.get();
+    const existing = snapshot.exists ? (snapshot.data() as ProductRecord) : null;
+
+    const record: ProductRecord = {
+      ...product,
+      id: docRef.id,
+      createdAt: existing?.createdAt ?? nowIso,
+      updatedAt: nowIso,
+      version: (existing?.version ?? 0) + 1
+    };
+
+    await docRef.set(record);
+    return record;
+  }
+
+  async deleteBySku(sku: string): Promise<boolean> {
+    const docRef = this.collection.doc(skuToDocId(sku));
+    const snapshot = await docRef.get();
+    if (!snapshot.exists) return false;
+
+    await docRef.delete();
+    return true;
+  }
+
+  async listProducts(): Promise<ProductRecord[]> {
+    const snapshot = await this.collection.orderBy('updatedAt', 'desc').get();
+    return snapshot.docs.map((doc) => doc.data() as ProductRecord);
   }
 
   /**
-   * Endpoint de Delta Sync: Retorna apenas produtos modificados/criados após updatedSince
+   * Delta Sync: devolve o que mudou depois de `isoDateString`.
+   *
+   * updatedAt é gravado em ISO 8601 UTC, cuja ordem alfabética coincide com a
+   * ordem cronológica — por isso a comparação de string do Firestore funciona
+   * aqui e não é preciso converter para Timestamp.
    */
-  async getProductsUpdatedSince(isoDateString?: string, limit = 50, offset = 0): Promise<{ products: ProductRecord[]; totalCount: number; maxUpdatedAt: string }> {
-    const allProducts = Array.from(this.productsStore.values());
-
-    let filtered = allProducts;
+  async getProductsUpdatedSince(
+    isoDateString?: string,
+    limit = 50,
+    offset = 0
+  ): Promise<{ products: ProductRecord[]; totalCount: number; maxUpdatedAt: string }> {
+    let query = this.collection.orderBy('updatedAt', 'desc');
     if (isoDateString) {
-      const thresholdTime = new Date(isoDateString).getTime();
-      filtered = allProducts.filter((p) => new Date(p.updatedAt).getTime() > thresholdTime);
+      query = query.where('updatedAt', '>', isoDateString);
     }
 
-    // Ordenar por data de atualização decrescente
-    filtered.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    // O total precisa refletir o filtro inteiro, não só a página devolvida.
+    const countSnapshot = await query.count().get();
+    const totalCount = countSnapshot.data().count;
 
-    const paginated = filtered.slice(offset, offset + limit);
-    const maxUpdatedAt = filtered.length > 0 ? filtered[0].updatedAt : new Date().toISOString();
+    const pageSnapshot = await query.offset(offset).limit(limit).get();
+    const products = pageSnapshot.docs.map((doc) => doc.data() as ProductRecord);
 
-    return {
-      products: paginated,
-      totalCount: filtered.length,
-      maxUpdatedAt,
-    };
+    const newestSnapshot = await this.collection.orderBy('updatedAt', 'desc').limit(1).get();
+    const maxUpdatedAt = newestSnapshot.empty
+      ? new Date().toISOString()
+      : (newestSnapshot.docs[0].data() as ProductRecord).updatedAt;
+
+    return { products, totalCount, maxUpdatedAt };
   }
 
   async getAllSkusMap(): Promise<Map<string, ProductRecord>> {
-    return new Map(this.productsStore);
+    const products = await this.listProducts();
+    return new Map(products.map((p) => [p.sku, p]));
+  }
+
+  /** Round-trip de leitura usado pelo diagnóstico de saúde. */
+  async ping(): Promise<number> {
+    const started = Date.now();
+    await this.collection.limit(1).get();
+    return Date.now() - started;
   }
 }
 
-export const dbClient = new AntigravityDBClient();
+export const dbClient = new FirestoreProductRepository();
