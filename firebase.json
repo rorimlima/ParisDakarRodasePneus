@@ -1,8 +1,14 @@
 {
   "hosting": {
     "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "predeploy": ["npm run build"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "predeploy": [
+      "npm run build"
+    ],
     "rewrites": [
       {
         "source": "/api/**",
@@ -88,6 +94,9 @@
     "firestore": {
       "port": 8080
     },
+    "auth": {
+      "port": 9099
+    },
     "ui": {
       "enabled": false
     },
@@ -105,6 +114,8 @@
       "firebase-debug.log",
       "firebase-debug.*.log"
     ],
-    "predeploy": ["npm run build:server"]
+    "predeploy": [
+      "npm run build:server"
+    ]
   }
 }

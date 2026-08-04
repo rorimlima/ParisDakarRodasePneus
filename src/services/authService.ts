@@ -50,11 +50,19 @@ const getAuth = async (): Promise<Auth> => {
 
   if (!authPromise) {
     authPromise = (async () => {
-      const [{ initializeApp, getApps }, { getAuth: getFirebaseAuth, setPersistence, browserSessionPersistence }] =
-        await Promise.all([import('firebase/app'), import('firebase/auth')]);
+      const [
+        { initializeApp, getApps },
+        { getAuth: getFirebaseAuth, setPersistence, browserSessionPersistence, connectAuthEmulator }
+      ] = await Promise.all([import('firebase/app'), import('firebase/auth')]);
 
       const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
       const auth = getFirebaseAuth(app);
+
+      // Desenvolvimento local contra o emulador (ver MIGRACAO-BANCO.md).
+      const emulatorHost = import.meta.env?.VITE_FIREBASE_AUTH_EMULATOR_HOST;
+      if (emulatorHost) {
+        connectAuthEmulator(auth, `http://${emulatorHost}`, { disableWarnings: true });
+      }
 
       // Sessão presa à aba: fechar o navegador encerra o acesso ao painel,
       // em vez de deixá-lo aberto num computador compartilhado.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Package,
   Settings,
@@ -50,6 +50,7 @@ import {
   Seller
 } from '../types';
 import { storageService } from '../services/storageService';
+import { catalogRepository, isRemoteCatalog } from '../services/catalogRepository';
 import { formatCNPJ, formatCPF } from '../utils/validation';
 
 interface AdminDashboardProps {
@@ -70,7 +71,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'clients' | 'admins' | 'inquiries' | 'sellers'>('products');
 
   // Local state initialized from storageService
-  const [products, setProducts] = useState<Product[]>(storageService.getProducts());
+  const [products, setProducts] = useState<Product[]>([]);
+  const [catalogBusy, setCatalogBusy] = useState(false);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(storageService.getSiteSettings());
   const [cpfClients, setCpfClients] = useState<CpfClient[]>(storageService.getCpfUsers());
   const [cnpjClients, setCnpjClients] = useState<B2BUser[]>(storageService.getCnpjUsers());
@@ -144,21 +146,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE) ---
-  const handleToggleProductActive = (id: string) => {
-    const prod = products.find((p) => p.id === id);
-    if (prod) {
-      const newStatus = prod.isActive === false ? true : false;
-      const updated = { ...prod, isActive: newStatus };
-      const updatedList = storageService.saveProduct(updated);
+  /*
+   * Toda gravação do catálogo passa por aqui.
+   *
+   * A tela só é atualizada com a lista que a operação devolveu — nunca com um
+   * palpite otimista. Se a gravação falhar, o painel continua mostrando o
+   * estado anterior e diz o que houve: fingir que salvou faria o administrador
+   * sair achando que o preço mudou quando ele não mudou.
+   */
+  const persistCatalog = async (
+    operation: () => Promise<Product[]>,
+    successMsg: string
+  ): Promise<boolean> => {
+    setCatalogBusy(true);
+    try {
+      const updatedList = await operation();
       setProducts(updatedList);
       onProductsUpdated(updatedList);
-      showToast(
-        newStatus
-          ? `✓ Produto "${prod.name}" ATIVADO e exposto no site!`
-          : `⚡ Produto "${prod.name}" DESATIVADO (Ocultado do site público).`
-      );
+      showToast(successMsg);
+      return true;
+    } catch (error) {
+      showToast(`Não foi possível salvar: ${(error as Error).message}`);
+      return false;
+    } finally {
+      setCatalogBusy(false);
     }
+  };
+
+  // Carrega o catálogo da origem vigente (API ou local) ao abrir o painel.
+  useEffect(() => {
+    let cancelled = false;
+    setCatalogBusy(true);
+
+    catalogRepository
+      .list()
+      .then((list) => {
+        if (!cancelled) setProducts(list);
+      })
+      .catch((error) => {
+        if (!cancelled) showToast(`Falha ao carregar o catálogo: ${(error as Error).message}`);
+      })
+      .finally(() => {
+        if (!cancelled) setCatalogBusy(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE) ---
+  const handleToggleProductActive = async (id: string) => {
+    const prod = products.find((p) => p.id === id);
+    if (!prod) return;
+
+    const newStatus = prod.isActive === false;
+    await persistCatalog(
+      () => catalogRepository.save({ ...prod, isActive: newStatus }),
+      newStatus
+        ? `Produto "${prod.name}" ativado e exposto no site.`
+        : `Produto "${prod.name}" desativado (oculto do site público).`
+    );
   };
 
   // --- SPREADSHEET IMPORT HANDLERS (EXCEL / CSV) ---
@@ -263,11 +311,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }
         });
 
-        storageService.saveProducts(currentProducts);
-        setProducts(currentProducts);
-        onProductsUpdated(currentProducts);
-        setIsImportModalOpen(false);
-        showToast(`Planilha importada com sucesso! ${createdCount} novos, ${updatedCount} atualizados.`);
+        const ok = await persistCatalog(
+          () => catalogRepository.saveMany(currentProducts),
+          `Planilha importada: ${createdCount} novos, ${updatedCount} atualizados.`
+        );
+        if (ok) setIsImportModalOpen(false);
       } catch (err: any) {
         alert('Erro ao processar arquivo da planilha: ' + err.message);
       }
@@ -291,7 +339,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- CATALOG MANAGEMENT HANDLERS ---
-  const handleSaveNewProduct = (e: React.FormEvent) => {
+  const handleSaveNewProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProdName || !newProdSku) {
       showToast('Preencha ao menos Nome e SKU do produto.');
@@ -331,29 +379,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       reviewsCount: 1
     };
 
-    const updatedList = storageService.saveProduct(newProd);
-    setProducts(updatedList);
-    onProductsUpdated(updatedList);
-    setIsAddProductModalOpen(false);
-    showToast('Novo produto adicionado ao catálogo com sucesso!');
+    const ok = await persistCatalog(
+      () => catalogRepository.save(newProd),
+      'Novo produto adicionado ao catálogo.'
+    );
+    if (ok) setIsAddProductModalOpen(false);
   };
 
-  const handleUpdateProduct = (prod: Product) => {
-
-    const updatedList = storageService.saveProduct(prod);
-    setProducts(updatedList);
-    onProductsUpdated(updatedList);
-    setEditingProduct(null);
-    showToast('Produto atualizado com sucesso!');
+  const handleUpdateProduct = async (prod: Product) => {
+    const ok = await persistCatalog(() => catalogRepository.save(prod), 'Produto atualizado.');
+    if (ok) setEditingProduct(null);
   };
 
-  const handleDeleteProduct = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este produto do catálogo?')) {
-      const updatedList = storageService.deleteProduct(id);
-      setProducts(updatedList);
-      onProductsUpdated(updatedList);
-      showToast('Produto removido do catálogo.');
-    }
+  const handleDeleteProduct = async (id: string) => {
+    const prod = products.find((p) => p.id === id);
+    if (!prod) return;
+    if (!confirm(`Excluir "${prod.name}" do catálogo?`)) return;
+
+    await persistCatalog(() => catalogRepository.remove(prod), 'Produto removido do catálogo.');
   };
 
   // Quick inline price / stock update

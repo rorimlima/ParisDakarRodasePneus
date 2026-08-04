@@ -18,7 +18,8 @@
     "typecheck": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.json --noEmit",
     "test:db": "tsx src/tests/testFirestoreRepository.ts",
     "seed:catalog": "tsx src/scripts/seedCatalog.ts",
-    "emulator": "firebase emulators:start --only firestore --project demo-paris-dakar"
+    "emulator": "firebase emulators:start --only firestore --project demo-paris-dakar",
+    "test:auth": "tsx src/tests/testAdminAuthorization.ts"
   },
   "keywords": [
     "antigravity",

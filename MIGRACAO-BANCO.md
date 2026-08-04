@@ -17,7 +17,7 @@ mas **desligada por padrão**.
 | API de escrita | ✅ `PUT/DELETE /api/v1/products/admin` — exige token Firebase com role `admin` |
 | Vitrine do site | ⚙️ Atrás da chave `VITE_USE_API_CATALOG` (padrão: `localStorage`) |
 | Login administrativo | ✅ Firebase Auth com claim `role: admin` |
-| Painel admin | ❌ Ainda grava no `localStorage` — falta trocar as chamadas pela API |
+| Painel admin | ✅ Grava pela API quando `VITE_USE_API_CATALOG=true` (mesma chave da vitrine) |
 | Vendedores, configurações, leads | ❌ Ainda no `localStorage` |
 
 ## Por que a chave existe
@@ -119,14 +119,28 @@ administrativo aparece indisponível na tela.
 > conta. O painel fecha sozinho na sessão aberta, porque o token deixa de ser
 > válido.
 
+## O painel e a vitrine compartilham a mesma chave
+
+`VITE_USE_API_CATALOG` governa os dois lados através de
+`src/services/catalogRepository.ts`. Isso é proposital: se o painel gravasse
+na API enquanto a loja lê do `localStorage` (ou o contrário), o administrador
+veria um catálogo e o cliente veria outro.
+
+Com a chave ligada, toda gravação do painel (criar, editar, ativar/desativar,
+excluir, importar planilha) recarrega a lista a partir do servidor depois de
+salvar — a tela nunca mostra um "sucesso" otimista que não foi de fato
+confirmado pela API. Se a gravação falhar (token expirado, validação, rede),
+o painel mantém o estado anterior e mostra o motivo.
+
+Verificado com login real contra os emuladores de Auth e Firestore: o login
+abre o painel, uma edição de estoque disparou o `PUT` autenticado, e o valor
+gravado foi conferido direto no Firestore.
+
 ## O que falta
 
-**O painel admin ainda grava no `localStorage`.** As rotas de escrita da API já
-existem e já exigem token, e o `authService.getIdToken()` já fornece esse token
-— falta trocar as chamadas do `storageService` por `catalogApi` dentro do
-`AdminDashboard`.
-
-Vendedores, configurações do site e leads também continuam locais.
+Vendedores, configurações do site e leads continuam no `localStorage`. São o
+próximo lote a migrar, seguindo o mesmo padrão desta seção: repositório com
+chave de corte, teste HTTP de autorização, verificação no navegador.
 
 ## Desenvolvimento local
 
