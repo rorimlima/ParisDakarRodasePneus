@@ -65,14 +65,39 @@ a ler do `localStorage` no deploy seguinte — não apaga nem toca no Firestore.
 | `FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS` | Sim | Autentica o `firebase deploy` no CI |
 | `VITE_FIREBASE_API_KEY` | **Não — precisa criar** | Config Web do Firebase Auth (pública por design, mas fica em secret por padronização) |
 
-**Atenção de permissão (IAM):** o service account acima foi originalmente
-criado só para publicar Hosting. Publicar Functions e Firestore Rules exige
-mais escopo (`Cloud Functions Developer`, `Service Account User`,
-`Firebase Rules Admin`, no mínimo). Se o deploy falhar no CI com erro de
-permissão, é isso — ajuste as roles do service account em
-IAM & Admin → IAM, no Google Cloud Console do projeto
-`paris-dakar-rodas-pneus`. Não tenho como verificar nem conceder essas roles
-por aqui.
+**Atenção de permissão (IAM) — bloqueio confirmado em produção:** o primeiro
+deploy deste pipeline (run do GitHub Actions, commit `48787af`) falhou
+exatamente aqui. Índices e regras do Firestore chegaram a ser publicados; a
+função `api` não:
+
+```
+Error: Missing required permission on project paris-dakar-rodas-pneus to
+deploy new HTTPS functions. The permission cloudfunctions.functions.setIamPolicy
+is required to deploy the following functions: api
+
+To address this error, please ask a project Owner to assign your account the
+"Cloud Functions Admin" role at the following URL:
+https://console.cloud.google.com/iam-admin/iam?project=paris-dakar-rodas-pneus
+```
+
+O service account `FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS` foi
+criado só para Hosting. Deploy de função com trigger HTTPS (a função `api` é
+Gen2/Cloud Run por baixo) exige poder alterar a política de IAM do invoker —
+é isso que falta. `Cloud Functions Developer` **não é suficiente** (não inclui
+`setIamPolicy`); é preciso `Cloud Functions Admin` mesmo, como o próprio
+Firebase indicou.
+
+**Correção, feita por um Owner do projeto**, no link acima:
+1. Encontre o service account (e-mail termina em
+   `...iam.gserviceaccount.com`, o mesmo cujo JSON está no secret do GitHub).
+2. Adicione a role **Cloud Functions Admin**.
+3. Se ainda faltar permissão numa tentativa seguinte, adicione também
+   **Service Account User** (necessária para o Cloud Build implantar em nome
+   da função).
+
+Não tenho como conceder essas roles por aqui — só um Owner do projeto no
+Console consegue. Depois de concedida, me avise: eu reexecuto o workflow sem
+precisar de novo push.
 
 ## Criar o administrador
 
