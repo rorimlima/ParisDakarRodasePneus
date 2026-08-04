@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X, MessageCircle, ShieldCheck, Truck, Car } from 'lucide-react';
+import { productImageSrc } from '../utils/productImage';
 import { Product, B2BUser } from '../types';
 
 interface ProductDetailModalProps {
@@ -49,7 +50,10 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   if (!product) return null;
 
-  const imagesList = [product.image, ...(product.secondaryImages || [])];
+  const imagesList = [product.image, ...(product.secondaryImages || [])]
+    .filter((img) => img && img.trim())
+    .map(productImageSrc);
+  if (imagesList.length === 0) imagesList.push(productImageSrc(undefined));
   const formattedPrice = brl.format(
     b2bUser.isLoggedIn && product.b2bPrice ? product.b2bPrice : product.price
   );
@@ -122,7 +126,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="space-y-4">
             <div className="aspect-[4/3] w-full rounded-xl pd-surface-2 overflow-hidden border pd-border">
               <img
-                src={selectedImage}
+                src={productImageSrc(selectedImage)}
                 alt={product.name}
                 className="w-full h-full object-cover"
                 decoding="async"

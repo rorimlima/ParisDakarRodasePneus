@@ -1,5 +1,6 @@
 import React from 'react';
 import { MessageCircle, Eye, Star } from 'lucide-react';
+import { productImageSrc } from '../utils/productImage';
 import { Product, B2BUser } from '../types';
 
 interface ProductCardProps {
@@ -58,7 +59,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Imagem */}
       <div className="relative aspect-[4/3] w-full pd-surface-2 overflow-hidden">
         <img
-          src={product.image}
+          src={productImageSrc(product.image)}
           alt={product.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
