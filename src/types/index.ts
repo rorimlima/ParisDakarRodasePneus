@@ -145,6 +145,16 @@ export interface UserSession {
   adminUser?: AdminUser | null;
 }
 
+export interface HeroSlideSettings {
+  id: string;
+  image: string;
+  tag: string;
+  title: string;
+  highlight: string;
+  subtitle: string;
+  inquiryMsg?: string;
+}
+
 // Global Site Settings
 export interface SiteSettings {
   heroTitle: string;
@@ -157,7 +167,9 @@ export interface SiteSettings {
   youtubeVideoUrl?: string;
   siteLogo?: string;
   instagramReels?: string[];
+  heroSlides?: HeroSlideSettings[];
 }
+
 
 // Vendedor / Atendimento WhatsApp
 export interface Vendedor {

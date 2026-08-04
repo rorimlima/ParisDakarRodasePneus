@@ -23,8 +23,11 @@ import {
 import { Filter, PackageCheck, Building2, PhoneCall, Lock, Loader2, MapPin, Phone, Clock } from 'lucide-react';
 
 export default function App() {
-  // Dark Mode State
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  // Dark Mode State with localStorage persistence
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : true;
+  });
 
   /**
    * Catálogo público: o hook assina apenas produtos com `ativo == true`.
@@ -64,10 +67,13 @@ export default function App() {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
+
 
   // Open Auth Modal with specific tab
   const handleOpenAuthModal = (tab: 'b2c' | 'b2b' | 'admin' = 'b2c') => {

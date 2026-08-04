@@ -52,10 +52,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
       product.specs.acabamento ? `Cor: ${product.specs.acabamento}` : null
     ]
       .filter(Boolean)
-      .join(' | ');
-
+    const msg = `Olá! Gostaria de consultar disponibilidade e valor do produto: ${product.name} (SKU: ${product.sku}). ${specsSummary ? `[${specsSummary}]` : ''}`;
     onConsultWhatsApp(msg);
   };
+
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 dark:bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">

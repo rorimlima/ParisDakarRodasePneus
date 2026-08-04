@@ -28,13 +28,15 @@ import {
 } from 'lucide-react';
 import {
   SiteSettings,
+  HeroSlideSettings,
   CpfClient,
   B2BUser,
   AdminUser,
   InquiryLog,
   PapelUsuario
 } from '../types';
-import { storageService } from '../services/storageService';
+import { storageService, DEFAULT_HERO_SLIDES } from '../services/storageService';
+
 import { useCatalogoAdmin } from '../hooks/useCatalogo';
 import { GestaoCatalogo } from './admin/GestaoCatalogo';
 import { GestaoCategorias } from './admin/GestaoCategorias';
@@ -130,7 +132,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     reader.readAsDataURL(file);
   };
 
+  const handleSlideImageUpload = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      alert('A imagem do slide é muito grande. Escolha um arquivo de até 8MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const currentSlides = [...(settingsForm.heroSlides || DEFAULT_HERO_SLIDES)];
+        currentSlides[index] = { ...currentSlides[index], image: event.target!.result as string };
+        setSettingsForm({ ...settingsForm, heroSlides: currentSlides });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpdateSlideField = (index: number, field: keyof HeroSlideSettings, value: string) => {
+    const currentSlides = [...(settingsForm.heroSlides || DEFAULT_HERO_SLIDES)];
+    currentSlides[index] = { ...currentSlides[index], [field]: value };
+    setSettingsForm({ ...settingsForm, heroSlides: currentSlides });
+  };
+
+  const handleAddHeroSlide = () => {
+    const currentSlides = [...(settingsForm.heroSlides || DEFAULT_HERO_SLIDES)];
+    const newSlide: HeroSlideSettings = {
+      id: `slide-${Date.now()}`,
+      image: '/hero_3d_truck_wheel.jpg',
+      tag: 'NOVO SLIDE 3D',
+      title: 'PARIS DAKAR',
+      highlight: 'RODAS FORJADAS',
+      subtitle: 'Descrição do novo slide do carrossel em destaque na tela inicial.',
+      inquiryMsg: 'Olá! Gostaria de saber mais sobre este produto.'
+    };
+    setSettingsForm({ ...settingsForm, heroSlides: [...currentSlides, newSlide] });
+  };
+
+  const handleRemoveHeroSlide = (index: number) => {
+    const currentSlides = [...(settingsForm.heroSlides || DEFAULT_HERO_SLIDES)];
+    if (currentSlides.length <= 1) {
+      alert('O carrossel deve manter pelo menos 1 slide.');
+      return;
+    }
+    currentSlides.splice(index, 1);
+    setSettingsForm({ ...settingsForm, heroSlides: currentSlides });
+  };
+
   // --- ADMIN USERS HANDLERS ---
+
   const handleAddAdmin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdminName || !newAdminEmail) return;
@@ -538,10 +589,165 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 />
               </div>
 
+              {/* Gestão dos Slides do Carrossel 3D (Hero) */}
+              <div className="p-5 rounded-2xl bg-[#141417] border border-white/10 space-y-4 my-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+                  <div>
+                    <h3 className="text-sm font-black uppercase italic text-amber-400 flex items-center gap-2">
+                      <Image className="w-4 h-4 text-amber-400" />
+                      <span>Gestão do Carrossel 3D da Tela Inicial (Hero)</span>
+                    </h3>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      Personalize as imagens 3D, títulos e mensagens automáticas do WhatsApp para cada slide da vitrine principal.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSettingsForm({ ...settingsForm, heroSlides: DEFAULT_HERO_SLIDES })}
+                      className="px-3 py-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-gray-300 text-[10px] font-bold uppercase transition"
+                    >
+                      Restaurar Padrão
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleAddHeroSlide}
+                      className="px-3 py-1.5 rounded bg-[#8B0000] hover:bg-red-800 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Adicionar Slide</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {(settingsForm.heroSlides || DEFAULT_HERO_SLIDES).map((slide, idx) => (
+                    <div key={slide.id || idx} className="p-4 rounded-xl bg-black/60 border border-white/10 space-y-3">
+                      <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                        <span className="text-xs font-black uppercase text-amber-400">
+                          Slide #{idx + 1} — {slide.title} {slide.highlight}
+                        </span>
+                        {(settingsForm.heroSlides || DEFAULT_HERO_SLIDES).length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveHeroSlide(idx)}
+                            className="text-red-400 hover:text-red-300 text-[10px] font-bold uppercase"
+                          >
+                            Remover Slide
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                        {/* Imagem do Slide preview / Upload */}
+                        <div className="space-y-2">
+                          <label className="text-[9px] font-bold text-gray-400 uppercase tracking-wider block">
+                            Imagem 3D do Slide
+                          </label>
+                          <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-zinc-900 border border-white/10">
+                            <img
+                              src={slide.image}
+                              alt={`Slide ${idx + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 text-white text-center py-1.5 px-3 rounded text-[10px] font-bold uppercase tracking-wider transition">
+                              <span>Trocar Imagem</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleSlideImageUpload(idx, e)}
+                                className="hidden"
+                              />
+                            </label>
+                            <input
+                              type="text"
+                              value={slide.image}
+                              onChange={(e) => handleUpdateSlideField(idx, 'image', e.target.value)}
+                              placeholder="URL da imagem (ou upload)"
+                              className="w-full px-2.5 py-1 rounded bg-black border border-white/10 text-gray-300 text-[10px]"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Campos do Slide */}
+                        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                              Tag / Emblema Superior
+                            </label>
+                            <input
+                              type="text"
+                              value={slide.tag}
+                              onChange={(e) => handleUpdateSlideField(idx, 'tag', e.target.value)}
+                              placeholder="EX: BEDUÍNO 3D EXCLUSIVE"
+                              className="w-full px-3 py-1.5 rounded bg-black border border-white/10 text-white text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                              Título Principal
+                            </label>
+                            <input
+                              type="text"
+                              value={slide.title}
+                              onChange={(e) => handleUpdateSlideField(idx, 'title', e.target.value)}
+                              placeholder="EX: PARIS DAKAR"
+                              className="w-full px-3 py-1.5 rounded bg-black border border-white/10 text-white text-xs"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                              Palavra Destaque
+                            </label>
+                            <input
+                              type="text"
+                              value={slide.highlight}
+                              onChange={(e) => handleUpdateSlideField(idx, 'highlight', e.target.value)}
+                              placeholder="EX: FORGED 3D"
+                              className="w-full px-3 py-1.5 rounded bg-black border border-white/10 text-white text-xs"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-3">
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                              Subtítulo / Descrição
+                            </label>
+                            <input
+                              type="text"
+                              value={slide.subtitle}
+                              onChange={(e) => handleUpdateSlideField(idx, 'subtitle', e.target.value)}
+                              className="w-full px-3 py-1.5 rounded bg-black border border-white/10 text-white text-xs"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-3">
+                            <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
+                              Mensagem Automática para Orçamento via WhatsApp
+                            </label>
+                            <input
+                              type="text"
+                              value={slide.inquiryMsg || ''}
+                              onChange={(e) => handleUpdateSlideField(idx, 'inquiryMsg', e.target.value)}
+                              className="w-full px-3 py-1.5 rounded bg-black border border-white/10 text-white text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-3 rounded font-black text-xs uppercase tracking-widest transition shadow-lg flex items-center gap-2"
               >
+
                 <Save className="w-4 h-4" />
                 <span>Salvar Alterações de Configuração</span>
               </button>
