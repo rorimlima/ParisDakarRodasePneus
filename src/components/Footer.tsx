@@ -17,30 +17,30 @@ export const Footer: React.FC<FooterProps> = ({
     <footer className="bg-black text-white border-t border-white/10 transition-colors shrink-0">
       
       {/* Top Banner Social & WhatsApp Route */}
-      <div className="border-b border-white/5 py-8 bg-[#0D0D0D]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          
+      <div className="border-b border-white/5 py-6 sm:py-8 bg-[#0D0D0D]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6">
+
           <div className="flex items-center gap-4">
-            <ParisDakarLogo colorMode="white" height={42} />
+            <ParisDakarLogo colorMode="white" height={38} />
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-col xs:flex-row flex-wrap items-stretch xs:items-center justify-center gap-3 sm:gap-4 w-full md:w-auto">
             <a
               href="https://www.instagram.com/parisdakarrodas/"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2.5 rounded bg-[#111111] border border-white/10 hover:border-[#8B0000] text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition text-gray-300 hover:text-white"
+              className="px-4 py-2.5 rounded bg-[#111111] border border-white/10 hover:border-[#8B0000] text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition text-gray-300 hover:text-white"
             >
-              <Instagram className="w-4 h-4 text-[#8B0000]" />
+              <Instagram className="w-4 h-4 text-[#8B0000] shrink-0" />
               <span>Siga no Instagram @parisdakarrodas</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-gray-500" />
+              <ArrowUpRight className="w-3.5 h-3.5 text-gray-500 shrink-0" />
             </a>
 
             <button
               onClick={() => onConsultWhatsApp("Olá! Gostaria de tirar dúvidas técnicas sobre rodas e pneus para caminhonetes no WhatsApp.")}
-              className="bg-[#25D366] text-black hover:bg-[#1da851] px-5 py-2.5 rounded text-xs font-black flex items-center gap-2 uppercase tracking-widest shadow-lg transition-all"
+              className="bg-[#25D366] text-black hover:bg-[#1da851] px-5 py-2.5 rounded text-[11px] sm:text-xs font-black flex items-center justify-center gap-2 uppercase tracking-widest shadow-lg transition-all"
             >
-              <MessageCircle className="w-4 h-4 fill-black text-black" />
+              <MessageCircle className="w-4 h-4 fill-black text-black shrink-0" />
               <span>Falar com Especialista 4x4</span>
             </button>
           </div>
@@ -49,9 +49,9 @@ export const Footer: React.FC<FooterProps> = ({
       </div>
 
       {/* Main Footer Links & Info */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
+        <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+
           {/* Column 1: Brand Info */}
           <div className="space-y-4">
             <h4 className="text-xs font-black uppercase tracking-widest text-[#8B0000]">
@@ -128,15 +128,15 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         {/* Bottom Copyright */}
-        <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-[10px] text-gray-500 gap-4">
-          <p className="uppercase font-bold">© {new Date().getFullYear()} Paris Dakar Rodas e Pneus. Todos os direitos reservados.</p>
-          <div className="flex space-x-6 items-center">
+        <div className="mt-10 sm:mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-[10px] text-gray-500 gap-4">
+          <p className="uppercase font-bold text-center sm:text-left">© {new Date().getFullYear()} Paris Dakar Rodas e Pneus. Todos os direitos reservados.</p>
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-x-6 items-center">
             <div className="flex items-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></div>
-              <span className="text-[10px] font-bold uppercase text-gray-400 tracking-tighter">Estoque Disponível</span>
+              <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse shrink-0"></div>
+              <span className="text-[10px] font-bold uppercase text-gray-400 tracking-tighter whitespace-nowrap">Estoque Disponível</span>
             </div>
-            <div className="h-4 w-[1px] bg-gray-800"></div>
-            <div className="flex space-x-4">
+            <div className="hidden sm:block h-4 w-[1px] bg-gray-800"></div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
               <span className="text-[10px] font-black uppercase italic text-white/30">Performance</span>
               <span className="text-[10px] font-black uppercase italic text-white/30">Resistance</span>
               <span className="text-[10px] font-black uppercase italic text-white/30">Caminhonetes 4x4</span>

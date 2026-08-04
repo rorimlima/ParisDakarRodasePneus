@@ -47,17 +47,17 @@ const INSTAGRAM_POSTS: InstagramPost[] = [
 
 export const InstagramFeed: React.FC = () => {
   return (
-    <section className="py-12 bg-slate-100 dark:bg-zinc-950 border-t border-b border-slate-200 dark:border-zinc-800 transition-colors">
+    <section className="py-8 sm:py-10 lg:py-12 bg-slate-100 dark:bg-zinc-950 border-t border-b border-slate-200 dark:border-zinc-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-950/20 text-pink-500 border border-pink-800/30 text-xs font-bold uppercase mb-2">
-              <Instagram className="w-3.5 h-3.5" />
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 sm:mb-8">
+          <div className="min-w-0">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-950/20 text-pink-500 border border-pink-800/30 text-[11px] sm:text-xs font-bold uppercase mb-2">
+              <Instagram className="w-3.5 h-3.5 shrink-0" />
               <span>@parisdakarrodas no Instagram</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight">
               Projetos & Caminhonetes Preparadas
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 mt-1">
@@ -69,16 +69,16 @@ export const InstagramFeed: React.FC = () => {
             href="https://www.instagram.com/parisdakarrodas/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white font-bold text-xs uppercase shadow-md hover:opacity-90 transition shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white font-bold text-xs uppercase shadow-md hover:opacity-90 transition shrink-0 w-full md:w-auto"
           >
-            <Instagram className="w-4 h-4" />
+            <Instagram className="w-4 h-4 shrink-0" />
             <span>Seguir no Instagram</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
           </a>
         </div>
 
         {/* Grid of Instagram Highlights */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6">
           {INSTAGRAM_POSTS.map((post) => (
             <a
               key={post.id}
@@ -113,11 +113,11 @@ export const InstagramFeed: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 space-y-1">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+              <div className="p-2.5 xs:p-3 sm:p-4 space-y-1">
+                <h4 className="text-[11px] xs:text-xs font-bold text-slate-900 dark:text-white truncate">
                   {post.vehicle}
                 </h4>
-                <p className="text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-2">
+                <p className="text-[10px] xs:text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-2">
                   {post.setup}
                 </p>
               </div>

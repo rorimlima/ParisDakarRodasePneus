@@ -491,93 +491,99 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-5 right-5 z-50 bg-[#8B0000] text-white px-5 py-3 rounded-xl shadow-2xl font-bold text-xs flex items-center gap-2 animate-bounce">
-          <CheckCircle2 className="w-4 h-4" />
+        <div
+          className="fixed top-4 right-4 left-4 sm:left-auto sm:top-5 sm:right-5 z-50 bg-[#8B0000] text-white px-4 sm:px-5 py-3 rounded-xl shadow-2xl font-bold text-xs flex items-center gap-2 animate-bounce"
+          style={{ marginTop: 'var(--safe-top)' }}
+        >
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{toastMsg}</span>
         </div>
       )}
 
       {/* Admin Top Navigation Bar */}
-      <header className="sticky top-0 z-40 bg-black border-b border-[#8B0000]/50 px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-[#8B0000] text-white rounded flex items-center justify-center font-black italic text-sm shadow-md border border-[#8B0000]/60">
+      <header
+        className="sticky top-0 z-40 bg-black border-b border-[#8B0000]/50 px-3 sm:px-8 py-3 sm:py-3.5 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3"
+        style={{ paddingTop: 'calc(0.75rem + var(--safe-top))' }}
+      >
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 bg-[#8B0000] text-white rounded flex items-center justify-center font-black italic text-xs sm:text-sm shadow-md border border-[#8B0000]/60 shrink-0">
             PD
           </div>
-          <div>
-            <h1 className="text-base font-black uppercase italic tracking-wider text-white flex items-center gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xs sm:text-base font-black uppercase italic tracking-wider text-white flex flex-wrap items-center gap-2">
               <span>Painel de Administração do Site</span>
               <span className="bg-[#8B0000] text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">
                 {adminUser.role === 'senior' ? 'SÊNIOR MASTER' : 'ADMINISTRADOR'}
               </span>
             </h1>
-            <p className="text-[11px] text-gray-400">
+            <p className="text-[10px] sm:text-[11px] text-gray-400 truncate">
               Usuário Logado: <span className="text-amber-400 font-bold">{adminUser.name}</span> ({adminUser.email})
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full xs:w-auto">
           <button
             onClick={onExitAdmin}
-            className="flex items-center gap-2 px-4 py-2 bg-[#111111] hover:bg-[#1a1a1a] border border-white/10 text-gray-300 hover:text-white text-xs font-bold uppercase tracking-wider rounded transition"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-[#111111] hover:bg-[#1a1a1a] border border-white/10 text-gray-300 hover:text-white text-xs font-bold uppercase tracking-wider rounded transition w-full xs:w-auto"
           >
-            <ArrowLeft className="w-4 h-4 text-[#8B0000]" />
+            <ArrowLeft className="w-4 h-4 text-[#8B0000] shrink-0" />
             <span>Voltar para o Site</span>
           </button>
         </div>
       </header>
 
       {/* Main Admin Body */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        
+      <div className="flex-1 max-w-7xl w-full mx-auto p-3 xs:p-4 sm:p-6 lg:p-8 space-y-6">
+
         {/* KPI Analytics Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Total Produtos</span>
-            <div className="text-xl font-black italic text-white flex items-center justify-between">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
+          <div className="bg-[#111111] p-3 sm:p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Total Produtos</span>
+            <div className="text-lg sm:text-xl font-black italic text-white flex items-center justify-between">
               <span>{products.length}</span>
-              <Package className="w-5 h-5 text-[#8B0000]" />
+              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-[#8B0000] shrink-0" />
             </div>
           </div>
 
-          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Clientes Lojistas (CNPJ)</span>
-            <div className="text-xl font-black italic text-amber-400 flex items-center justify-between">
+          <div className="bg-[#111111] p-3 sm:p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Clientes Lojistas (CNPJ)</span>
+            <div className="text-lg sm:text-xl font-black italic text-amber-400 flex items-center justify-between">
               <span>{cnpjClients.length}</span>
-              <Building2 className="w-5 h-5 text-amber-500" />
+              <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
             </div>
           </div>
 
-          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Clientes Finais (CPF)</span>
-            <div className="text-xl font-black italic text-sky-400 flex items-center justify-between">
+          <div className="bg-[#111111] p-3 sm:p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Clientes Finais (CPF)</span>
+            <div className="text-lg sm:text-xl font-black italic text-sky-400 flex items-center justify-between">
               <span>{cpfClients.length}</span>
-              <User className="w-5 h-5 text-sky-400" />
+              <User className="w-4 h-4 sm:w-5 sm:h-5 text-sky-400 shrink-0" />
             </div>
           </div>
 
-          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Cotações / Leads</span>
-            <div className="text-xl font-black italic text-emerald-400 flex items-center justify-between">
+          <div className="bg-[#111111] p-3 sm:p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Cotações / Leads</span>
+            <div className="text-lg sm:text-xl font-black italic text-emerald-400 flex items-center justify-between">
               <span>{inquiries.length}</span>
-              <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
+              <FileSpreadsheet className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0" />
             </div>
           </div>
 
-          <div className="bg-[#111111] p-4 rounded-xl border border-white/10 space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Administradores</span>
-            <div className="text-xl font-black italic text-[#8B0000] flex items-center justify-between">
+          <div className="col-span-2 md:col-span-1 bg-[#111111] p-3 sm:p-4 rounded-xl border border-white/10 space-y-1">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-gray-400 block">Administradores</span>
+            <div className="text-lg sm:text-xl font-black italic text-[#8B0000] flex items-center justify-between">
               <span>{adminUsers.length}</span>
-              <ShieldCheck className="w-5 h-5 text-[#8B0000]" />
+              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#8B0000] shrink-0" />
             </div>
           </div>
         </div>
 
-        {/* Tab Selector Bar */}
-        <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
+        {/* Tab Selector Bar — rola na horizontal em telas estreitas */}
+        <div className="flex flex-nowrap md:flex-wrap gap-2 border-b border-white/10 pb-4 overflow-x-auto no-scrollbar snap-strip">
           <button
             onClick={() => setActiveTab('products')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'products'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
@@ -589,7 +595,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'settings'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
@@ -601,7 +607,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('clients')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'clients'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
@@ -613,7 +619,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('inquiries')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'inquiries'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
@@ -625,7 +631,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('admins')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'admins'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
@@ -637,7 +643,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('sellers')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'sellers'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'bg-[#111111] text-gray-400 hover:text-white border border-white/10'
@@ -653,23 +659,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="space-y-6">
             
             {/* Action & Filter Toolbar */}
-            <div className="bg-[#111111] p-4 rounded-xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex flex-1 items-center gap-3 w-full sm:w-auto">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+            <div className="bg-[#111111] p-3 sm:p-4 rounded-xl border border-white/10 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 sm:gap-4">
+              <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-3 w-full lg:w-auto lg:flex-1">
+                <div className="relative flex-1 min-w-0">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
                     value={productSearch}
                     onChange={(e) => setProductSearch(e.target.value)}
                     placeholder="Buscar por nome, SKU, marca..."
-                    className="w-full pl-9 pr-4 py-2 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
+                    className="w-full pl-9 pr-4 py-2.5 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
                   />
                 </div>
 
                 <select
                   value={selectedCatFilter}
                   onChange={(e) => setSelectedCatFilter(e.target.value)}
-                  className="px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none"
+                  className="px-3 py-2.5 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none shrink-0"
                 >
                   <option value="todos">Todas Categorias</option>
                   <option value="rodas">Rodas</option>
@@ -680,14 +686,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </select>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              <div className="flex flex-col xs:flex-row flex-wrap items-stretch xs:items-center gap-2.5 w-full lg:w-auto">
                 <button
                   type="button"
                   onClick={() => setIsImportModalOpen(true)}
                   className="bg-emerald-800 hover:bg-emerald-700 text-white px-4 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 justify-center"
                   title="Importar catálogo em lote via planilha Excel ou CSV"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-300" />
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-300 shrink-0" />
                   <span>Importar Planilha (Excel/CSV)</span>
                 </button>
 
@@ -704,7 +710,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Products Data Table */}
             <div className="bg-[#111111] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-black border-b border-white/10 text-gray-400 uppercase text-[10px] tracking-wider font-bold">
@@ -811,10 +817,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* TAB 2: SITE SETTINGS */}
         {activeTab === 'settings' && (
-          <div className="bg-[#111111] p-6 rounded-xl border border-white/10 space-y-6 max-w-3xl mx-auto">
+          <div className="bg-[#111111] p-4 sm:p-6 rounded-xl border border-white/10 space-y-6 max-w-3xl mx-auto">
             <div className="border-b border-white/10 pb-4">
-              <h2 className="text-base font-black uppercase italic tracking-wider text-white flex items-center gap-2">
-                <Settings className="w-5 h-5 text-[#8B0000]" />
+              <h2 className="text-sm sm:text-base font-black uppercase italic tracking-wider text-white flex items-center gap-2">
+                <Settings className="w-5 h-5 text-[#8B0000] shrink-0" />
                 <span>Configurações do Site e Comunicação</span>
               </h2>
               <p className="text-xs text-gray-400">
@@ -923,8 +929,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="space-y-8">
             
             {/* B2B CNPJ Table */}
-            <div className="bg-[#111111] p-6 rounded-xl border border-white/10 space-y-4">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="bg-[#111111] p-4 sm:p-6 rounded-xl border border-white/10 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                 <h3 className="text-sm font-black uppercase italic text-amber-400 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-amber-500" />
                   <span>Clientes Lojistas / Atacado B2B ({cnpjClients.length})</span>
@@ -932,7 +938,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="text-[10px] text-gray-400">Exigência de Regime Tributário e CNPJ Validados</span>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-black text-gray-400 uppercase text-[10px] tracking-wider font-bold">
@@ -973,15 +979,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* B2C CPF Table */}
-            <div className="bg-[#111111] p-6 rounded-xl border border-white/10 space-y-4">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="bg-[#111111] p-4 sm:p-6 rounded-xl border border-white/10 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
                 <h3 className="text-sm font-black uppercase italic text-sky-400 flex items-center gap-2">
                   <User className="w-4 h-4 text-sky-400" />
                   <span>Clientes Finais CPF ({cpfClients.length})</span>
                 </h3>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-black text-gray-400 uppercase text-[10px] tracking-wider font-bold">
@@ -1012,15 +1018,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* TAB 4: INQUIRIES & LEADS */}
         {activeTab === 'inquiries' && (
-          <div className="bg-[#111111] p-6 rounded-xl border border-white/10 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="bg-[#111111] p-4 sm:p-6 rounded-xl border border-white/10 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
               <h3 className="text-sm font-black uppercase italic text-emerald-400 flex items-center gap-2">
                 <MessageCircle className="w-4 h-4 text-emerald-500" />
                 <span>Solicitações de Cotação & Atendimento ({inquiries.length})</span>
               </h3>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="data-table-scroll">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-black text-gray-400 uppercase text-[10px] tracking-wider font-bold">
@@ -1095,13 +1101,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {/* List Current Admin Users */}
-            <div className="bg-[#111111] p-6 rounded-xl border border-white/10 space-y-4">
+            <div className="bg-[#111111] p-4 sm:p-6 rounded-xl border border-white/10 space-y-4">
               <h3 className="text-sm font-black uppercase italic text-white flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[#8B0000]" />
                 <span>Administradores Autorizados</span>
               </h3>
 
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-black text-gray-400 uppercase text-[10px] tracking-wider font-bold">
@@ -1135,7 +1141,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Add New Admin Form */}
             {adminUser.role === 'senior' && (
-              <div className="bg-[#111111] p-6 rounded-xl border border-white/10 space-y-4">
+              <div className="bg-[#111111] p-4 sm:p-6 rounded-xl border border-white/10 space-y-4">
                 <h3 className="text-xs font-black uppercase italic text-amber-400 flex items-center gap-2">
                   <Plus className="w-4 h-4" />
                   <span>Autorizar Novo Administrador</span>
@@ -1233,7 +1239,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {/* Sellers Data Table */}
             <div className="bg-[#111111] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-black border-b border-white/10 text-gray-400 uppercase text-[10px] tracking-wider font-bold">
@@ -1320,10 +1326,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* ADD PRODUCT MODAL */}
       {isAddProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-3xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-8 overflow-hidden text-white p-6 space-y-4">
+        <div className="modal-overlay bg-black/85 backdrop-blur-md">
+          <div className="modal-panel relative max-w-3xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl overflow-hidden text-white p-4 xs:p-5 sm:p-6 space-y-4">
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
               <h3 className="text-base font-black uppercase italic tracking-wider text-white">
                 Cadastrar Novo Produto no Catálogo
               </h3>
@@ -1362,7 +1368,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Categoria</label>
                   <select
@@ -1401,7 +1407,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Preço B2C (R$)</label>
                   <input
@@ -1436,7 +1442,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {/* Specs Grid */}
               <div className="p-3 bg-[#181818] rounded border border-white/10 space-y-2">
                 <span className="text-[10px] font-bold uppercase text-amber-400 block">Tabela de Especificações Técnicas</span>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <input
                     type="text"
                     value={specAro}
@@ -1512,10 +1518,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* EDIT PRODUCT MODAL */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-2xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-8 overflow-hidden text-white p-6 space-y-4">
+        <div className="modal-overlay bg-black/85 backdrop-blur-md">
+          <div className="modal-panel relative max-w-2xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl overflow-hidden text-white p-4 xs:p-5 sm:p-6 space-y-4">
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
               <h3 className="text-base font-black uppercase italic tracking-wider text-white">
                 Editar Produto: {editingProduct.name}
               </h3>
@@ -1534,7 +1540,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               }}
               className="space-y-4 text-xs"
             >
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Nome do Produto</label>
                   <input
@@ -1556,7 +1562,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-amber-400 block mb-1">Preço Venda Atacado B2B (R$)</label>
                   <input
@@ -1619,10 +1625,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* SPREADSHEET IMPORT MODAL (EXCEL / CSV) */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-[#111111] rounded-2xl border border-emerald-600/40 shadow-2xl my-8 overflow-hidden text-white p-6 space-y-5">
+        <div className="modal-overlay bg-black/85 backdrop-blur-md">
+          <div className="modal-panel relative max-w-xl bg-[#111111] rounded-2xl border border-emerald-600/40 shadow-2xl overflow-hidden text-white p-4 xs:p-5 sm:p-6 space-y-5">
             
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 bg-emerald-900/80 text-emerald-300 rounded flex items-center justify-center border border-emerald-600/50">
                   <FileSpreadsheet className="w-5 h-5" />
@@ -1701,9 +1707,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* MODAL: ADD / EDIT SELLER */}
       {isSellerModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#111111] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="modal-overlay bg-black/80 backdrop-blur-sm animate-fade-in items-center">
+          <div className="modal-panel-fixed bg-[#111111] border border-white/10 rounded-2xl max-w-md p-4 xs:p-5 sm:p-6 space-y-5 shadow-2xl overflow-y-auto">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
               <h3 className="text-base font-black text-white uppercase tracking-wider flex items-center gap-2">
                 <Headphones className="w-5 h-5 text-[#8B0000]" />
                 <span>{editingSeller ? 'Editar Vendedor' : 'Cadastrar Novo Vendedor'}</span>

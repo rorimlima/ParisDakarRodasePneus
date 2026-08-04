@@ -25,8 +25,8 @@ import {
 import { ShieldCheck, Filter, PackageCheck, Building2, PhoneCall, Lock } from 'lucide-react';
 
 export default function App() {
-  // Dark Mode State
-  const [darkMode, setDarkMode] = useState<boolean>(true);
+  // Dark Mode State — o site abre em modo claro por padrão
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
   // Persistent Storage States
   const [products, setProducts] = useState<Product[]>(() => storageService.getProducts());
@@ -211,7 +211,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white transition-colors duration-200 flex flex-col font-sans">
+    <div className="min-h-screen bg-[#F4F4F5] dark:bg-[#0A0A0A] text-[#111111] dark:text-white transition-colors duration-200 flex flex-col font-sans">
       
       {/* 1. Header Navbar */}
       <Header
@@ -237,8 +237,8 @@ export default function App() {
       />
 
       {/* 3. Main Catalog Section */}
-      <main id="catalog-section" className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        
+      <main id="catalog-section" className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 space-y-6 sm:space-y-8">
+
         {/* Search & Filter Dashboard */}
         <SearchDashboard
           onApplyVehicleFilter={(filter) => setVehicleFilter(filter)}
@@ -249,9 +249,9 @@ export default function App() {
 
         {/* Filter Feedback Banner */}
         {(vehicleFilter || sizeFilter || searchQuery || activeCategory !== 'todos') && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-red-950/20 border border-red-800/40 text-xs text-red-300">
-            <div className="flex items-center gap-2 font-medium">
-              <Filter className="w-4 h-4 text-red-500" />
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-between gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 text-xs text-red-700 dark:text-red-300">
+            <div className="flex items-start gap-2 font-medium min-w-0">
+              <Filter className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
               <span>
                 Filtros ativos:{' '}
                 {activeCategory !== 'todos' && <strong>[Categoria: {activeCategory}] </strong>}
@@ -269,7 +269,7 @@ export default function App() {
                 setSearchQuery('');
                 setActiveCategory('todos');
               }}
-              className="text-white underline font-bold hover:text-amber-400"
+              className="text-red-700 dark:text-white underline font-bold hover:text-amber-600 dark:hover:text-amber-400 shrink-0 self-start sm:self-auto"
             >
               Limpar Todos os Filtros
             </button>
@@ -277,30 +277,30 @@ export default function App() {
         )}
 
         {/* Section Heading & Items Count */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <PackageCheck className="w-6 h-6 text-[#8B0000]" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-black/10 dark:border-white/10 pb-4">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-black text-[#111111] dark:text-white uppercase tracking-tight flex items-center gap-2">
+              <PackageCheck className="w-5 h-5 sm:w-6 sm:h-6 text-[#8B0000] shrink-0" />
               <span>Catálogo Paris Dakar // Pronta Entrega</span>
             </h2>
-            <p className="text-xs text-gray-400">
-              Exibindo <strong className="text-red-400">{filteredProducts.length}</strong> itens cadastrados com suporte de cotação via WhatsApp.
+            <p className="text-xs text-zinc-500 dark:text-gray-400">
+              Exibindo <strong className="text-red-600 dark:text-red-400">{filteredProducts.length}</strong> itens cadastrados com suporte de cotação via WhatsApp.
             </p>
           </div>
 
           {currentSession.type === 'b2b' && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111111] border border-amber-500/30 text-amber-400 text-xs font-bold">
-              <Building2 className="w-4 h-4" />
-              <span>Pessoa Jurídica: {currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName}</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-[#111111] border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-bold self-start sm:self-auto min-w-0">
+              <Building2 className="w-4 h-4 shrink-0" />
+              <span className="truncate">Pessoa Jurídica: {currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName}</span>
             </div>
           )}
 
           {currentSession.type === 'admin' && (
             <button
               onClick={() => setViewMode('admin')}
-              className="px-3.5 py-1.5 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-black uppercase tracking-wider flex items-center gap-2 transition"
+              className="px-3.5 py-1.5 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-black uppercase tracking-wider flex items-center gap-2 transition self-start sm:self-auto"
             >
-              <Lock className="w-4 h-4" />
+              <Lock className="w-4 h-4 shrink-0" />
               <span>Gerenciar Catálogo no Painel Admin</span>
             </button>
           )}
@@ -308,7 +308,7 @@ export default function App() {
 
         {/* Product Cards Grid */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-6">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -321,21 +321,21 @@ export default function App() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 px-4 rounded-2xl bg-[#111111] border border-white/10 space-y-4">
-            <div className="w-16 h-16 rounded-full bg-red-950/30 text-red-500 flex items-center justify-center mx-auto border border-red-800/40">
-              <Filter className="w-8 h-8" />
+          <div className="text-center py-12 sm:py-16 px-4 rounded-2xl bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 space-y-4">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-red-100 dark:bg-red-950/30 text-red-500 flex items-center justify-center mx-auto border border-red-300 dark:border-red-800/40">
+              <Filter className="w-7 h-7 sm:w-8 sm:h-8" />
             </div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-base sm:text-lg font-bold text-[#111111] dark:text-white px-2">
               Nenhum item encontrado para esta combinação de filtros
             </h3>
-            <p className="text-xs text-gray-400 max-w-md mx-auto">
+            <p className="text-xs text-zinc-500 dark:text-gray-400 max-w-md mx-auto px-2">
               Nossa equipe técnica pode encomendar conjuntos sob medida para a furação e offset exatos do seu projeto 4x4.
             </p>
             <button
               onClick={() => handleConsultWhatsApp("Olá! Não encontrei a medida exata no site. Podem me ajudar com uma cotação sob medida?")}
-              className="btn-paris inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase"
+              className="btn-paris inline-flex items-center gap-2 px-5 sm:px-6 py-3 rounded-xl font-bold text-xs uppercase"
             >
-              <PhoneCall className="w-4 h-4" />
+              <PhoneCall className="w-4 h-4 shrink-0" />
               <span>Consultar Especialista no WhatsApp</span>
             </button>
           </div>

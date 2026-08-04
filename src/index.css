@@ -1,21 +1,49 @@
 @import "tailwindcss";
 
+/* No Tailwind v4 a variante `dark:` segue prefers-color-scheme por padrão.
+   Aqui trocamos a estratégia para depender da classe `.dark` no <html>,
+   que é o que o toggle de tema no Header liga/desliga via JS. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ==========================================================================
+   BREAKPOINTS RESPONSIVOS
+   xs  -> celulares maiores (416px+)
+   sm  -> celulares landscape / phablets (640px+)   [padrão Tailwind]
+   md  -> tablets retrato (768px+)                  [padrão Tailwind]
+   lg  -> tablets landscape / notebooks (1024px+)   [padrão Tailwind]
+   xl  -> desktops (1280px+)                        [padrão Tailwind]
+   2xl -> monitores grandes (1536px+)               [padrão Tailwind]
+   3xl -> ultrawide (1800px+)
+   ========================================================================== */
+@theme {
+  --breakpoint-xs: 26rem;
+  --breakpoint-3xl: 112.5rem;
+}
+
 @layer base {
+  /* Modo Claro (padrão de abertura do site) */
   :root {
     --brand-red: #8B0000;
     --brand-red-dark: #500000;
     --brand-red-bright: #B21B1B;
-    --brand-red-glow: rgba(139, 0, 0, 0.4);
-    
-    --bg-main: #0A0A0A;
-    --bg-card: #111111;
-    --bg-subtle: #1A1A1A;
-    --border-color: rgba(255, 255, 255, 0.08);
-    --text-primary: #FFFFFF;
-    --text-secondary: #9CA3AF;
-    --text-muted: #6B7280;
+    --brand-red-glow: rgba(139, 0, 0, 0.25);
+
+    --bg-main: #F4F4F5;
+    --bg-card: #FFFFFF;
+    --bg-subtle: #F1F1F3;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --text-primary: #111111;
+    --text-secondary: #52525B;
+    --text-muted: #71717A;
+
+    /* Áreas seguras (notch do iPhone, barras de gestos Android) */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
   }
 
+  /* Modo Escuro (ativado via toggle no Header) */
   .dark {
     --brand-red: #8B0000;
     --brand-red-dark: #500000;
@@ -30,18 +58,89 @@
     --text-secondary: #9CA3AF;
     --text-muted: #6B7280;
   }
+
+  html {
+    /* Impede o iOS de reescalar o texto ao girar o aparelho */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    /* Compensa o header fixo ao pular para #catalog-section */
+    scroll-padding-top: 6rem;
+  }
+
+  /* Nunca deixa uma imagem/mídia estourar a largura do container */
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  /* O canvas 3D tem suas dimensões definidas por JS, por isso fica de fora */
+  img,
+  video {
+    height: auto;
+  }
+
+  /* Quebra palavras longas (SKUs, URLs, e-mails) em telas estreitas */
+  h1, h2, h3, h4, p, span, a, td, th, li, label {
+    overflow-wrap: break-word;
+  }
+
+  /* iOS Safari aplica zoom automático em campos com fonte < 16px.
+     Em telas de toque forçamos 16px para manter o layout estável. */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Alvos de toque confortáveis (mínimo recomendado ~44px) */
+  @media (pointer: coarse) {
+    button,
+    a[role="button"],
+    input[type="checkbox"],
+    input[type="radio"] {
+      touch-action: manipulation;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 body {
-  background-color: #0A0A0A;
-  color: #FFFFFF;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   transition: background-color 0.25s ease, color 0.25s ease;
   overflow-x: hidden;
+  /* Respeita as laterais seguras em aparelhos com notch no modo paisagem */
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
 }
 
-/* Off-road carbon fiber texture subtle overlay */
+/* Off-road carbon fiber texture subtle overlay (usado no fundo do Hero 3D) */
 .bg-carbon {
+  background-color: #EDEDEF;
+  background-image: radial-gradient(#D8D8DC 1px, transparent 0);
+  background-size: 16px 16px;
+}
+
+.dark .bg-carbon {
   background-color: #0D0D0D;
   background-image: radial-gradient(#1E1E1E 1px, transparent 0);
   background-size: 16px 16px;
@@ -54,7 +153,7 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0A0A;
+  background: var(--bg-main);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -66,12 +165,91 @@ body {
   background: #B21B1B;
 }
 
+/* Barras mais finas em telas pequenas para não roubar área útil */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* Esconde a barra de rolagem em faixas horizontais (abas, pílulas de categoria) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Rolagem horizontal com "encaixe" nos itens — usado nas faixas de abas mobile */
+.snap-strip {
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-strip > * {
+  scroll-snap-align: start;
+}
+
+/* --------------------------------------------------------------------------
+   MODAIS RESPONSIVOS
+   Centralizar com `items-center` + `overflow-y-auto` corta o topo do conteúdo
+   quando ele é mais alto que a viewport. O padrão abaixo rola corretamente em
+   qualquer altura de tela e usa 100dvh para não brigar com a barra de
+   endereço dos navegadores mobile.
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  padding-top: max(1rem, var(--safe-top));
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+
+@media (max-width: 639px) {
+  .modal-overlay {
+    padding: 0.75rem;
+    padding-top: max(0.75rem, var(--safe-top));
+    padding-bottom: max(0.75rem, var(--safe-bottom));
+  }
+}
+
+/* Centraliza verticalmente quando cabe, e rola a partir do topo quando não cabe */
+.modal-panel {
+  margin: auto;
+  width: 100%;
+}
+
+/* Painel com altura limitada e corpo rolável interno */
+.modal-panel-fixed {
+  margin: auto;
+  width: 100%;
+  max-height: calc(100dvh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 639px) {
+  .modal-panel-fixed {
+    max-height: calc(100dvh - 1.5rem);
+  }
+}
+
 /* Custom Spec Table styling - Elegant Dark Theme */
 .clean-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.8125rem;
+  table-layout: fixed;
 }
 
 .clean-table th {
@@ -81,18 +259,57 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.7rem;
+  color: #71717A;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+}
+
+.dark .clean-table th {
   color: #9CA3AF;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .clean-table td {
   padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: #111111;
+  overflow-wrap: anywhere;
+}
+
+.dark .clean-table td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   color: #FFFFFF;
 }
 
 .clean-table tr:last-child td {
   border-bottom: none;
+}
+
+/* Em telas estreitas a tabela de specs compacta o espaçamento e a fonte */
+@media (max-width: 400px) {
+  .clean-table {
+    font-size: 0.75rem;
+  }
+
+  .clean-table th,
+  .clean-table td {
+    padding: 5px 6px;
+  }
+
+  .clean-table th {
+    font-size: 0.625rem;
+    letter-spacing: 0.03em;
+  }
+}
+
+/* Tabelas de dados do painel admin: rolam na horizontal sem espremer colunas */
+.data-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table-scroll > table {
+  min-width: 44rem;
 }
 
 /* Red metallic highlight gradient */
@@ -114,6 +331,15 @@ body {
   transform: translateY(0);
 }
 
+/* Aparelhos de toque não têm hover: evita o botão "grudar" no estado hover */
+@media (hover: none) {
+  .btn-paris:hover {
+    background: linear-gradient(135deg, #8B0000 0%, #500000 100%);
+    box-shadow: 0 4px 14px rgba(139, 0, 0, 0.35);
+    transform: none;
+  }
+}
+
 /* Pulse badge for Off-road ready stock */
 @keyframes redPulse {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -122,4 +348,14 @@ body {
 
 .animate-pulse-red {
   animation: redPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade-in usado pelos modais */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.18s ease-out;
 }

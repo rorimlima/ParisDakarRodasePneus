@@ -69,44 +69,44 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
   };
 
   return (
-    <div className="w-full bg-[#111111] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl transition-colors">
-      
+    <div className="w-full bg-white dark:bg-[#111111] border border-black/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 lg:p-6 shadow-lg dark:shadow-2xl transition-colors">
+
       {/* Dashboard Top Mode Switcher */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-white/10">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-black/10 dark:border-white/10">
+        <div className="min-w-0">
           <h2 className="text-xs font-bold text-[#8B0000] uppercase tracking-widest flex items-center gap-2 mb-1">
-            <SlidersHorizontal className="w-4 h-4 text-[#8B0000]" />
+            <SlidersHorizontal className="w-4 h-4 text-[#8B0000] shrink-0" />
             <span>Busca Inteligente & Filtros Técnicos</span>
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-zinc-500 dark:text-gray-400">
             Selecione por modelo do seu veículo ou por especificações de Aro, Furação e Pneu.
           </p>
         </div>
 
         {/* Tab Switch: Vehicle vs Size */}
-        <div className="flex bg-[#0A0A0A] p-1 rounded border border-white/10 w-full sm:w-auto">
+        <div className="flex bg-slate-100 dark:bg-[#0A0A0A] p-1 rounded border border-black/10 dark:border-white/10 w-full lg:w-auto shrink-0">
           <button
             onClick={() => setSearchMode('vehicle')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded text-[11px] font-bold uppercase tracking-wider transition ${
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition ${
               searchMode === 'vehicle'
-                ? 'bg-[#1a1a1a] text-white border border-[#8B0000]/60 shadow-sm'
-                : 'text-gray-500 hover:text-white'
+                ? 'bg-white dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-[#8B0000]/60 shadow-sm'
+                : 'text-zinc-500 dark:text-gray-500 hover:text-[#111111] dark:hover:text-white'
             }`}
           >
-            <Car className="w-3.5 h-3.5" />
-            <span>Por Veículo (4x4)</span>
+            <Car className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Por Veículo (4x4)</span>
           </button>
 
           <button
             onClick={() => setSearchMode('size')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded text-[11px] font-bold uppercase tracking-wider transition ${
+            className={`flex-1 lg:flex-none flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2.5 rounded text-[10px] sm:text-[11px] font-bold uppercase tracking-wider transition ${
               searchMode === 'size'
-                ? 'bg-[#1a1a1a] text-white border border-[#8B0000]/60 shadow-sm'
-                : 'text-gray-500 hover:text-white'
+                ? 'bg-white dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-[#8B0000]/60 shadow-sm'
+                : 'text-zinc-500 dark:text-gray-500 hover:text-[#111111] dark:hover:text-white'
             }`}
           >
-            <Ruler className="w-3.5 h-3.5" />
-            <span>Por Medida / Aro</span>
+            <Ruler className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Por Medida / Aro</span>
           </button>
         </div>
       </div>
@@ -118,7 +118,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             
             {/* Brand Dropdown */}
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+              <label className="text-[10px] font-bold text-zinc-500 dark:text-gray-400 uppercase tracking-widest block mb-1.5">
                 1. Marca do Veículo
               </label>
               <select
@@ -127,7 +127,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
                   setSelectedBrand(e.target.value);
                   setSelectedModel('');
                 }}
-                className="w-full px-3 py-2.5 rounded bg-[#1a1a1a] text-white border border-white/10 text-xs font-medium focus:border-[#8B0000] focus:ring-0 outline-none"
+                className="w-full px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-black/10 dark:border-white/10 text-xs font-medium focus:border-[#8B0000] focus:ring-0 outline-none"
               >
                 <option value="">-- Selecione a Montadora --</option>
                 {VEHICLE_BRANDS.map((b) => (
@@ -140,14 +140,14 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
             {/* Model Dropdown */}
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+              <label className="text-[10px] font-bold text-zinc-500 dark:text-gray-400 uppercase tracking-widest block mb-1.5">
                 2. Modelo
               </label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
                 disabled={!selectedBrand}
-                className="w-full px-3 py-2.5 rounded bg-[#1a1a1a] text-white border border-white/10 text-xs font-medium focus:border-[#8B0000] focus:ring-0 outline-none disabled:opacity-40"
+                className="w-full px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-black/10 dark:border-white/10 text-xs font-medium focus:border-[#8B0000] focus:ring-0 outline-none disabled:opacity-40"
               >
                 <option value="">-- Selecione o Modelo --</option>
                 {availableModels.map((mod) => (
@@ -160,13 +160,13 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
             {/* Year Dropdown */}
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+              <label className="text-[10px] font-bold text-zinc-500 dark:text-gray-400 uppercase tracking-widest block mb-1.5">
                 3. Ano de Fabricação
               </label>
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(e.target.value)}
-                className="w-full px-3 py-2.5 rounded bg-[#1a1a1a] text-white border border-white/10 text-xs font-medium focus:border-[#8B0000] focus:ring-0 outline-none"
+                className="w-full px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-black/10 dark:border-white/10 text-xs font-medium focus:border-[#8B0000] focus:ring-0 outline-none"
               >
                 <option value="">-- Selecione o Ano --</option>
                 {Array.from({ length: 15 }, (_, i) => 2026 - i).map((year) => (
@@ -180,27 +180,27 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
           </div>
 
           {/* Vehicle Search Action */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2">
+            <div className="flex items-start gap-1.5 text-[11px] sm:text-xs text-emerald-400 font-medium">
+              <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-px" />
               <span>Garantia de furação exata e compatibilidade com freios originais.</span>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-stretch gap-2 w-full md:w-auto shrink-0">
               <button
                 onClick={handleResetFilters}
-                className="px-3 py-2 rounded bg-[#1a1a1a] border border-white/10 text-gray-300 text-xs font-semibold hover:text-white transition flex items-center gap-1"
+                className="px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 text-zinc-600 dark:text-gray-300 text-xs font-semibold hover:text-[#111111] dark:hover:text-white transition flex items-center justify-center gap-1 shrink-0"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                 Limpar
               </button>
 
               <button
                 onClick={handleApplyVehicleSearch}
-                className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-2.5 rounded text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2"
+                className="flex-1 md:flex-none bg-[#8B0000] hover:bg-red-800 text-white px-4 sm:px-6 py-2.5 rounded text-[11px] sm:text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2"
               >
-                <Check className="w-4 h-4" />
-                Filtrar Produtos Compatíveis
+                <Check className="w-4 h-4 shrink-0" />
+                <span>Filtrar Produtos Compatíveis</span>
               </button>
             </div>
           </div>
@@ -214,13 +214,13 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             
             {/* Aro Selector */}
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+              <label className="text-[10px] font-bold text-zinc-500 dark:text-gray-400 uppercase tracking-widest block mb-1.5">
                 Aro
               </label>
               <select
                 value={selectedAro}
                 onChange={(e) => setSelectedAro(e.target.value)}
-                className="w-full px-3 py-2.5 rounded bg-[#1a1a1a] text-white border border-white/10 text-xs font-medium focus:border-[#8B0000] outline-none"
+                className="w-full px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-black/10 dark:border-white/10 text-xs font-medium focus:border-[#8B0000] outline-none"
               >
                 <option value="">Qualquer Aro</option>
                 {ARO_OPTIONS.map((aro) => (
@@ -233,13 +233,13 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
             {/* Furação Selector */}
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+              <label className="text-[10px] font-bold text-zinc-500 dark:text-gray-400 uppercase tracking-widest block mb-1.5">
                 Furação (PCD)
               </label>
               <select
                 value={selectedFuracao}
                 onChange={(e) => setSelectedFuracao(e.target.value)}
-                className="w-full px-3 py-2.5 rounded bg-[#1a1a1a] text-white border border-white/10 text-xs font-medium focus:border-[#8B0000] outline-none"
+                className="w-full px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-black/10 dark:border-white/10 text-xs font-medium focus:border-[#8B0000] outline-none"
               >
                 <option value="">Todas as Furações</option>
                 {FURACAO_OPTIONS.map((fur) => (
@@ -252,13 +252,13 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
             {/* Tire Type Selector */}
             <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1.5">
+              <label className="text-[10px] font-bold text-zinc-500 dark:text-gray-400 uppercase tracking-widest block mb-1.5">
                 Tipo de Pneu
               </label>
               <select
                 value={selectedTireType}
                 onChange={(e) => setSelectedTireType(e.target.value)}
-                className="w-full px-3 py-2.5 rounded bg-[#1a1a1a] text-white border border-white/10 text-xs font-medium focus:border-[#8B0000] outline-none"
+                className="w-full px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-black/10 dark:border-white/10 text-xs font-medium focus:border-[#8B0000] outline-none"
               >
                 <option value="">Qualquer Banda</option>
                 <option value="MT">Mud Terrain (MT)</option>
@@ -270,29 +270,29 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
 
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex items-stretch justify-end gap-2 pt-2">
             <button
               onClick={handleResetFilters}
-              className="px-3 py-2 rounded bg-[#1a1a1a] text-gray-300 text-xs font-semibold hover:text-white"
+              className="px-3 py-2.5 rounded bg-slate-100 dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 text-zinc-600 dark:text-gray-300 text-xs font-semibold hover:text-[#111111] dark:hover:text-white shrink-0"
             >
               Limpar
             </button>
 
             <button
               onClick={handleApplySizeSearch}
-              className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-2.5 rounded text-xs font-black uppercase tracking-widest transition flex items-center gap-2"
+              className="flex-1 sm:flex-none bg-[#8B0000] hover:bg-red-800 text-white px-4 sm:px-6 py-2.5 rounded text-[11px] sm:text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2"
             >
-              <Filter className="w-4 h-4" />
-              Aplicar Filtros Técnicos
+              <Filter className="w-4 h-4 shrink-0" />
+              <span>Aplicar Filtros Técnicos</span>
             </button>
           </div>
         </div>
       )}
 
       {/* Category Pills Bar */}
-      <div className="flex flex-wrap items-center gap-2 pt-5 mt-4 border-t border-white/10">
-        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mr-2 flex items-center gap-1">
-          <Layers className="w-3.5 h-3.5" />
+      <div className="flex flex-wrap items-center gap-2 pt-5 mt-4 border-t border-black/10 dark:border-white/10">
+        <span className="w-full sm:w-auto text-[10px] font-bold text-zinc-500 dark:text-gray-500 uppercase tracking-widest sm:mr-2 flex items-center gap-1">
+          <Layers className="w-3.5 h-3.5 shrink-0" />
           Categorias:
         </span>
 
@@ -310,7 +310,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase tracking-wider transition ${
               activeCategory === cat.id
                 ? 'bg-[#8B0000] text-white shadow-sm'
-                : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-white/5'
+                : 'bg-slate-100 dark:bg-[#1a1a1a] text-zinc-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white border border-black/5 dark:border-white/5'
             }`}
           >
             {cat.label}
