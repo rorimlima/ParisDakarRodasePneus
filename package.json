@@ -16,7 +16,9 @@
     "preview": "vite preview",
     "check:db": "tsx src/scripts/checkDatabase.ts",
     "typecheck": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.json --noEmit",
-    "test:db": "tsx src/tests/testFirestoreRepository.ts"
+    "test:db": "tsx src/tests/testFirestoreRepository.ts",
+    "seed:catalog": "tsx src/scripts/seedCatalog.ts",
+    "emulator": "firebase emulators:start --only firestore --project demo-paris-dakar"
   },
   "keywords": [
     "antigravity",

@@ -110,3 +110,53 @@ export const DeltaSyncQuerySchema = z.object({
     z.number().int().min(0).default(0)
   ),
 });
+
+/**
+ * Schema de escrita do produto completo (painel administrativo).
+ *
+ * Diferente de ProductImportRowSchema, que valida a linha reduzida da
+ * planilha, este cobre o produto como a loja o exibe. Campos de reputação
+ * (rating, reviewsCount) e o id não entram: são definidos pelo servidor,
+ * senão o cliente conseguiria forjar a própria nota.
+ */
+export const ProductSpecsSchema = z.object({
+  aro: z.string().trim().max(20).optional(),
+  furacao: z.string().trim().max(30).optional(),
+  offset: z.string().trim().max(30).optional(),
+  tala: z.string().trim().max(20).optional(),
+  acabamento: z.string().trim().max(60).optional(),
+  medidaPneu: z.string().trim().max(40).optional(),
+  tipoPneu: z.enum(['MT', 'AT', 'LT', 'HT']).optional(),
+  indiceCarga: z.string().trim().max(20).optional(),
+  alturaLift: z.string().trim().max(30).optional(),
+  garantia: z.string().trim().max(40).optional(),
+  peso: z.string().trim().max(20).optional()
+});
+
+export const ProductWriteSchema = z.object({
+  sku: z
+    .string()
+    .trim()
+    .min(3)
+    .max(50)
+    .regex(/^[A-Za-z0-9\-_]+$/, 'SKU aceita apenas letras, números, hífen e underline'),
+  name: z.string().trim().min(2).max(150),
+  brand: z.string().trim().min(1).max(80),
+  category: z.enum(['rodas', 'pneus', 'kits-lift', 'acessorios', 'combos']),
+  subcategory: z.string().trim().max(80).optional(),
+  price: z.number().positive('Preço deve ser maior que zero'),
+  originalPrice: z.number().positive().optional(),
+  b2bPrice: z.number().positive().optional(),
+  isWholesaleOnly: z.boolean().optional(),
+  badge: z.string().trim().max(40).optional(),
+  // URLs de imagem restritas a http(s) para não aceitar javascript: nem data:
+  image: z.string().trim().url('Imagem deve ser uma URL http(s) válida').startsWith('http', 'Somente URLs http(s)'),
+  secondaryImages: z.array(z.string().url().startsWith('http')).max(8).optional(),
+  description: z.string().trim().max(2000).default(''),
+  specs: ProductSpecsSchema.default({}),
+  compatibleVehicles: z.array(z.string().trim().max(120)).max(60).default([]),
+  stockQuantity: z.number().int().min(0),
+  isActive: z.boolean().default(true)
+});
+
+export type ProductWriteInput = z.infer<typeof ProductWriteSchema>;

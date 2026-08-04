@@ -7,6 +7,7 @@ import { StoreLocation } from './components/StoreLocation';
 import { InstagramFeed } from './components/InstagramFeed';
 import { Footer } from './components/Footer';
 import { useTheme } from './hooks/useTheme';
+import { useCatalog } from './hooks/useCatalog';
 import { storageService } from './services/storageService';
 import {
   Product,
@@ -18,7 +19,7 @@ import {
   SiteSettings,
   Seller
 } from './types';
-import { Filter, PackageCheck, Building2, PhoneCall, Lock, X } from 'lucide-react';
+import { Filter, PackageCheck, Building2, PhoneCall, Lock, X, ServerCrash, RefreshCw } from 'lucide-react';
 
 /*
  * Telas pesadas ficam em chunks separados: o visitante que só navega no
@@ -58,8 +59,8 @@ const CATEGORY_LABELS: Record<string, string> = {
 export default function App() {
   const { isDark, toggleTheme } = useTheme();
 
-  // Estado persistido em localStorage
-  const [products, setProducts] = useState<Product[]>(() => storageService.getProducts());
+  // Catálogo vem da API (Firestore). O resto ainda é local — ver README.
+  const { products, status: catalogStatus, error: catalogError, reload: reloadCatalog, setProducts } = useCatalog();
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
   const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
   const [sellers, setSellers] = useState<Seller[]>(() => storageService.getSellers());
@@ -318,9 +319,15 @@ export default function App() {
               <span>Catálogo — pronta entrega</span>
             </h2>
             <p className="text-xs pd-text-3 mt-1.5">
-              <strong className="pd-brand-text">{filteredProducts.length}</strong>{' '}
-              {filteredProducts.length === 1 ? 'item disponível' : 'itens disponíveis'} com cotação via
-              WhatsApp.
+              {catalogStatus === 'loading' ? (
+                'Carregando catálogo...'
+              ) : (
+                <>
+                  <strong className="pd-brand-text">{filteredProducts.length}</strong>{' '}
+                  {filteredProducts.length === 1 ? 'item disponível' : 'itens disponíveis'} com cotação
+                  via WhatsApp.
+                </>
+              )}
             </p>
           </div>
 
@@ -339,7 +346,52 @@ export default function App() {
           )}
         </div>
 
-        {filteredProducts.length > 0 ? (
+        {catalogStatus === 'loading' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" aria-busy="true">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="pd-card overflow-hidden animate-pulse">
+                <div className="aspect-[4/3] w-full pd-surface-2" />
+                <div className="p-5 space-y-3">
+                  <div className="h-3 w-1/3 rounded pd-surface-2" />
+                  <div className="h-4 w-full rounded pd-surface-2" />
+                  <div className="h-4 w-2/3 rounded pd-surface-2" />
+                  <div className="h-9 w-full rounded pd-surface-2 mt-4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {catalogStatus === 'error' && (
+          <div className="pd-card text-center py-16 px-6 space-y-4" role="alert">
+            <div
+              className="w-14 h-14 rounded-full pd-surface-2 pd-brand-text flex items-center justify-center mx-auto border pd-border"
+              aria-hidden="true"
+            >
+              <ServerCrash className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-bold pd-text">Não foi possível carregar o catálogo</h3>
+            <p className="text-xs pd-text-3 max-w-md mx-auto leading-relaxed">{catalogError}</p>
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+              <button type="button" onClick={reloadCatalog} className="btn btn-primary">
+                <RefreshCw className="w-4 h-4" />
+                <span>Tentar novamente</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  handleConsultWhatsApp('Olá! O site está fora do ar. Podem me atender por aqui?')
+                }
+                className="btn btn-whats"
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>Falar no WhatsApp</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {catalogStatus === 'ready' && (filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredProducts.map((product) => (
               <ProductCard
@@ -378,7 +430,7 @@ export default function App() {
               <span>Consultar especialista</span>
             </button>
           </div>
-        )}
+        ))}
       </main>
 
       <StoreLocation
