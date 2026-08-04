@@ -22,6 +22,11 @@
     --pd-whats: #128c4a;
     --pd-info: #14618f;
 
+    /* Tinta da logo — mesma arte, luminosidade ajustada por tema */
+    --pd-logo-1: #c42020;
+    --pd-logo-2: #8b0000;
+    --pd-logo-3: #5e0000;
+
     /* Superfícies */
     --pd-bg: #f6f5f3;
     --pd-bg-alt: #eeece8;
@@ -71,6 +76,11 @@
     --pd-success: #34d399;
     --pd-whats: #25d366;
     --pd-info: #5cb8f0;
+
+    /* No fundo quase preto o bordô original some; clareia sem mudar o desenho. */
+    --pd-logo-1: #ec5757;
+    --pd-logo-2: #cd2020;
+    --pd-logo-3: #950c0c;
 
     --pd-bg: #0a0908;
     --pd-bg-alt: #100e0d;
@@ -618,62 +628,15 @@
     filter: drop-shadow(0 9px 12px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 24px var(--pd-brand-ring));
   }
 
-  /* Texto com extrusão em camadas (falso 3D via text-shadow escalonado) */
-  .logo-3d__word {
-    font-family: var(--pd-font-serif);
-    font-weight: 800;
-    text-transform: uppercase;
-    line-height: 0.95;
-    letter-spacing: 0.07em;
-    transform: translateZ(16px);
-    background-image: linear-gradient(
-      175deg,
-      color-mix(in srgb, var(--pd-brand-bright) 82%, #fff) 0%,
-      var(--pd-brand) 44%,
-      var(--pd-brand-strong) 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.22)) drop-shadow(0 3px 5px rgba(0, 0, 0, 0.24));
+  /* Tipografia da marca — plano um pouco atrás do emblema */
+  .logo-3d__plate {
+    display: inline-flex;
+    transform: translateZ(13px);
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.26)) drop-shadow(0 5px 9px rgba(0, 0, 0, 0.18));
+    transition: filter 0.4s ease;
   }
-  .logo-3d__sub {
-    font-family: var(--pd-font-serif);
-    font-style: italic;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.26em;
-    color: var(--pd-brand);
-    transform: translateZ(9px);
-    opacity: 0.92;
-  }
-  .logo-3d--invert .logo-3d__word {
-    background-image: linear-gradient(175deg, #ffffff 0%, #f0eae8 46%, #c9bdba 100%);
-  }
-  .logo-3d--invert .logo-3d__sub {
-    color: rgba(255, 255, 255, 0.86);
-  }
-
-  /* Reflexo giratório sobre o emblema */
-  .logo-3d__shine {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: conic-gradient(
-      from 210deg,
-      transparent 0deg,
-      rgba(255, 255, 255, 0.42) 28deg,
-      transparent 70deg,
-      transparent 360deg
-    );
-    mix-blend-mode: screen;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    pointer-events: none;
-    animation: pdSpin 7s linear infinite;
-  }
-  .logo-3d:hover .logo-3d__shine {
-    opacity: 0.75;
+  .logo-3d:hover .logo-3d__plate {
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.32)) drop-shadow(0 9px 16px rgba(0, 0, 0, 0.24));
   }
 
   /* Pedestal — sombra de contato que ancora o logo no plano */
@@ -729,11 +692,6 @@
   }
 }
 
-@keyframes pdSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 @keyframes pdFloat {
   0%,
