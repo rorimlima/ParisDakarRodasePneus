@@ -1,12 +1,8 @@
 {
   "hosting": {
     "public": "dist",
-
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "predeploy": ["npm run build"],
     "rewrites": [
       {
         "source": "/api/**",
@@ -20,6 +16,35 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "/assets/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=31536000, immutable"
+          }
+        ]
+      },
+      {
+        "source": "/favicon.svg",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=604800"
+          }
+        ]
+      },
+      {
+        "source": "/index.html",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
     ]
   },
   "functions": {
@@ -28,11 +53,12 @@
     "ignore": [
       "node_modules",
       ".git",
+      "dist",
+      "public",
+      "assets",
       "firebase-debug.log",
       "firebase-debug.*.log"
     ],
-    "predeploy": [
-      "npm run build"
-    ]
+    "predeploy": ["npm run build:server"]
   }
 }

@@ -8,142 +8,159 @@ interface FooterProps {
   onOpenArchitectureViewer: () => void;
 }
 
+const CATEGORY_LINKS = [
+  'Rodas forjadas heavy-duty 4x4',
+  'Pneus Mud-Terrain (MT)',
+  'Pneus All-Terrain (AT)',
+  'Kits lift de suspensão',
+  'Espaçadores billet aeronáutico'
+];
+
 export const Footer: React.FC<FooterProps> = ({
   onConsultWhatsApp,
   onOpenB2BModal,
   onOpenArchitectureViewer
 }) => {
   return (
-    <footer className="bg-black text-white border-t border-white/10 transition-colors shrink-0">
-      
-      {/* Top Banner Social & WhatsApp Route */}
-      <div className="border-b border-white/5 py-8 bg-[#0D0D0D]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          
-          <div className="flex items-center gap-4">
-            <ParisDakarLogo colorMode="white" height={42} />
-          </div>
+    <footer className="pd-bg-alt border-t pd-border shrink-0">
+      {/* Faixa de conversão */}
+      <div className="border-b pd-hairline">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <ParisDakarLogo variant="full" height={40} />
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3">
             <a
               href="https://www.instagram.com/parisdakarrodas/"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2.5 rounded bg-[#111111] border border-white/10 hover:border-[#8B0000] text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition text-gray-300 hover:text-white"
+              className="btn btn-outline"
             >
-              <Instagram className="w-4 h-4 text-[#8B0000]" />
-              <span>Siga no Instagram @parisdakarrodas</span>
-              <ArrowUpRight className="w-3.5 h-3.5 text-gray-500" />
+              <Instagram className="w-4 h-4" />
+              <span>@parisdakarrodas</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
             </a>
 
             <button
-              onClick={() => onConsultWhatsApp("Olá! Gostaria de tirar dúvidas técnicas sobre rodas e pneus para caminhonetes no WhatsApp.")}
-              className="bg-[#25D366] text-black hover:bg-[#1da851] px-5 py-2.5 rounded text-xs font-black flex items-center gap-2 uppercase tracking-widest shadow-lg transition-all"
+              type="button"
+              onClick={() =>
+                onConsultWhatsApp(
+                  'Olá! Gostaria de tirar dúvidas técnicas sobre rodas e pneus para caminhonetes.'
+                )
+              }
+              className="btn btn-whats"
             >
-              <MessageCircle className="w-4 h-4 fill-black text-black" />
-              <span>Falar com Especialista 4x4</span>
+              <MessageCircle className="w-4 h-4" />
+              <span>Falar com especialista 4x4</span>
             </button>
           </div>
-
         </div>
       </div>
 
-      {/* Main Footer Links & Info */}
+      {/* Colunas */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          
-          {/* Column 1: Brand Info */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-black uppercase tracking-widest text-[#8B0000]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold uppercase tracking-[0.14em] pd-brand-text">
               Paris Dakar Rodas e Pneus
-            </h4>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Referência nacional no fornecimento de conjuntos de rodas forjadas heavy-duty, pneus off-road e kits de elevação de suspensão para caminhonetes 4x4 e expedições.
+            </h3>
+            <p className="text-xs pd-text-2 leading-relaxed">
+              Referência nacional em conjuntos de rodas forjadas heavy-duty, pneus off-road e kits de
+              elevação de suspensão para caminhonetes 4x4 e expedições.
             </p>
-            <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold pt-1">
-              <Award className="w-4 h-4 text-amber-400" />
-              <span>Garantia e Suporte de Furação Exata</span>
-            </div>
+            <p className="flex items-center gap-2 text-xs pd-gold-text font-semibold pt-1">
+              <Award className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Garantia e suporte de furação exata</span>
+            </p>
           </div>
 
-          {/* Column 2: Categorias Principais */}
-          <div className="space-y-3">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Categorias Caminhonetes 4x4
-            </h4>
-            <ul className="space-y-2 text-xs text-gray-500">
-              <li><a href="#catalog-section" className="hover:text-[#8B0000] transition">Rodas Forjadas Heavy-Duty 4x4</a></li>
-              <li><a href="#catalog-section" className="hover:text-[#8B0000] transition">Pneus Mud-Terrain (MT)</a></li>
-              <li><a href="#catalog-section" className="hover:text-[#8B0000] transition">Pneus All-Terrain (AT)</a></li>
-              <li><a href="#catalog-section" className="hover:text-[#8B0000] transition">Kits Lift de Suspensão</a></li>
-              <li><a href="#catalog-section" className="hover:text-[#8B0000] transition">Espaçadores Billet Aeronáutico</a></li>
+          <nav className="space-y-3" aria-label="Categorias">
+            <h3 className="text-[0.62rem] font-bold uppercase tracking-[0.14em] pd-text-3">
+              Categorias 4x4
+            </h3>
+            <ul className="space-y-2 text-xs">
+              {CATEGORY_LINKS.map((label) => (
+                <li key={label}>
+                  <a href="#catalog-section" className="pd-link">
+                    {label}
+                  </a>
+                </li>
+              ))}
             </ul>
-          </div>
+          </nav>
 
-          {/* Column 3: Atendimento & Suporte */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Atendimento Especializado
-            </h4>
-            <p className="text-xs text-gray-400">
-              Consultoria técnica direta com especialistas para especificação de furação, offset, tala e pneus para caminhonetes.
+            <h3 className="text-[0.62rem] font-bold uppercase tracking-[0.14em] pd-text-3">
+              Atendimento especializado
+            </h3>
+            <p className="text-xs pd-text-2 leading-relaxed">
+              Consultoria técnica direta para especificação de furação, offset, tala e pneus.
             </p>
-            <button
-              onClick={() => onConsultWhatsApp("Olá! Gostaria de tirar dúvidas com um especialista Paris Dakar sobre furação e offset.")}
-              className="text-xs font-bold text-[#8B0000] underline hover:text-white transition flex items-center gap-1 uppercase tracking-wider"
-            >
-              <span>Falar com Consultor Técnico</span>
-            </button>
-            <div className="pt-2">
+            <div className="flex flex-col items-start gap-2 pt-1">
               <button
-                onClick={onOpenArchitectureViewer}
-                className="text-xs text-gray-500 hover:text-white underline"
+                type="button"
+                onClick={() =>
+                  onConsultWhatsApp(
+                    'Olá! Gostaria de falar com um especialista Paris Dakar sobre furação e offset.'
+                  )
+                }
+                className="pd-link text-xs font-bold underline"
               >
-                Documentação de Arquitetura (Vercel)
+                Falar com consultor técnico
+              </button>
+
+              <button type="button" onClick={onOpenB2BModal} className="pd-link text-xs font-bold underline">
+                Área do lojista (CNPJ)
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenArchitectureViewer}
+                className="pd-link text-xs underline"
+              >
+                Documentação de arquitetura
               </button>
             </div>
           </div>
 
-          {/* Column 4: Contato & Unidade */}
           <div className="space-y-3">
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-              Central de Atendimento
-            </h4>
-            <div className="space-y-2 text-xs text-gray-400">
-              <p className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#8B0000] shrink-0" />
-                <span>Showroom Principal & Centro de Distribuição Off-Road</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>WhatsApp Vendas: (11) 99999-DAKAR</span>
-              </p>
-              <p className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>Atendimento Especializado em Caminhonetes</span>
-              </p>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Bottom Copyright */}
-        <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-[10px] text-gray-500 gap-4">
-          <p className="uppercase font-bold">© {new Date().getFullYear()} Paris Dakar Rodas e Pneus. Todos os direitos reservados.</p>
-          <div className="flex space-x-6 items-center">
-            <div className="flex items-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></div>
-              <span className="text-[10px] font-bold uppercase text-gray-400 tracking-tighter">Estoque Disponível</span>
-            </div>
-            <div className="h-4 w-[1px] bg-gray-800"></div>
-            <div className="flex space-x-4">
-              <span className="text-[10px] font-black uppercase italic text-white/30">Performance</span>
-              <span className="text-[10px] font-black uppercase italic text-white/30">Resistance</span>
-              <span className="text-[10px] font-black uppercase italic text-white/30">Caminhonetes 4x4</span>
-            </div>
+            <h3 className="text-[0.62rem] font-bold uppercase tracking-[0.14em] pd-text-3">
+              Central de atendimento
+            </h3>
+            <ul className="space-y-2.5 text-xs pd-text-2">
+              <li className="flex items-start gap-2">
+                <MapPin className="w-4 h-4 pd-brand-text shrink-0 mt-0.5" aria-hidden="true" />
+                <a href="#localizacao" className="pd-link">
+                  Showroom e centro de distribuição
+                </a>
+              </li>
+              <li className="flex items-start gap-2">
+                <Phone className="w-4 h-4 pd-success-text shrink-0 mt-0.5" aria-hidden="true" />
+                <span>WhatsApp vendas: (11) 99999-8888</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <ShieldCheck className="w-4 h-4 pd-gold-text shrink-0 mt-0.5" aria-hidden="true" />
+                <span>Especialistas em caminhonetes</span>
+              </li>
+            </ul>
           </div>
         </div>
 
+        <hr className="pd-rule my-10" />
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-[0.62rem] pd-text-3">
+          <p className="uppercase font-bold tracking-wider">
+            © {new Date().getFullYear()} Paris Dakar Rodas e Pneus. Todos os direitos reservados.
+          </p>
+
+          <div className="flex items-center gap-3">
+            <span
+              className="w-1.5 h-1.5 rounded-full animate-pulse-red"
+              style={{ backgroundColor: 'var(--pd-success)' }}
+              aria-hidden="true"
+            />
+            <span className="font-bold uppercase tracking-wider">Estoque disponível</span>
+          </div>
+        </div>
       </div>
     </footer>
   );

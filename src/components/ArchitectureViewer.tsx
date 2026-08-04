@@ -31,15 +31,16 @@ export const ArchitectureViewer: React.FC<ArchitectureViewerProps> = ({ onClose 
 │   ├── layout/
 │   │   ├── Header.tsx            # Header com Logo, Instagram e WhatsApp
 │   │   └── Footer.tsx            # Footer com Social Proof
-│   ├── 3d/
-│   │   └── Hero3DVisualizer.tsx  # Three.js 360º Wheel & Tire Canvas
+│   ├── sections/
+│   │   ├── Hero.tsx              # Abertura com emblema em relevo 3D (CSS)
+│   │   └── StoreLocation.tsx     # Mapa da unidade com carregamento sob demanda
 │   ├── ui/
 │   │   ├── ProductCard.tsx       # Card com Tabela Limpa & WhatsApp Route
 │   │   ├── SearchDashboard.tsx   # Painel Veículo x Medida
 │   │   └── ParisDakarLogo.tsx    # SVG com Touareg Dakar Symbol
 │   └── modals/
 │       ├── ProductDetailModal.tsx
-│       └── B2BModal.tsx
+│       └── AuthModal.tsx
 ├── lib/                          # Serviços & Conectores de Backend
 │   ├── supabase/                 # Conector Supabase (Futuro Backend)
 │   │   ├── client.ts             # Browser Supabase Client
@@ -112,20 +113,20 @@ CREATE TABLE b2b_profiles (
 );`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-4xl bg-[#111111] text-white rounded-2xl border border-white/10 shadow-2xl p-6 sm:p-8 my-8 max-h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pd-overlay-bg pd-anim-rise">
+      <div className="relative w-full max-w-4xl pd-surface pd-text rounded-2xl border pd-border shadow-2xl p-6 sm:p-8 my-8 max-h-[90vh] flex flex-col overflow-hidden">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center justify-between pb-4 border-b pd-border shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded bg-[#8B0000]/20 border border-[#8B0000]/40 text-[#8B0000]">
+            <div className="p-2.5 rounded bg-[#8B0000]/20 border border-[#8B0000]/40 pd-brand-text">
               <Cpu className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-black uppercase italic tracking-tight text-white flex items-center gap-2">
+              <h2 className="text-lg font-black uppercase italic tracking-tight pd-text flex items-center gap-2">
                 <span>Arquitetura de Software Next.js / Vercel</span>
               </h2>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs pd-text-2">
                 Paris Dakar E-Commerce Front-End // Estrutura de Diretórios e Configuração Tailwind CSS
               </p>
             </div>
@@ -133,7 +134,7 @@ CREATE TABLE b2b_profiles (
 
           <button
             onClick={onClose}
-            className="p-2.5 rounded-full bg-[#1a1a1a] text-gray-300 hover:bg-[#8B0000] hover:text-white transition border border-white/10"
+            className="p-2.5 rounded-full pd-surface-2 pd-text-2 hover:bg-[#8B0000] transition border pd-border"
           >
             <X className="w-5 h-5" />
           </button>
@@ -146,7 +147,7 @@ CREATE TABLE b2b_profiles (
             className={`flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition border ${
               activeTab === 'tree'
                 ? 'bg-[#8B0000] text-white border-[#8B0000]'
-                : 'bg-[#1a1a1a] text-gray-400 border-white/10 hover:text-white'
+                : 'pd-surface-2 pd-text-2 pd-border'
             }`}
           >
             <FolderTree className="w-4 h-4" />
@@ -158,7 +159,7 @@ CREATE TABLE b2b_profiles (
             className={`flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition border ${
               activeTab === 'tailwind'
                 ? 'bg-[#8B0000] text-white border-[#8B0000]'
-                : 'bg-[#1a1a1a] text-gray-400 border-white/10 hover:text-white'
+                : 'pd-surface-2 pd-text-2 pd-border'
             }`}
           >
             <Code2 className="w-4 h-4" />
@@ -170,7 +171,7 @@ CREATE TABLE b2b_profiles (
             className={`flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition border ${
               activeTab === 'backend'
                 ? 'bg-[#8B0000] text-white border-[#8B0000]'
-                : 'bg-[#1a1a1a] text-gray-400 border-white/10 hover:text-white'
+                : 'pd-surface-2 pd-text-2 pd-border'
             }`}
           >
             <Server className="w-4 h-4" />
@@ -179,7 +180,7 @@ CREATE TABLE b2b_profiles (
         </div>
 
         {/* Tab Content Display */}
-        <div className="mt-4 flex-1 overflow-y-auto bg-zinc-900/90 rounded-2xl border border-zinc-800/90 p-4 font-mono text-xs text-zinc-200 relative">
+        <div className="mt-4 flex-1 overflow-y-auto pd-surface-2 rounded-2xl border pd-border p-4 font-mono text-xs pd-text-2 relative">
           
           {/* Copy Button */}
           <button
@@ -187,11 +188,11 @@ CREATE TABLE b2b_profiles (
               const code = activeTab === 'tree' ? directoryTreeText : activeTab === 'tailwind' ? tailwindConfigCode : backendDocText;
               copyToClipboard(code, activeTab);
             }}
-            className="absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[11px] font-sans font-bold flex items-center gap-1.5 border border-zinc-700 transition"
+            className="absolute top-3 right-3 px-3 py-1.5 rounded-lg pd-surface-3 pd-row-hover pd-text-2 text-[11px] font-sans font-bold flex items-center gap-1.5 border pd-border-strong transition"
           >
             {copiedCode === activeTab ? (
               <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 pd-success-text" />
                 <span>Copiado!</span>
               </>
             ) : (
@@ -203,19 +204,19 @@ CREATE TABLE b2b_profiles (
           </button>
 
           {activeTab === 'tree' && (
-            <pre className="whitespace-pre overflow-x-auto leading-relaxed text-emerald-400 font-bold">
+            <pre className="whitespace-pre overflow-x-auto leading-relaxed pd-success-text font-bold">
               {directoryTreeText}
             </pre>
           )}
 
           {activeTab === 'tailwind' && (
-            <pre className="whitespace-pre overflow-x-auto leading-relaxed text-amber-300">
+            <pre className="whitespace-pre overflow-x-auto leading-relaxed pd-gold-text">
               {tailwindConfigCode}
             </pre>
           )}
 
           {activeTab === 'backend' && (
-            <pre className="whitespace-pre overflow-x-auto leading-relaxed text-sky-300">
+            <pre className="whitespace-pre overflow-x-auto leading-relaxed pd-info-text">
               {backendDocText}
             </pre>
           )}
@@ -223,15 +224,15 @@ CREATE TABLE b2b_profiles (
         </div>
 
         {/* Deployment Note */}
-        <div className="pt-4 border-t border-zinc-800 shrink-0 flex items-center justify-between text-xs text-zinc-400">
+        <div className="pt-4 border-t pd-border shrink-0 flex items-center justify-between text-xs pd-text-2">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <ShieldCheck className="w-4 h-4 pd-success-text" />
             <span>Pronto para Deploy imediato na Vercel com suporte a Serverless Functions.</span>
           </div>
 
           <button
             onClick={onClose}
-            className="btn-paris px-5 py-2 rounded-xl text-xs font-bold font-sans"
+            className="btn btn-primary px-5 py-2 rounded-xl text-xs font-bold font-sans"
           >
             Entendido / Voltar à Plataforma
           </button>

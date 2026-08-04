@@ -4,7 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "outDir": "./dist",
+    "outDir": "./dist-server",
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
@@ -13,6 +13,7 @@
     "resolveJsonModule": true,
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.tsx", "src/hooks/**", "src/data/**", "src/services/storageService.ts"]
 }
 

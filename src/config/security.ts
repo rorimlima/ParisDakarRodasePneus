@@ -50,6 +50,8 @@ export const helmetMiddleware = helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'https:'],
       connectSrc: ["'self'", 'https://identitytoolkit.googleapis.com', 'https://securetoken.googleapis.com'],
+      // Necessário para o mapa da unidade (embed do Google Maps) renderizar.
+      frameSrc: ["'self'", 'https://www.google.com', 'https://maps.google.com'],
     },
   },
   crossOriginEmbedderPolicy: true,

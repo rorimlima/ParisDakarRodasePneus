@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1c1817"/>
+      <stop offset="1" stop-color="#080706"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="18" y1="8" x2="102" y2="114" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E24545"/>
+      <stop offset="0.45" stop-color="#B01414"/>
+      <stop offset="1" stop-color="#6E0000"/>
+    </linearGradient>
+    <mask id="tuareg" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+      <rect width="120" height="120" fill="#000"/>
+      <path fill="#fff" d="M60 14c-13 0-24 6-31 16-6 9-8 20-6 31 2 12 9 23 19 30 9 6 20 9 31 8 9-1 17-4 24-10-8 3-16 3-24 1 9-6 16-15 19-25 4-13 2-27-6-38C80 19 70 14 60 14Z"/>
+      <path fill="#fff" d="M84 84c8 1 16 0 23-4-4 9-11 16-20 20-3 1-6 2-9 2 4-5 6-11 6-18Z"/>
+      <path fill="#000" d="M26 40c14-11 34-14 51-8l-3 10c-15-6-32-3-45 6Z"/>
+      <path fill="#000" d="M22 58c17-12 40-14 59-6l-3 10c-17-7-37-5-53 5Z"/>
+      <path fill="#000" d="M28 76c15-10 35-12 51-6l-3 10c-14-5-31-4-45 4Z"/>
+    </mask>
+  </defs>
+  <rect width="120" height="120" rx="26" fill="url(#bg)"/>
+  <g transform="translate(60 61) scale(0.88) translate(-60 -60)">
+    <rect width="120" height="120" fill="url(#mark)" mask="url(#tuareg)"/>
+  </g>
+</svg>

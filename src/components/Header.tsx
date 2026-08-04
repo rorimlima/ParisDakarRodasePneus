@@ -10,18 +10,18 @@ import {
   X,
   User,
   Lock,
-  LogIn
+  LogIn,
+  MapPin
 } from 'lucide-react';
 import { ParisDakarLogo } from './ParisDakarLogo';
 import { UserSession } from '../types';
 
 interface HeaderProps {
-  darkMode: boolean;
-  onToggleDarkMode: () => void;
+  isDark: boolean;
+  onToggleTheme: () => void;
   currentSession: UserSession;
   onOpenAuthModal: (tab?: 'b2c' | 'b2b' | 'admin') => void;
   onOpenAdminDashboard: () => void;
-  onOpenArchitectureViewer: () => void;
   onSearchChange: (query: string) => void;
   searchQuery: string;
   onConsultWhatsApp: (msg?: string) => void;
@@ -29,12 +29,11 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  darkMode,
-  onToggleDarkMode,
+  isDark,
+  onToggleTheme,
   currentSession,
   onOpenAuthModal,
   onOpenAdminDashboard,
-  onOpenArchitectureViewer,
   onSearchChange,
   searchQuery,
   onConsultWhatsApp,
@@ -42,191 +41,241 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const themeLabel = isDark ? 'Ativar modo claro' : 'Ativar modo escuro';
+
+  const accountButton = () => {
+    if (currentSession.type === 'admin') {
+      return (
+        <button type="button" onClick={onOpenAdminDashboard} className="btn btn-primary">
+          <Lock className="w-4 h-4" />
+          <span>Painel admin</span>
+        </button>
+      );
+    }
+
+    if (currentSession.type === 'b2b') {
+      return (
+        <button type="button" onClick={() => onOpenAuthModal('b2b')} className="btn btn-outline">
+          <Building2 className="w-4 h-4 pd-gold-text" />
+          <span className="max-w-[13rem] truncate">
+            {currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName || 'Conta PJ'}
+          </span>
+        </button>
+      );
+    }
+
+    if (currentSession.type === 'b2c') {
+      return (
+        <button type="button" onClick={() => onOpenAuthModal('b2c')} className="btn btn-outline">
+          <User className="w-4 h-4 pd-brand-text" />
+          <span className="max-w-[13rem] truncate">
+            {currentSession.b2cUser?.fullName || 'Minha conta'}
+          </span>
+        </button>
+      );
+    }
+
+    return (
+      <button type="button" onClick={() => onOpenAuthModal('b2c')} className="btn btn-outline">
+        <LogIn className="w-4 h-4 pd-brand-text" />
+        <span>Entrar</span>
+      </button>
+    );
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-md bg-black/95 text-white border-b border-[#8B0000]/50 transition-colors duration-200">
-      
-      {/* Top Announcement Bar - Only Instagram */}
-      <div className="bg-gradient-to-r from-black via-[#8B0000]/40 to-black text-white text-xs py-1.5 px-4 font-medium border-b border-[#8B0000]/30">
-        <div className="max-w-7xl mx-auto w-full flex justify-center items-center">
+    <header className="sticky top-0 z-40 w-full pd-glass border-b pd-border">
+      {/* Faixa de anúncio */}
+      <div className="border-b pd-hairline">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-1.5 flex items-center justify-center gap-4">
+          <p className="text-[0.68rem] font-semibold tracking-wide pd-text-3 truncate hidden sm:block">
+            {announcementText || 'Rodas forjadas • Pneus off-road • Consultoria técnica 4x4'}
+          </p>
           <a
             href="https://www.instagram.com/parisdakarrodas/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-amber-300 transition flex items-center gap-1.5 font-bold tracking-wide text-xs"
+            className="pd-link text-[0.68rem] font-bold tracking-wide flex items-center gap-1.5 shrink-0"
           >
-            <Instagram className="w-3.5 h-3.5 text-pink-500" />
-            <span>Siga nosso Instagram @parisdakarrodas</span>
+            <Instagram className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>@parisdakarrodas</span>
           </a>
         </div>
       </div>
 
-      {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-        
-        {/* Brand Logo */}
-        <a href="#" className="flex items-center gap-2">
-          <ParisDakarLogo colorMode="default" height={44} />
+      {/* Barra principal — o logo abre o site no topo */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-5">
+        <a
+          href="#topo"
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          aria-label="Paris Dakar Rodas e Pneus — início"
+          className="shrink-0"
+        >
+          <ParisDakarLogo variant="full" height={42} />
         </a>
 
-        {/* Desktop Quick Search Bar */}
-        <div className="hidden md:flex flex-1 max-w-md relative">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-500">
-            <Search className="w-4 h-4" />
-          </div>
+        {/* Busca rápida */}
+        <div className="hidden md:flex flex-1 max-w-lg relative">
+          <Search
+            className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pd-text-3 pointer-events-none"
+            aria-hidden="true"
+          />
           <input
-            type="text"
+            type="search"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Caminhonetes (Hilux, Ranger, Ram, S10), Aro, Pneu (35x12.5)..."
-            className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm rounded-xl bg-[#111111] text-white border border-white/10 focus:outline-none focus:border-[#8B0000] focus:ring-1 focus:ring-[#8B0000] transition placeholder-zinc-500"
+            placeholder="Hilux, Ranger, RAM, aro 17, 35x12.50..."
+            aria-label="Buscar no catálogo"
+            className="pd-input !pl-10"
           />
         </div>
 
-        {/* Desktop Actions */}
-        <div className="hidden lg:flex items-center gap-3">
-          
-          {/* Dark / Light Toggle */}
+        {/* Ações desktop */}
+        <div className="hidden lg:flex items-center gap-2.5">
           <button
-            onClick={onToggleDarkMode}
-            className="p-2.5 rounded-xl bg-[#111111] text-zinc-300 hover:bg-[#1a1a1a] border border-white/10 transition"
-            title={darkMode ? "Mudar para Modo Claro" : "Mudar para Modo Escuro"}
+            type="button"
+            onClick={onToggleTheme}
+            className="btn-icon"
+            title={themeLabel}
+            aria-label={themeLabel}
           >
-            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-zinc-300" />}
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          {/* ADMIN ACTIVE BUTTON / PAINEL ADMIN TRIGGER */}
-          {currentSession.type === 'admin' ? (
-            <button
-              onClick={onOpenAdminDashboard}
-              className="bg-[#8B0000] hover:bg-red-800 text-white px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 border border-red-500/50 shadow-lg animate-pulse"
-            >
-              <Lock className="w-4 h-4" />
-              <span>Painel Master Supremo</span>
-            </button>
-          ) : currentSession.type === 'b2b' ? (
-            <button
-              onClick={() => onOpenAuthModal('b2b')}
-              className="bg-[#111111] text-amber-400 border border-amber-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
-            >
-              <Building2 className="w-4 h-4 text-amber-400" />
-              <span>{currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName || 'Conta Pessoa Jurídica'}</span>
-            </button>
-          ) : currentSession.type === 'b2c' ? (
-            <button
-              onClick={() => onOpenAuthModal('b2c')}
-              className="bg-[#111111] text-sky-400 border border-sky-500/30 px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
-            >
-              <User className="w-4 h-4" />
-              <span>{currentSession.b2cUser?.fullName || 'Minha Conta'}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onOpenAuthModal('b2c')}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#111111] text-zinc-200 border border-white/10 hover:border-[#8B0000] transition"
-            >
-              <LogIn className="w-4 h-4 text-[#8B0000]" />
-              <span>Entrar / Cadastrar</span>
-            </button>
-          )}
+          <a href="#localizacao" className="btn-icon" title="Localização" aria-label="Localização">
+            <MapPin className="w-4 h-4" />
+          </a>
 
-          {/* WhatsApp Direct Specialist Route Button */}
+          {accountButton()}
+
           <button
-            onClick={() => onConsultWhatsApp("Olá equipe Paris Dakar! Gostaria de consultar rodas e pneus para minha caminhonete 4x4.")}
-            className="btn-paris flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold shadow-md uppercase tracking-wider"
+            type="button"
+            onClick={() =>
+              onConsultWhatsApp(
+                'Olá equipe Paris Dakar! Gostaria de consultar rodas e pneus para minha caminhonete 4x4.'
+              )
+            }
+            className="btn btn-primary"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Atendimento WhatsApp</span>
+            <span>WhatsApp</span>
           </button>
         </div>
 
-        {/* Mobile Menu Toggle */}
+        {/* Ações mobile */}
         <div className="flex lg:hidden items-center gap-2">
           <button
-            onClick={onToggleDarkMode}
-            className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-800"
+            type="button"
+            onClick={onToggleTheme}
+            className="btn-icon"
+            title={themeLabel}
+            aria-label={themeLabel}
           >
-            {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-900 text-slate-800 dark:text-zinc-200 border border-slate-200 dark:border-zinc-800"
+            className="btn-icon"
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? 'Fechar menu' : 'Abrir menu'}
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
-
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Gaveta mobile */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-zinc-950 border-b border-zinc-800 px-4 py-4 space-y-3">
+        <div className="lg:hidden pd-surface border-t pd-border px-4 py-4 space-y-3 pd-anim-rise">
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
+            <Search
+              className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 pd-text-3 pointer-events-none"
+              aria-hidden="true"
+            />
             <input
-              type="text"
+              type="search"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar caminhonete, aro, pneu..."
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-100"
+              aria-label="Buscar no catálogo"
+              className="pd-input !pl-10"
             />
           </div>
 
-          <div className="flex flex-col gap-2 pt-1">
+          <div className="flex flex-col gap-2">
             {currentSession.type === 'admin' ? (
               <button
+                type="button"
                 onClick={() => {
                   onOpenAdminDashboard();
                   setMobileMenuOpen(false);
                 }}
-                className="w-full py-2.5 bg-[#8B0000] text-white rounded font-bold text-xs uppercase flex items-center justify-center gap-2"
+                className="btn btn-primary btn-block"
               >
                 <Lock className="w-4 h-4" />
-                <span>Painel Admin ({currentSession.adminUser?.role})</span>
+                <span>Painel admin ({currentSession.adminUser?.role})</span>
               </button>
             ) : (
               <>
                 <button
+                  type="button"
                   onClick={() => {
                     onOpenAuthModal('b2c');
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full py-2.5 bg-zinc-900 text-white rounded font-bold text-xs uppercase flex items-center justify-center gap-2 border border-white/10"
+                  className="btn btn-outline btn-block"
                 >
-                  <User className="w-4 h-4 text-sky-400" />
-                  <span>Área Cliente CPF</span>
+                  <User className="w-4 h-4 pd-brand-text" />
+                  <span>Área cliente CPF</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => {
                     onOpenAuthModal('b2b');
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full py-2.5 bg-zinc-900 text-amber-400 rounded font-bold text-xs uppercase flex items-center justify-center gap-2 border border-amber-500/30"
+                  className="btn btn-outline btn-block"
                 >
-                  <Building2 className="w-4 h-4 text-amber-400" />
-                  <span>Área Lojista CNPJ</span>
+                  <Building2 className="w-4 h-4 pd-gold-text" />
+                  <span>Área lojista CNPJ</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => {
                     onOpenAuthModal('admin');
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full py-2 bg-red-950/80 text-red-300 rounded font-bold text-xs uppercase flex items-center justify-center gap-2 border border-red-800"
+                  className="btn btn-subtle btn-block"
                 >
-                  <Lock className="w-4 h-4 text-red-400" />
-                  <span>Acesso Restrito Admin</span>
+                  <Lock className="w-4 h-4" />
+                  <span>Acesso restrito</span>
                 </button>
               </>
             )}
 
+            <a
+              href="#localizacao"
+              onClick={() => setMobileMenuOpen(false)}
+              className="btn btn-subtle btn-block"
+            >
+              <MapPin className="w-4 h-4" />
+              <span>Como chegar</span>
+            </a>
+
             <button
+              type="button"
               onClick={() => {
-                onConsultWhatsApp("Olá! Atendimento Paris Dakar Caminhonetes 4x4.");
+                onConsultWhatsApp('Olá! Atendimento Paris Dakar caminhonetes 4x4.');
                 setMobileMenuOpen(false);
               }}
-              className="btn-paris w-full py-2.5 rounded font-bold text-xs uppercase flex items-center justify-center gap-2 mt-1"
+              className="btn btn-primary btn-block"
             >
               <MessageCircle className="w-4 h-4" />
               <span>Falar no WhatsApp</span>
@@ -234,7 +283,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
       )}
-
     </header>
   );
 };

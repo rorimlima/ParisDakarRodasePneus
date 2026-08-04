@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, MessageCircle, UserCheck, ShieldCheck } from 'lucide-react';
 import { Seller } from '../types';
 
@@ -19,137 +19,145 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
   onFallbackCentral,
   productName
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const activeSellers = sellers.filter((s) => s.isActive);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div 
-        className="relative w-full max-w-lg bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[#1a1a1a] via-[#161616] to-[#8B0000]/30 p-5 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <MessageCircle className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <h3 className="text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
-                Atendimento Especializado 4x4
-              </h3>
-              <p className="text-xs text-gray-400">
-                Escolha um de nossos consultores no WhatsApp
-              </p>
+    <div
+      className="pd-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Escolher consultor"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="pd-modal max-w-lg flex flex-col">
+        {/* Cabeçalho */}
+        <div className="p-5 border-b pd-border flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <span
+              className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 pd-success-text"
+              style={{
+                backgroundColor: 'color-mix(in srgb, var(--pd-success) 14%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--pd-success) 32%, transparent)'
+              }}
+              aria-hidden="true"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-base font-bold uppercase tracking-tight pd-text truncate">
+                Atendimento especializado
+              </h2>
+              <p className="text-xs pd-text-3">Escolha um consultor para falar no WhatsApp</p>
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition"
-          >
-            <X className="w-5 h-5" />
+          <button type="button" onClick={onClose} className="btn-icon shrink-0" aria-label="Fechar">
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Product Context Banner if present */}
         {productName && (
-          <div className="bg-[#8B0000]/10 border-b border-[#8B0000]/30 px-5 py-2.5 flex items-center justify-between text-xs">
-            <span className="text-gray-300 font-medium">Item em Cotação:</span>
-            <span className="font-bold text-red-400 truncate max-w-[280px]" title={productName}>
+          <div className="px-5 py-2.5 border-b pd-hairline pd-surface-2 flex items-center justify-between gap-3 text-xs">
+            <span className="pd-text-3 font-medium shrink-0">Item em cotação:</span>
+            <span className="font-bold pd-brand-text truncate" title={productName}>
               {productName}
             </span>
           </div>
         )}
 
-        {/* Sellers Body List */}
+        {/* Lista de vendedores */}
         <div className="p-5 overflow-y-auto space-y-3 flex-1">
           {activeSellers.length === 0 ? (
-            <div className="text-center py-8 text-gray-400 space-y-3">
-              <UserCheck className="w-12 h-12 mx-auto text-gray-600" />
-              <p className="text-sm font-semibold">Nenhum vendedor disponível no momento.</p>
+            <div className="text-center py-8 space-y-3">
+              <UserCheck className="w-11 h-11 mx-auto pd-text-3" aria-hidden="true" />
+              <p className="text-sm font-semibold pd-text-2">
+                Nenhum consultor disponível no momento.
+              </p>
               {onFallbackCentral && (
-                <button
-                  onClick={onFallbackCentral}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg uppercase tracking-wider transition"
-                >
-                  Falar no Canal Principal
+                <button type="button" onClick={onFallbackCentral} className="btn btn-whats">
+                  Falar no canal principal
                 </button>
               )}
             </div>
           ) : (
             activeSellers.map((seller) => (
-              <div
+              <button
                 key={seller.id}
+                type="button"
                 onClick={() => onSelectSeller(seller)}
-                className="group relative bg-[#181818] hover:bg-[#222222] border border-white/5 hover:border-emerald-500/50 rounded-xl p-4 transition-all duration-200 cursor-pointer shadow-md flex items-center justify-between gap-4"
+                className="pd-card pd-card-hover w-full p-4 flex items-center justify-between gap-4 text-left"
               >
-                {/* Avatar & Info */}
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="relative shrink-0">
+                <span className="flex items-center gap-3.5 min-w-0">
+                  <span className="relative shrink-0">
                     {seller.avatarUrl ? (
                       <img
                         src={seller.avatarUrl}
-                        alt={seller.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-emerald-500/40 group-hover:border-emerald-400 transition"
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover border-2 pd-border"
+                        loading="lazy"
+                        decoding="async"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#8B0000] text-white font-black text-lg flex items-center justify-center border-2 border-emerald-500/40">
+                      <span
+                        className="w-12 h-12 rounded-full flex items-center justify-center font-extrabold text-white"
+                        style={{ backgroundColor: 'var(--pd-brand)' }}
+                        aria-hidden="true"
+                      >
                         {seller.name.substring(0, 2).toUpperCase()}
-                      </div>
-                    )}
-                    {/* Status Dot */}
-                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#181818] animate-pulse" />
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-bold text-white group-hover:text-emerald-400 transition truncate">
-                        {seller.name}
-                      </h4>
-                      <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Online
                       </span>
-                    </div>
-                    <p className="text-xs text-gray-400 truncate mt-0.5">
-                      {seller.specialty || 'Consultor Técnico Paris Dakar'}
-                    </p>
-                    <p className="text-[11px] text-gray-500 font-mono mt-0.5">
-                      {seller.phone}
-                    </p>
-                  </div>
-                </div>
+                    )}
+                    <span
+                      className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 animate-pulse-red"
+                      style={{
+                        backgroundColor: 'var(--pd-success)',
+                        borderColor: 'var(--pd-surface)'
+                      }}
+                      aria-hidden="true"
+                    />
+                  </span>
 
-                {/* Direct Action Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSelectSeller(seller);
-                  }}
-                  className="shrink-0 bg-emerald-600 group-hover:bg-emerald-500 text-white font-black text-xs px-3.5 py-2 rounded-lg uppercase tracking-wider transition flex items-center gap-2 shadow-lg group-hover:scale-105"
-                >
+                  <span className="min-w-0">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-bold pd-text truncate">{seller.name}</span>
+                      <span className="pd-badge pd-badge-success shrink-0">Online</span>
+                    </span>
+                    <span className="block text-xs pd-text-2 truncate mt-0.5">
+                      {seller.specialty || 'Consultor técnico Paris Dakar'}
+                    </span>
+                    <span className="block text-[0.68rem] pd-text-3 pd-mono mt-0.5">{seller.phone}</span>
+                  </span>
+                </span>
+
+                <span className="btn btn-whats btn-sm shrink-0">
                   <MessageCircle className="w-4 h-4" />
                   <span className="hidden sm:inline">Conversar</span>
-                </button>
-              </div>
+                </span>
+              </button>
             ))
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 bg-[#0a0a0a] border-t border-white/10 flex items-center justify-between gap-3 text-xs">
-          <span className="text-gray-400 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            Atendimento Oficial Paris Dakar 4x4
+        {/* Rodapé */}
+        <div className="p-4 border-t pd-border pd-surface-2 flex items-center justify-between gap-3 text-xs">
+          <span className="pd-text-3 flex items-center gap-1.5">
+            <ShieldCheck className="w-4 h-4 pd-success-text" aria-hidden="true" />
+            Atendimento oficial Paris Dakar
           </span>
 
           {onFallbackCentral && activeSellers.length > 0 && (
-            <button
-              onClick={onFallbackCentral}
-              className="text-gray-400 hover:text-white underline text-[11px] transition"
-            >
-              Usar Número Central
+            <button type="button" onClick={onFallbackCentral} className="pd-link underline text-[0.68rem]">
+              Usar número central
             </button>
           )}
         </div>

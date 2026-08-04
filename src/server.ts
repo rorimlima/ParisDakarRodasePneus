@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -7,6 +7,7 @@ import cors from 'cors';
 import { helmetMiddleware, corsOptions, generalRateLimiter } from './config/security.js';
 import { OFFICIAL_BRAND } from './config/branding.js';
 import { errorHandlerMiddleware, notFoundMiddleware } from './middlewares/errorHandler.js';
+import { getDatabaseHealth } from './services/dbHealth.js';
 
 import importRoutes from './routes/importRoutes.js';
 import catalogRoutes from './routes/catalogRoutes.js';
@@ -31,7 +32,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // 3. Servir arquivos estáticos da logo oficial e ativos públicos
 app.use('/assets', express.static(path.join(__dirname, '../assets')));
-app.use('/public', express.static(path.join(__dirname, '../public')));
+app.use('/public', express.static(path.join(__dirname, '../api-assets')));
 
 // 4. Rota para consulta da Identidade Visual e Logo Oficial
 app.get('/api/brand', (_req: Request, res: Response) => {
@@ -49,6 +50,16 @@ app.get('/health', (_req: Request, res: Response) => {
     timestamp: new Date().toISOString(),
     security: 'ENABLED',
   });
+});
+
+// 5.1. Diagnóstico da camada de dados (credenciais, Firestore e store ativo)
+app.get('/health/db', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const report = await getDatabaseHealth();
+    res.status(report.status === 'down' ? 503 : 200).json(report);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // 6. Montagem das Rotas da API Antigravity

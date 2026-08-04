@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, MessageCircle, ShieldCheck, Truck, Check, Star, Car, Building2, Lock } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, MessageCircle, ShieldCheck, Truck, Car } from 'lucide-react';
 import { Product, B2BUser } from '../types';
 
 interface ProductDetailModalProps {
@@ -10,249 +10,239 @@ interface ProductDetailModalProps {
   onOpenB2BModal: () => void;
 }
 
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   product,
   onClose,
   b2bUser,
-  onConsultWhatsApp,
-  onOpenB2BModal
+  onConsultWhatsApp
 }) => {
-  if (!product) return null;
-
-  const [selectedImage, setSelectedImage] = useState<string>(product.image);
+  const [selectedImage, setSelectedImage] = useState<string>(product?.image ?? '');
   const [vehicleQuery, setVehicleQuery] = useState<string>('');
   const [vehicleCheckResult, setVehicleCheckResult] = useState<string | null>(null);
 
-  const imagesList = [product.image, ...(product.secondaryImages || [])];
+  // Trocar de produto sem desmontar o modal precisa reiniciar a galeria.
+  useEffect(() => {
+    setSelectedImage(product?.image ?? '');
+    setVehicleQuery('');
+    setVehicleCheckResult(null);
+  }, [product?.id, product?.image]);
 
-  const formattedPrice = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(b2bUser.isLoggedIn && product.b2bPrice ? product.b2bPrice : product.price);
+  // Fechar com ESC e travar o scroll do fundo enquanto o modal está aberto.
+  useEffect(() => {
+    if (!product) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    const previousOverflow = document.body.style.overflow;
+
+    document.addEventListener('keydown', onKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [product, onClose]);
+
+  if (!product) return null;
+
+  const imagesList = [product.image, ...(product.secondaryImages || [])];
+  const formattedPrice = brl.format(
+    b2bUser.isLoggedIn && product.b2bPrice ? product.b2bPrice : product.price
+  );
 
   const handleCheckCompatibility = () => {
-    if (!vehicleQuery.trim()) return;
+    const query = vehicleQuery.trim();
+    if (!query) return;
+
     const isMatched = product.compatibleVehicles.some((v) =>
-      v.toLowerCase().includes(vehicleQuery.toLowerCase())
+      v.toLowerCase().includes(query.toLowerCase())
     );
-    if (isMatched) {
-      setVehicleCheckResult(`✅ Compatibilidade confirmada! O item ${product.sku} se adapta perfeitamente ao seu ${vehicleQuery}.`);
-    } else {
-      setVehicleCheckResult(`⚠️ Verificação especial necessária: Seu ${vehicleQuery} pode requerer kit de elevação de suspensão (Lift) ou espaçadores adicionais. Fale com nosso consultor no WhatsApp para confirmar!`);
-    }
+
+    setVehicleCheckResult(
+      isMatched
+        ? `Compatibilidade confirmada: o item ${product.sku} se adapta ao seu ${query}.`
+        : `Verificação especial necessária: seu ${query} pode exigir kit de elevação (lift) ou espaçadores. Fale com um consultor no WhatsApp para confirmar.`
+    );
   };
 
   const handleWhatsAppConsult = () => {
     const specsSummary = [
-      product.specs.aro ? `Aro ${product.specs.aro}` : null,
-      product.specs.furacao ? `Furação: ${product.specs.furacao}` : null,
-      product.specs.offset ? `Offset: ${product.specs.offset}` : null,
-      product.specs.tala ? `Tala: ${product.specs.tala}` : null,
-      product.specs.medidaPneu ? `Medida: ${product.specs.medidaPneu}` : null,
-      product.specs.acabamento ? `Cor: ${product.specs.acabamento}` : null
+      product.specs.aro && `Aro ${product.specs.aro}`,
+      product.specs.furacao && `Furação: ${product.specs.furacao}`,
+      product.specs.offset && `Offset: ${product.specs.offset}`,
+      product.specs.tala && `Tala: ${product.specs.tala}`,
+      product.specs.medidaPneu && `Medida: ${product.specs.medidaPneu}`,
+      product.specs.acabamento && `Cor: ${product.specs.acabamento}`
     ]
       .filter(Boolean)
       .join(' | ');
 
-    const msg = `Olá equipe Paris Dakar! 🏁\n\nGostaria de fechar o pedido ou solicitar uma cotação técnica sobre o produto:\n\n*${product.name}*\nSKU: ${product.sku}\nEspecificações: ${specsSummary}\nPreço: ${formattedPrice}\n\nMeu veículo: ${vehicleQuery || 'A confirmar com especialista'}`;
-
-    onConsultWhatsApp(msg);
+    onConsultWhatsApp(
+      `Olá equipe Paris Dakar! 🏁\n\nGostaria de uma cotação técnica do produto:\n\n*${product.name}*\nSKU: ${product.sku}\nEspecificações: ${specsSummary}\nPreço: ${formattedPrice}\n\nMeu veículo: ${vehicleQuery || 'A confirmar com especialista'}`
+    );
   };
 
+  const specRows: Array<[string, string | undefined, boolean?]> = [
+    ['Aro', product.specs.aro, true],
+    ['Furação (PCD)', product.specs.furacao, true],
+    ['Offset (ET)', product.specs.offset],
+    ['Tala (largura)', product.specs.tala],
+    ['Medida do pneu', product.specs.medidaPneu, true],
+    ['Tipo de banda', product.specs.tipoPneu],
+    ['Acabamento', product.specs.acabamento],
+    ['Peso do item', product.specs.peso]
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-8 overflow-hidden text-white">
-        
-        {/* Close Button */}
+    <div
+      className="pd-overlay overflow-y-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-label={product.name}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="pd-modal max-w-4xl relative my-8">
         <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2.5 rounded-full bg-[#1a1a1a] text-gray-300 hover:bg-[#8B0000] hover:text-white transition border border-white/10"
+          className="btn-icon absolute top-4 right-4 z-10"
+          aria-label="Fechar"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 sm:p-8">
-          
-          {/* Gallery Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 p-6 sm:p-8">
+          {/* Galeria */}
           <div className="space-y-4">
-            <div className="aspect-[4/3] w-full rounded-xl bg-[#1a1a1a] overflow-hidden border border-white/10">
+            <div className="aspect-[4/3] w-full rounded-xl pd-surface-2 overflow-hidden border pd-border">
               <img
                 src={selectedImage}
                 alt={product.name}
                 className="w-full h-full object-cover"
+                decoding="async"
               />
             </div>
 
-            {/* Thumbnails */}
             {imagesList.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {imagesList.map((img, idx) => (
                   <button
-                    key={idx}
+                    key={`${img}-${idx}`}
+                    type="button"
                     onClick={() => setSelectedImage(img)}
-                    className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
-                      selectedImage === img
-                        ? 'border-[#8B0000]'
-                        : 'border-white/10 opacity-60 hover:opacity-100'
-                    }`}
+                    aria-label={`Imagem ${idx + 1}`}
+                    aria-pressed={selectedImage === img}
+                    className="w-16 h-16 rounded-lg overflow-hidden border-2 shrink-0 transition"
+                    style={{
+                      borderColor: selectedImage === img ? 'var(--pd-brand)' : 'var(--pd-border)',
+                      opacity: selectedImage === img ? 1 : 0.6
+                    }}
                   >
-                    <img src={img} alt="thumb" className="w-full h-full object-cover" />
+                    <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Guarantees Box */}
-            <div className="p-4 rounded-xl bg-[#1a1a1a] border border-white/10 space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                <span>Garantia de Fábrica Paris Dakar: {product.specs.garantia || '3 Anos'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-400">
-                <Truck className="w-4 h-4 text-[#8B0000]" />
-                <span>Envio rápido via transportadora especializada para todo o Brasil.</span>
-              </div>
+            <div className="pd-surface-2 border pd-border rounded-xl p-4 space-y-2.5 text-xs">
+              <p className="flex items-center gap-2 pd-success-text font-bold">
+                <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Garantia de fábrica: {product.specs.garantia || '3 anos'}</span>
+              </p>
+              <p className="flex items-center gap-2 pd-text-2">
+                <Truck className="w-4 h-4 pd-brand-text shrink-0" aria-hidden="true" />
+                <span>Envio por transportadora especializada para todo o Brasil.</span>
+              </p>
             </div>
           </div>
 
-          {/* Product Info Section */}
-          <div className="space-y-5 flex flex-col justify-between">
-            
-            <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[#8B0000] uppercase tracking-widest">
-                  {product.brand} // {product.category}
+          {/* Informações */}
+          <div className="flex flex-col justify-between gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-3 text-xs pr-10">
+                <span className="font-bold pd-brand-text uppercase tracking-[0.14em] truncate">
+                  {product.brand} · {product.category}
                 </span>
-                <span className="font-mono text-gray-400 text-[11px]">SKU: {product.sku}</span>
+                <span className="pd-mono pd-text-3 text-[0.68rem] shrink-0">SKU {product.sku}</span>
               </div>
 
-              <h2 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-white leading-tight">
+              <h2 className="pd-serif text-xl sm:text-2xl font-extrabold uppercase tracking-tight pd-text leading-tight">
                 {product.name}
               </h2>
 
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-300 leading-relaxed">
-                {product.description}
-              </p>
+              <p className="text-sm pd-text-2 leading-relaxed">{product.description}</p>
 
-              {/* Specification Clean Table */}
-              <div className="pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 mb-2">
-                  Especificações Técnicas
-                </h4>
-                <div className="border border-slate-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-slate-50 dark:bg-zinc-950">
-                  <table className="clean-table">
-                    <tbody>
-                      {product.specs.aro && (
-                        <tr>
-                          <th>Aro</th>
-                          <td className="font-bold">{product.specs.aro}</td>
+              <div>
+                <h3 className="pd-label">Especificações técnicas</h3>
+                <table className="clean-table">
+                  <tbody>
+                    {specRows
+                      .filter(([, value]) => Boolean(value))
+                      .map(([label, value, strong]) => (
+                        <tr key={label}>
+                          <th scope="row">{label}</th>
+                          <td className={strong ? 'font-bold pd-mono' : 'pd-mono'}>{value}</td>
                         </tr>
-                      )}
-                      {product.specs.furacao && (
-                        <tr>
-                          <th>Furação (PCD)</th>
-                          <td className="font-bold">{product.specs.furacao}</td>
-                        </tr>
-                      )}
-                      {product.specs.offset && (
-                        <tr>
-                          <th>Offset (ET)</th>
-                          <td>{product.specs.offset}</td>
-                        </tr>
-                      )}
-                      {product.specs.tala && (
-                        <tr>
-                          <th>Tala (Largura)</th>
-                          <td>{product.specs.tala}</td>
-                        </tr>
-                      )}
-                      {product.specs.medidaPneu && (
-                        <tr>
-                          <th>Medida do Pneu</th>
-                          <td className="font-bold text-red-600">{product.specs.medidaPneu}</td>
-                        </tr>
-                      )}
-                      {product.specs.tipoPneu && (
-                        <tr>
-                          <th>Tipo de Banda</th>
-                          <td>{product.specs.tipoPneu}</td>
-                        </tr>
-                      )}
-                      {product.specs.acabamento && (
-                        <tr>
-                          <th>Acabamento</th>
-                          <td>{product.specs.acabamento}</td>
-                        </tr>
-                      )}
-                      {product.specs.peso && (
-                        <tr>
-                          <th>Peso do Item</th>
-                          <td>{product.specs.peso}</td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                      ))}
+                  </tbody>
+                </table>
               </div>
 
-              {/* Vehicle Compatibility Checker */}
-              <div className="pt-2 space-y-2">
-                <label className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase flex items-center gap-1.5">
-                  <Car className="w-4 h-4 text-red-600" />
-                  Verificar Compatibilidade no Seu Veículo:
+              {/* Checador de compatibilidade */}
+              <div className="space-y-2">
+                <label className="pd-label flex items-center gap-1.5" htmlFor="checa-veiculo">
+                  <Car className="w-3.5 h-3.5 pd-brand-text" aria-hidden="true" />
+                  Verificar compatibilidade no seu veículo
                 </label>
                 <div className="flex gap-2">
                   <input
+                    id="checa-veiculo"
                     type="text"
                     value={vehicleQuery}
                     onChange={(e) => setVehicleQuery(e.target.value)}
-                    placeholder="Ex: Hilux 2022, Ranger, Wrangler..."
-                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-100"
+                    onKeyDown={(e) => e.key === 'Enter' && handleCheckCompatibility()}
+                    placeholder="Ex: Hilux 2022, Ranger, S10..."
+                    className="pd-input"
                   />
-                  <button
-                    onClick={handleCheckCompatibility}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700"
-                  >
+                  <button type="button" onClick={handleCheckCompatibility} className="btn btn-subtle">
                     Checar
                   </button>
                 </div>
                 {vehicleCheckResult && (
-                  <p className="text-xs p-2.5 rounded-lg bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 leading-normal">
+                  <p className="text-xs pd-surface-2 border pd-border rounded-lg p-3 leading-relaxed pd-text-2">
                     {vehicleCheckResult}
                   </p>
                 )}
               </div>
-
             </div>
 
-            {/* Price & Action Footer */}
-            <div className="pt-4 border-t border-slate-200 dark:border-zinc-800 space-y-3">
-              <div className="flex items-center justify-between">
+            {/* Preço e ação */}
+            <div className="pt-4 border-t pd-border space-y-3">
+              <div className="flex items-end justify-between gap-3">
                 <div>
-                  <span className="text-xs text-slate-400 block">Valor Unitário / Jogo:</span>
-                  <span className="text-2xl font-black text-slate-900 dark:text-white">
-                    {formattedPrice}
-                  </span>
+                  <span className="pd-label mb-0.5">Valor unitário / jogo</span>
+                  <span className="text-2xl font-extrabold pd-text">{formattedPrice}</span>
                 </div>
-
-                <span className="text-xs text-emerald-500 font-bold bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-800/40">
-                  Estoque Disponível
-                </span>
+                <span className="pd-badge pd-badge-success">Estoque disponível</span>
               </div>
 
               <button
+                type="button"
                 onClick={handleWhatsAppConsult}
-                className="btn-paris w-full py-3.5 rounded-xl font-bold text-sm uppercase tracking-wide flex items-center justify-center gap-2 shadow-xl"
+                className="btn btn-whats btn-block btn-lg"
               >
-                <MessageCircle className="w-5 h-5" />
-                <span>Fechar Pedido / Consultar no WhatsApp</span>
+                <MessageCircle className="w-4 h-4" />
+                <span>Consultar no WhatsApp</span>
               </button>
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );
