@@ -228,10 +228,16 @@ export default function App() {
       // Itens desativados no painel admin não aparecem na loja
       if (product.isActive === false) return false;
 
-      // Filtro: apenas produtos com estoque > 4
-      if ((product.stockQuantity ?? 0) <= 4) return false;
+      // Se a categoria ativa for 'todos' (página inicial), mostramos apenas pneus.
+      // Caso contrário, mostramos a categoria específica selecionada.
+      if (activeCategory === 'todos') {
+        if (product.category !== 'pneus') return false;
+      } else {
+        if (product.category !== activeCategory) return false;
+      }
 
-      if (activeCategory !== 'todos' && product.category !== activeCategory) return false;
+      // Filtro: apenas pneus devem ter obrigatoriamente estoque > 4 para serem exibidos
+      if (product.category === 'pneus' && (product.stockQuantity ?? 0) <= 4) return false;
 
       if (query) {
         const haystack = [
