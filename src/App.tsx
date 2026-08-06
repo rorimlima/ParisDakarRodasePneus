@@ -12,6 +12,7 @@ import { Footer } from './components/Footer';
 
 import { WhatsAppSellerModal } from './components/WhatsAppSellerModal';
 import { storageService } from './services/storageService';
+import { onSessionChange } from './services/authService';
 import {
   Product,
   ProductCategory,
@@ -31,7 +32,8 @@ export default function App() {
   // Persistent Storage States
   const [products, setProducts] = useState<Product[]>(() => storageService.getProducts());
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
-  const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
+  // A sessão é a que o Firebase Auth reportar — nunca o que estiver no localStorage.
+  const [currentSession, setCurrentSession] = useState<UserSession>({ type: null });
   const [sellers, setSellers] = useState<Seller[]>(() => storageService.getSellers());
 
   // View Mode ('store' or 'admin')
@@ -65,6 +67,25 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
+
+  // Sessão controlada pelo Firebase Auth: sobrevive ao reload, expira sozinha e
+  // carrega o papel a partir dos Custom Claims do token.
+  useEffect(() => {
+    // Descarta qualquer sessão antiga gravada no localStorage pelo login anterior.
+    storageService.clearUserSession();
+
+    const unsubscribe = onSessionChange(
+      (session) => {
+        setCurrentSession(session);
+        if (session.type !== 'admin') {
+          setViewMode('store');
+        }
+      },
+      (message) => console.error('[Auth]', message)
+    );
+
+    return unsubscribe;
+  }, []);
 
   // Open Auth Modal with specific tab
   const handleOpenAuthModal = (tab: 'b2c' | 'b2b' | 'admin' = 'b2c') => {

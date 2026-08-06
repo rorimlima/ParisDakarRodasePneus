@@ -15,11 +15,16 @@
     "declaration": false
   },
   "include": ["src/**/*.ts"],
+  // Backend e frontend convivem em src/: tudo que roda no navegador fica de fora
+  // do build da Cloud Function.
   "exclude": [
     "node_modules",
     "src/**/*.tsx",
     "src/data/**",
     "src/services/storageService.ts",
+    "src/services/authService.ts",
+    "src/config/firebaseClient.ts",
+    "src/vite-env.d.ts",
     "src/tests/**"
   ]
 }

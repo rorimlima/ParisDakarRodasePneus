@@ -68,9 +68,13 @@ export interface SizeSearchFilter {
 }
 
 // B2B CNPJ Client
+export type B2BAccountStatus = 'pending' | 'approved' | 'rejected';
+
 export interface B2BUser {
   id?: string;
   isLoggedIn: boolean;
+  // Definido pelo administrador; contas novas nascem como 'pending' sem desconto.
+  status?: B2BAccountStatus;
   companyName: string; // Razão Social
   tradeName?: string; // Nome Fantasia
   cnpj: string; // Suporta numérico e alfanumérico

@@ -31,6 +31,8 @@ const anon = testEnv.unauthenticatedContext().firestore();
 const admin = testEnv.authenticatedContext('admin-uid', { role: 'admin' }).firestore();
 const cliente = testEnv.authenticatedContext('cliente-uid', { role: 'client' }).firestore();
 const outro = testEnv.authenticatedContext('outro-uid', { role: 'client' }).firestore();
+// Usuário recém-criado no Firebase Auth: ainda sem claim de papel e sem perfil.
+const novo = testEnv.authenticatedContext('novo-uid').firestore();
 
 const produtoValido = {
   sku: 'RODA-BBS-17-01',
@@ -156,6 +158,42 @@ const casos = [
         userId: 'outro-uid',
         message: 'spoofing',
         createdAt: serverTimestamp(),
+      }),
+  ],
+
+  // --- Contrato com o authService: os payloads reais de cadastro devem passar ---
+  [
+    'payload de cadastro B2C do authService é aceito',
+    'ok',
+    () =>
+      setDoc(doc(novo, 'clients/novo-uid'), {
+        fullName: 'Ana Ranger',
+        cpf: '123.456.789-00',
+        email: 'ana@ex.com',
+        phone: '(11) 90000-0000',
+        address: 'Rua X, 10',
+        cep: '01000-000',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+  ],
+  [
+    'payload de cadastro B2B do authService é aceito',
+    'ok',
+    () =>
+      setDoc(doc(novo, 'b2bAccounts/novo-uid'), {
+        companyName: 'Ranger Peças LTDA',
+        tradeName: 'Ranger 4x4',
+        cnpj: '11.222.333/0001-44',
+        taxRegime: 'Simples Nacional',
+        stateRegistration: 'Isento',
+        phone: '(11) 90000-0000',
+        email: 'ana@ex.com',
+        address: 'Rua X, 10',
+        status: 'pending',
+        discountPercentage: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }),
   ],
 

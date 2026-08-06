@@ -1,0 +1,72 @@
+name: Deploy Firebase
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      alvos:
+        description: 'Alvos do deploy (sintaxe do --only)'
+        required: false
+        default: 'firestore:rules,firestore:indexes,storage,hosting,functions'
+
+concurrency:
+  group: deploy-firebase
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Publicar no projeto paris-dakar-rodas-pneus
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testar as regras do Firestore antes de publicar
+        run: npm run test:rules
+
+      # A chave da conta de serviço nunca é impressa: o GitHub mascara o secret
+      # e o arquivo vive só no diretório temporário do runner.
+      - name: Autenticar no Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::Secret FIREBASE_SERVICE_ACCOUNT não configurado no repositório."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/service-account.json" >> "$GITHUB_ENV"
+
+      - name: Deploy
+        env:
+          # Consumidas pelo Vite no predeploy do Hosting.
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+        run: |
+          npx firebase deploy \
+            --project paris-dakar-rodas-pneus \
+            --only "${{ inputs.alvos || 'firestore:rules,firestore:indexes,storage,hosting,functions' }}" \
+            --non-interactive
+
+      - name: Remover credenciais do runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/service-account.json"

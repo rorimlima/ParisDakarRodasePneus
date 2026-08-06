@@ -13,9 +13,18 @@ import {
   LogIn,
   UserPlus
 } from 'lucide-react';
-import { B2BUser, CpfClient, AdminUser, UserSession, TaxRegime } from '../types';
+import { UserSession, TaxRegime } from '../types';
 import { formatCPF, formatCNPJ, validateCPF, validateCNPJ, isAlphanumericCNPJ } from '../utils/validation';
-import { storageService } from '../services/storageService';
+import {
+  describeAuthError,
+  loginAsAdmin,
+  loginWithEmail,
+  logout,
+  registerB2BAccount,
+  registerB2CClient,
+  requestPasswordReset,
+} from '../services/authService';
+import { FIREBASE_NOT_CONFIGURED_MESSAGE, isFirebaseConfigured } from '../config/firebaseClient';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -68,6 +77,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // Feedback Messages
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -78,48 +88,53 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setSuccessMsg('');
   };
 
-  // 1. CPF (B2C) Login
-  const handleCpfLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Executa uma ação de autenticação tratando carregamento, erro e fechamento do modal.
+  const runAuthAction = async (
+    action: () => Promise<UserSession>,
+    message: string,
+    delay = 700
+  ) => {
     setErrorMsg('');
+    setSuccessMsg('');
 
-    if (!cpfLoginInput || !cpfPassword) {
-      setErrorMsg('Preencha seu CPF/E-mail e Senha.');
+    if (!isFirebaseConfigured) {
+      setErrorMsg(FIREBASE_NOT_CONFIGURED_MESSAGE);
       return;
     }
 
-    const cpfUsers = storageService.getCpfUsers();
-    const cleanInput = cpfLoginInput.trim().toLowerCase();
-    
-    const user = cpfUsers.find(
-      (u) => u.email.toLowerCase() === cleanInput || u.cpf.replace(/\D/g, '') === cleanInput.replace(/\D/g, '')
-    );
-
-    if (user || cpfLoginInput.length > 3) {
-      const activeUser = user || {
-        id: `cpf-${Date.now()}`,
-        fullName: cpfLoginInput.includes('@') ? cpfLoginInput.split('@')[0] : 'Cliente Registrado',
-        cpf: formatCPF(cpfLoginInput),
-        email: cpfLoginInput.includes('@') ? cpfLoginInput : 'cliente@parisdakar.com.br',
-        phone: '(11) 99999-0000',
-        address: 'São Paulo - SP',
-        cep: '01000-000',
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-
-      const session: UserSession = { type: 'b2c', b2cUser: activeUser };
-      storageService.saveUserSession(session);
-      onLoginSuccess(session);
-      onClose();
-    } else {
-      setErrorMsg('Dados de login incorretos. Verifique e tente novamente.');
+    setIsSubmitting(true);
+    try {
+      const session = await action();
+      setSuccessMsg(message);
+      window.setTimeout(() => {
+        onLoginSuccess(session);
+        onClose();
+      }, delay);
+    } catch (error) {
+      setErrorMsg(describeAuthError(error));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // 2. CPF (B2C) Register
-  const handleCpfRegister = (e: React.FormEvent) => {
+  // 1. CPF (B2C) Login — Firebase Auth (e-mail + senha)
+  const handleCpfLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+
+    if (!cpfLoginInput || !cpfPassword) {
+      setErrorMsg('Preencha seu e-mail e a senha.');
+      return;
+    }
+
+    await runAuthAction(
+      () => loginWithEmail(cpfLoginInput, cpfPassword),
+      'Login realizado com sucesso. Bem-vindo de volta!'
+    );
+  };
+
+  // 2. CPF (B2C) Register — cria a conta no Firebase Auth e o perfil em clients/{uid}
+  const handleCpfRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (!cpfFullName || !cpfValue || !cpfEmail || !cpfRegPassword) {
       setErrorMsg('Preencha todos os campos obrigatórios (Nome, CPF, E-mail e Senha).');
@@ -131,69 +146,45 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const newUser = storageService.registerCpfUser({
-      fullName: cpfFullName,
-      cpf: formatCPF(cpfValue),
-      email: cpfEmail,
-      phone: cpfPhone,
-      address: cpfAddress,
-      cep: cpfCep
-    });
-
-    const session: UserSession = { type: 'b2c', b2cUser: newUser };
-    storageService.saveUserSession(session);
-    setSuccessMsg('Cadastro de Cliente Final realizado com sucesso!');
-    setTimeout(() => {
-      onLoginSuccess(session);
-      onClose();
-    }, 800);
-  };
-
-  // 3. CNPJ (B2B) Login
-  const handleCnpjLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMsg('');
-
-    if (!cnpjLoginInput || !cnpjPassword) {
-      setErrorMsg('Informe o CNPJ ou E-mail corporativo e a Senha.');
+    if (cpfRegPassword.length < 6) {
+      setErrorMsg('A senha precisa ter pelo menos 6 caracteres.');
       return;
     }
 
-    const cnpjUsers = storageService.getCnpjUsers();
-    const cleanInput = cnpjLoginInput.trim().toLowerCase();
-
-    const user = cnpjUsers.find(
-      (u) =>
-        u.email.toLowerCase() === cleanInput ||
-        u.cnpj.toUpperCase().replace(/[^A-Z0-9]/g, '') === cleanInput.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    await runAuthAction(
+      () =>
+        registerB2CClient({
+          fullName: cpfFullName,
+          cpf: formatCPF(cpfValue),
+          email: cpfEmail,
+          password: cpfRegPassword,
+          phone: cpfPhone,
+          address: cpfAddress,
+          cep: cpfCep,
+        }),
+      'Cadastro de Cliente Final realizado com sucesso!',
+      900
     );
-
-    if (user || cnpjLoginInput.length > 4) {
-      const activeUser = user || {
-        id: `cnpj-${Date.now()}`,
-        isLoggedIn: true,
-        companyName: 'Auto Center Parceiro LTDA',
-        tradeName: 'Dakar Partner 4x4',
-        cnpj: formatCNPJ(cnpjLoginInput),
-        taxRegime: 'Simples Nacional' as TaxRegime,
-        phone: '(11) 98888-0000',
-        email: cnpjLoginInput.includes('@') ? cnpjLoginInput : 'loja@autocenter.com.br',
-        discountPercentage: 20
-      };
-
-      const session: UserSession = { type: 'b2b', b2bUser: activeUser };
-      storageService.saveUserSession(session);
-      onLoginSuccess(session);
-      onClose();
-    } else {
-      setErrorMsg('CNPJ ou Senha não encontrados no banco B2B.');
-    }
   };
 
-  // 4. CNPJ (B2B) Register
-  const handleCnpjRegister = (e: React.FormEvent) => {
+  // 3. CNPJ (B2B) Login — Firebase Auth (e-mail corporativo + senha)
+  const handleCnpjLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
+
+    if (!cnpjLoginInput || !cnpjPassword) {
+      setErrorMsg('Informe o e-mail corporativo e a senha.');
+      return;
+    }
+
+    await runAuthAction(
+      () => loginWithEmail(cnpjLoginInput, cnpjPassword),
+      'Acesso Lojista liberado.'
+    );
+  };
+
+  // 4. CNPJ (B2B) Register — conta nasce pendente de aprovação, sem desconto
+  const handleCnpjRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (!companyName || !cnpjValue || !cnpjEmail || !cnpjRegPassword || !taxRegime) {
       setErrorMsg('Atenção: Razão Social, CNPJ, Regime Tributário, E-mail e Senha são obrigatórios.');
@@ -205,91 +196,80 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const newUser = storageService.registerCnpjUser({
-      companyName,
-      tradeName: tradeName || companyName,
-      cnpj: formatCNPJ(cnpjValue),
-      taxRegime,
-      stateRegistration: stateRegistration || 'Isento',
-      phone: cnpjPhone,
-      email: cnpjEmail,
-      address: cnpjAddress,
-      discountPercentage: 20
-    });
+    if (cnpjRegPassword.length < 6) {
+      setErrorMsg('A senha precisa ter pelo menos 6 caracteres.');
+      return;
+    }
 
-    const session: UserSession = { type: 'b2b', b2bUser: newUser };
-    storageService.saveUserSession(session);
-    setSuccessMsg('Cadastro Lojista / B2B aprovado com sucesso! Tabela de atacado liberada.');
-    setTimeout(() => {
-      onLoginSuccess(session);
-      onClose();
-    }, 1000);
+    await runAuthAction(
+      () =>
+        registerB2BAccount({
+          companyName,
+          tradeName: tradeName || companyName,
+          cnpj: formatCNPJ(cnpjValue),
+          taxRegime,
+          stateRegistration: stateRegistration || 'Isento',
+          phone: cnpjPhone,
+          email: cnpjEmail,
+          password: cnpjRegPassword,
+          address: cnpjAddress,
+        }),
+      'Cadastro enviado! A tabela de atacado é liberada assim que um administrador aprovar a conta.',
+      1200
+    );
   };
 
-  // 5. Admin Login (Master Supremo)
-  const handleAdminLogin = (e: React.FormEvent) => {
+  // 5. Admin Login — exige o Custom Claim `role: admin` no token do Firebase
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
 
-    const cleanEmail = adminEmail.trim().toLowerCase();
-    const adminUsers = storageService.getAdminUsers();
-    const foundAdmin = adminUsers.find(
-      (a) => a.email.toLowerCase() === cleanEmail
+    if (!adminEmail || !adminPassword) {
+      setErrorMsg('Informe o e-mail e a senha de administrador.');
+      return;
+    }
+
+    await runAuthAction(
+      () => loginAsAdmin(adminEmail, adminPassword),
+      'Autenticação de administrador confirmada.'
     );
+  };
 
-    const isMasterCredential =
-      (cleanEmail === 'admin@parisdakar.com.br' || cleanEmail === 'master@parisdakar.com.br') && adminPassword === 'adminparisrodas';
-    const isLegacyAdmin =
-      cleanEmail.includes('admin') && (adminPassword === 'adminparisrodas' || adminPassword === 'admin123');
+  // Recuperação de senha por e-mail (Firebase Auth)
+  const handlePasswordReset = async (email: string) => {
+    setErrorMsg('');
+    setSuccessMsg('');
 
-    if (isMasterCredential || isLegacyAdmin || foundAdmin) {
-      const activeAdmin: AdminUser = {
-        id: foundAdmin?.id || 'admin-senior-001',
-        name: 'Master Supremo',
-        email: cleanEmail || 'admin@parisdakar.com.br',
-        role: 'senior',
-        grantedBySenior: true,
-        createdAt: foundAdmin?.createdAt || new Date().toISOString().split('T')[0]
-      };
+    if (!isFirebaseConfigured) {
+      setErrorMsg(FIREBASE_NOT_CONFIGURED_MESSAGE);
+      return;
+    }
 
-      const session: UserSession = { type: 'admin', adminUser: activeAdmin };
-      storageService.saveUserSession(session);
-      setSuccessMsg('Autenticação de Administrador Master Supremo realizada com sucesso!');
-      setTimeout(() => {
-        onLoginSuccess(session);
-        onClose();
-      }, 800);
-    } else {
-      setErrorMsg('Credenciais inválidas. Verifique o e-mail de acesso admin e a senha master.');
+    if (!email.trim()) {
+      setErrorMsg('Digite o e-mail da conta para receber o link de redefinição.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await requestPasswordReset(email);
+      setSuccessMsg(`Enviamos um link de redefinição de senha para ${email.trim()}.`);
+    } catch (error) {
+      setErrorMsg(describeAuthError(error));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Direct Master Supremo Access Trigger
-  const handleSeniorBypass = () => {
-    const seniorAdmin: AdminUser = {
-      id: 'admin-senior-001',
-      name: 'Master Supremo',
-      email: 'admin@parisdakar.com.br',
-      role: 'senior',
-      grantedBySenior: true,
-      createdAt: '2026-01-01'
-    };
-
-
-    const session: UserSession = { type: 'admin', adminUser: seniorAdmin };
-    storageService.saveUserSession(session);
-    setSuccessMsg('Acesso Master Supremo Concedido!');
-    setTimeout(() => {
-      onLoginSuccess(session);
-      onClose();
-    }, 500);
-  };
-
-  const handleLogout = () => {
-    storageService.clearUserSession();
-    onLoginSuccess({ type: null });
-    setSuccessMsg('Sessão encerrada com sucesso.');
-    setTimeout(() => onClose(), 600);
+  const handleLogout = async () => {
+    setErrorMsg('');
+    try {
+      await logout();
+      onLoginSuccess({ type: null });
+      setSuccessMsg('Sessão encerrada com sucesso.');
+      window.setTimeout(() => onClose(), 600);
+    } catch (error) {
+      setErrorMsg(describeAuthError(error));
+    }
   };
 
   return (
@@ -383,7 +363,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Body Form Content */}
         <div className="p-6 space-y-5">
-          
+
+          {!isFirebaseConfigured && (
+            <div className="p-3 bg-amber-950/70 border border-amber-700 text-amber-200 rounded text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+              <span>{FIREBASE_NOT_CONFIGURED_MESSAGE}</span>
+            </div>
+          )}
+
           {/* Feedback Messages */}
           {errorMsg && (
             <div className="p-3 bg-red-950/80 border border-red-800 text-red-200 rounded text-xs flex items-center gap-2">
@@ -430,13 +417,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <form onSubmit={handleCpfLogin} className="space-y-4">
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">
-                      CPF ou E-mail do Cliente
+                      E-mail do Cliente
                     </label>
                     <input
-                      type="text"
+                      type="email"
+                      autoComplete="email"
                       value={cpfLoginInput}
                       onChange={(e) => setCpfLoginInput(e.target.value)}
-                      placeholder="000.000.000-00 ou seu@email.com"
+                      placeholder="seu@email.com"
                       className="w-full px-3.5 py-2.5 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
                     />
                   </div>
@@ -447,6 +435,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </label>
                     <input
                       type="password"
+                      autoComplete="current-password"
                       value={cpfPassword}
                       onChange={(e) => setCpfPassword(e.target.value)}
                       placeholder="••••••••"
@@ -456,9 +445,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   <button
                     type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
                   >
-                    Acessar Minha Conta (CPF)
+                    {isSubmitting ? 'Entrando...' : 'Acessar Minha Conta (CPF)'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePasswordReset(cpfLoginInput)}
+                    disabled={isSubmitting}
+                    className="w-full text-[10px] uppercase tracking-widest text-gray-500 hover:text-gray-300 transition"
+                  >
+                    Esqueci minha senha
                   </button>
                 </form>
               ) : (
@@ -559,9 +558,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   <button
                     type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg mt-2"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg mt-2"
                   >
-                    Concluir Cadastro CPF
+                    {isSubmitting ? 'Criando conta...' : 'Concluir Cadastro CPF'}
                   </button>
                 </form>
               )}
@@ -599,13 +599,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <form onSubmit={handleCnpjLogin} className="space-y-4">
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">
-                      CNPJ (Numérico ou Alfanumérico) ou E-mail Corporativo
+                      E-mail Corporativo
                     </label>
                     <input
-                      type="text"
+                      type="email"
+                      autoComplete="email"
                       value={cnpjLoginInput}
                       onChange={(e) => setCnpjLoginInput(e.target.value)}
-                      placeholder="12.345.678/0001-90 ou 12.ABC.345/0001-89"
+                      placeholder="compras@suaempresa.com.br"
                       className="w-full px-3.5 py-2.5 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
                     />
                   </div>
@@ -616,6 +617,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </label>
                     <input
                       type="password"
+                      autoComplete="current-password"
                       value={cnpjPassword}
                       onChange={(e) => setCnpjPassword(e.target.value)}
                       placeholder="••••••••"
@@ -625,9 +627,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   <button
                     type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
                   >
-                    Acessar Tabela do Lojista (CNPJ)
+                    {isSubmitting ? 'Entrando...' : 'Acessar Tabela do Lojista (CNPJ)'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePasswordReset(cnpjLoginInput)}
+                    disabled={isSubmitting}
+                    className="w-full text-[10px] uppercase tracking-widest text-gray-500 hover:text-gray-300 transition"
+                  >
+                    Esqueci minha senha
                   </button>
                 </form>
               ) : (
@@ -768,9 +780,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   <button
                     type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg mt-2"
+                    disabled={isSubmitting}
+                    className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg mt-2"
                   >
-                    Enviar Cadastro Lojista B2B
+                    {isSubmitting ? 'Enviando cadastro...' : 'Enviar Cadastro Lojista B2B'}
                   </button>
                 </form>
               )}
@@ -788,22 +801,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <p className="text-gray-300">
                   Painel de gestão administrativa e controle do catálogo Paris Dakar Rodas e Pneus.
                 </p>
-                <div className="pt-1 text-[11px] font-mono text-amber-400">
-                  <span>Usuário Master: <strong>admin@parisdakar.com.br</strong></span>
-                </div>
-
+                <p className="pt-1 text-[11px] text-gray-400">
+                  Entre com a conta Firebase que possui a permissão de administrador. A permissão é
+                  concedida pelo backend e não pode ser obtida pelo navegador.
+                </p>
               </div>
 
               <form onSubmit={handleAdminLogin} className="space-y-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">
-                    E-mail do Administrador Master
+                    E-mail do Administrador
                   </label>
                   <input
                     type="email"
+                    autoComplete="email"
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
-                    placeholder="onaeror@gmail.com"
+                    placeholder="admin@parisdakar.com.br"
                     className="w-full px-3.5 py-2.5 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
                   />
                 </div>
@@ -814,32 +828,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </label>
                   <input
                     type="password"
+                    autoComplete="current-password"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
-                    placeholder="adminparisrodas"
+                    placeholder="••••••••"
                     className="w-full px-3.5 py-2.5 rounded bg-[#1a1a1a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#8B0000]"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-60 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
                 >
                   <KeyRound className="w-4 h-4" />
-                  Entrar como Master Supremo
+                  {isSubmitting ? 'Verificando...' : 'Entrar no Painel Administrativo'}
                 </button>
-              </form>
 
-              {/* Direct Senior Master Access Trigger */}
-              <div className="pt-3 border-t border-white/10 text-center">
                 <button
                   type="button"
-                  onClick={handleSeniorBypass}
-                  className="px-4 py-2 bg-[#1a1a1a] hover:bg-[#222222] text-amber-400 border border-amber-500/30 rounded text-[10px] font-bold uppercase tracking-widest transition"
+                  onClick={() => handlePasswordReset(adminEmail)}
+                  disabled={isSubmitting}
+                  className="w-full text-[10px] uppercase tracking-widest text-gray-500 hover:text-gray-300 transition"
                 >
-                  ⚡ Acesso Direto Master Supremo (onaeror@gmail.com)
+                  Esqueci minha senha
                 </button>
-              </div>
+              </form>
             </div>
           )}
 
