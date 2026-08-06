@@ -1,0 +1,180 @@
+rules_version = '2';
+
+/**
+ * Paris Dakar Rodas e Pneus — Regras de Segurança do Cloud Firestore
+ *
+ * Modelo de autorização:
+ *  - A identidade vem do Firebase Auth (request.auth).
+ *  - O papel (role) vem de Custom Claims no token JWT, definidos pelo backend
+ *    através de `npm run set-admin <UID>` (src/scripts/setAdminClaim.ts).
+ *    Isso é intencional: claims não podem ser forjados pelo cliente, ao
+ *    contrário de um campo `role` gravado em um documento.
+ *  - O Admin SDK (backend Express / Cloud Functions) ignora estas regras,
+ *    portanto toda escrita crítica (estoque, pedidos, preços) deve continuar
+ *    passando pela API protegida por authenticateToken + requireRole('admin').
+ *
+ * Postura: negar por padrão. Toda coleção não declarada aqui é inacessível
+ * a partir do SDK cliente (web/mobile).
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------
+    // Funções auxiliares
+    // ---------------------------------------------------------------
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.role == 'admin';
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Campos que o cliente tentou alterar nesta escrita.
+    // `resource` é nulo quando o documento ainda não existe: nesse caso todos os
+    // campos enviados contam como alterados, evitando erro de avaliação na regra.
+    function changedKeys() {
+      return resource == null
+        ? request.resource.data.keys()
+        : request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // Impede escalonamento de privilégio via documento.
+    function noPrivilegeFields() {
+      return !request.resource.data.keys().hasAny(['role', 'isAdmin', 'claims', 'grantedBySenior']);
+    }
+
+    function isNonNegativeNumber(value) {
+      return value is number && value >= 0;
+    }
+
+    // ---------------------------------------------------------------
+    // Catálogo público — leitura livre, escrita apenas administrador
+    // ---------------------------------------------------------------
+
+    match /products/{productId} {
+      allow read: if true;
+
+      allow create, update: if isAdmin()
+        && request.resource.data.sku is string
+        && request.resource.data.sku.size() > 0
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && isNonNegativeNumber(request.resource.data.price)
+        && isNonNegativeNumber(request.resource.data.stockQuantity);
+
+      allow delete: if isAdmin();
+    }
+
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /sellers/{sellerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------
+    // Clientes B2C (CPF) — o documento é indexado pelo UID do Firebase Auth
+    // ---------------------------------------------------------------
+
+    match /clients/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+
+      allow create: if isOwner(uid)
+        && noPrivilegeFields()
+        && request.resource.data.email is string
+        && request.resource.data.fullName is string;
+
+      // O dono atualiza apenas os próprios dados cadastrais.
+      allow update: if (isOwner(uid)
+          && noPrivilegeFields()
+          && changedKeys().hasOnly(['fullName', 'phone', 'address', 'cep', 'email', 'updatedAt']))
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------
+    // Contas B2B (CNPJ) — desconto e aprovação são exclusivos do admin
+    // ---------------------------------------------------------------
+
+    match /b2bAccounts/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+
+      // Autocadastro entra sempre como pendente e sem desconto.
+      allow create: if isOwner(uid)
+        && noPrivilegeFields()
+        && request.resource.data.cnpj is string
+        && request.resource.data.companyName is string
+        && request.resource.data.status == 'pending'
+        && request.resource.data.discountPercentage == 0;
+
+      // O dono nunca altera desconto, status ou CNPJ já aprovado.
+      allow update: if (isOwner(uid)
+          && noPrivilegeFields()
+          && changedKeys().hasOnly(['companyName', 'tradeName', 'phone', 'email', 'address', 'stateRegistration', 'taxRegime', 'updatedAt']))
+        || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------
+    // Administradores — visível e gravável somente por administradores
+    // ---------------------------------------------------------------
+
+    match /adminUsers/{uid} {
+      allow read: if isAdmin();
+      // A criação/remoção de admin acontece via Admin SDK (setCustomUserClaims),
+      // nunca a partir do navegador.
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Orçamentos / contatos de WhatsApp
+    // ---------------------------------------------------------------
+
+    match /inquiries/{inquiryId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------------------------------------------------------------
+    // Pedidos e valores financeiros — somente leitura no cliente.
+    // Toda gravação passa pelo backend (split-fee calculado no servidor).
+    // ---------------------------------------------------------------
+
+    match /orders/{orderId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Trilha de auditoria das importações de estoque: só o backend escreve.
+    match /stockImports/{importId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------------------
+    // Negação explícita para qualquer caminho não previsto acima
+    // ---------------------------------------------------------------
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

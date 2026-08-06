@@ -3,15 +3,23 @@
   "version": "1.0.0",
   "description": "Plataforma E-commerce Automotivo Paris Dakar Rodas e Pneus com Antigravity e Firebase Auth",
   "type": "module",
-  "main": "dist/server.js",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.server.json",
     "build:client": "vite build",
-    "start": "node dist/server.js",
+    "build:all": "npm run build && npm run build:client",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node lib/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "dev:client": "vite --port=3000 --host=0.0.0.0",
-    "set-admin": "ts-node src/scripts/setAdminClaim.ts",
-    "deploy": "npm run build && firebase deploy --only hosting,functions"
+    "set-admin": "tsx src/scripts/setAdminClaim.ts",
+    "deploy": "firebase deploy --only firestore:rules,firestore:indexes,storage,hosting,functions",
+    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes,storage",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "test:rules": "firebase emulators:exec --project demo-paris-dakar --only firestore \"node src/tests/firestore.rules.test.mjs\""
   },
   "keywords": [
     "antigravity",
@@ -48,12 +56,17 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/multer": "^1.4.11",
     "@types/node": "^20.14.9",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.25.0",
+    "firebase": "^12.17.1",
+    "firebase-tools": "^15.26.0",
     "tailwindcss": "^4.1.14",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
@@ -61,4 +74,3 @@
     "typescript": "^5.5.2"
   }
 }
-

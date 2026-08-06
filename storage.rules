@@ -1,0 +1,70 @@
+rules_version = '2';
+
+/**
+ * Paris Dakar Rodas e Pneus — Regras de Segurança do Cloud Storage
+ *
+ * Mesma postura do Firestore: negar por padrão, papel via Custom Claims e
+ * validação de tipo/tamanho de arquivo alinhada com o uploadMiddleware
+ * do backend (10 MB para planilhas de estoque, 5 MB para imagens).
+ */
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.role == 'admin';
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|avif)');
+    }
+
+    function isSpreadsheet() {
+      return request.resource.contentType in [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv',
+        'application/csv',
+        'text/plain'
+      ];
+    }
+
+    function underMB(limit) {
+      return request.resource.size < limit * 1024 * 1024;
+    }
+
+    // Imagens do catálogo: públicas para leitura, gravação só do admin.
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && underMB(5);
+    }
+
+    // Ativos de marca (logo, banners).
+    match /branding/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && underMB(5);
+    }
+
+    // Planilhas de importação de estoque (.xlsx/.csv) — apenas admin.
+    match /stock-imports/{fileId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin() && isSpreadsheet() && underMB(10);
+    }
+
+    // Arquivos pessoais do cliente (comprovantes, documentos B2B).
+    match /users/{uid}/{allPaths=**} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow write: if isSignedIn()
+        && request.auth.uid == uid
+        && (isImage() || request.resource.contentType == 'application/pdf')
+        && underMB(5);
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

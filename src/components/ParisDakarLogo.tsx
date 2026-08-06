@@ -75,22 +75,20 @@ export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
   return (
     <div className={`inline-flex items-center gap-3 select-none ${className}`}>
       {TuaregIcon}
-      {variant !== 'icon' && (
-        <div className="flex flex-col justify-center leading-none">
-          <span
-            className="font-black tracking-wider text-lg sm:text-xl md:text-2xl font-serif uppercase leading-tight"
-            style={{ color: brandRed, fontFamily: 'Georgia, "Times New Roman", Times, serif', letterSpacing: '0.08em' }}
-          >
-            PARIS DAKAR
-          </span>
-          <span
-            className="text-[0.62rem] sm:text-[0.7rem] font-bold tracking-[0.22em] font-serif italic uppercase mt-0.5"
-            style={{ color: subTextColor, fontFamily: 'Georgia, "Times New Roman", Times, serif' }}
-          >
-            RODAS E PNEUS
-          </span>
-        </div>
-      )}
+      <div className="flex flex-col justify-center leading-none">
+        <span
+          className="font-black tracking-wider text-lg sm:text-xl md:text-2xl font-serif uppercase leading-tight"
+          style={{ color: brandRed, fontFamily: 'Georgia, "Times New Roman", Times, serif', letterSpacing: '0.08em' }}
+        >
+          PARIS DAKAR
+        </span>
+        <span
+          className="text-[0.62rem] sm:text-[0.7rem] font-bold tracking-[0.22em] font-serif italic uppercase mt-0.5"
+          style={{ color: subTextColor, fontFamily: 'Georgia, "Times New Roman", Times, serif' }}
+        >
+          RODAS E PNEUS
+        </span>
+      </div>
     </div>
   );
 };
