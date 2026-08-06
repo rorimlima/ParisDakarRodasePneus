@@ -7,20 +7,20 @@ dotenv.config();
  * Inicialização centralizada do Firebase Admin SDK com credenciais de serviço
  * Suporta ESM / CJS Interop para verificação cryptográfica segura de tokens JWT.
  */
-const getFirebaseAdminApps = (): any[] => {
+const getFirebaseAdminApps = (): admin.app.App[] => {
   const defaultAdmin = (admin as any).default || admin;
   const rawApps = defaultAdmin.apps;
   if (Array.isArray(rawApps)) {
-    return rawApps.filter((app): app is any => app !== null && app !== undefined);
+    return rawApps.filter((app): app is admin.app.App => app !== null && app !== undefined);
   }
   return [];
 };
 
-const getFirebaseAdminInstance = (): any => {
+const getFirebaseAdminInstance = (): typeof admin => {
   return (admin as any).default || admin;
 };
 
-const initFirebaseAdmin = (): any => {
+const initFirebaseAdmin = (): admin.app.App => {
   const existingApps = getFirebaseAdminApps();
   if (existingApps.length > 0) {
     return existingApps[0];

@@ -1,12 +1,4 @@
-import type { GrupoCategoria } from './catalog';
-
-export * from './catalog';
-
-/**
- * Categoria de apresentação no site. Acompanha os grupos do catálogo Firestore
- * (`GrupoCategoria`) e mantém 'combos' para os conjuntos montados manualmente.
- */
-export type ProductCategory = GrupoCategoria | 'combos';
+export type ProductCategory = 'rodas' | 'pneus' | 'kits-lift' | 'acessorios' | 'combos';
 
 export type TireType = 'MT' | 'AT' | 'LT' | 'HT';
 export type WheelFinish = 'Preto Fosco' | 'Grafite Acetinado' | 'Bronze Off-Road' | 'Cromo Satinado' | 'Vermelho Dakar Accent';
@@ -35,13 +27,6 @@ export interface VehicleFitment {
   aroRecomendado: string;
 }
 
-/** Linha da ficha técnica renderizada no site, montada a partir do schema da categoria. */
-export interface LinhaFichaTecnica {
-  label: string;
-  valor: string;
-  destaque?: boolean;
-}
-
 export interface Product {
   id: string;
   sku: string;
@@ -63,17 +48,9 @@ export interface Product {
   stockQuantity: number;
   rating: number;
   reviewsCount: number;
-
-  // --- vindos do catálogo Firestore ---
-  /** Unidade de venda por extenso: "par", "jogo", "unidade"... */
-  unidadeLabel?: string;
-  /** Sigla original do ERP (UN, PR, JG, KT...). */
-  unidadeSigla?: string;
-  /** Ficha técnica completa, na ordem definida pela categoria. */
-  fichaTecnicaCompleta?: LinhaFichaTecnica[];
-  /** Nome da categoria de catálogo à qual o produto pertence. */
-  categoriaNome?: string;
+  isActive?: boolean; // Se false, o produto fica oculto no site público (desativado)
 }
+
 
 export interface VehicleSearchFilter {
   marca: string;
@@ -88,6 +65,7 @@ export interface SizeSearchFilter {
   furacao: string;
   medidaPneu: string;
   tipoPneu: string;
+  referencia?: string;
 }
 
 // B2B CNPJ Client
@@ -115,16 +93,12 @@ export interface CpfClient {
   phone: string;
   address: string;
   cep: string;
+  birthDate?: string;
   createdAt: string;
 }
 
 // Admin User
-/**
- * `senior`   — controle total, concede papéis.
- * `gerencia` — opera o catálogo e enxerga ValorReposicao/margem.
- * `admin`    — opera o catálogo sem acesso a custo.
- */
-export type AdminRole = 'senior' | 'gerencia' | 'admin';
+export type AdminRole = 'senior' | 'admin';
 
 export interface AdminUser {
   id: string;
@@ -145,16 +119,6 @@ export interface UserSession {
   adminUser?: AdminUser | null;
 }
 
-export interface HeroSlideSettings {
-  id: string;
-  image: string;
-  tag: string;
-  title: string;
-  highlight: string;
-  subtitle: string;
-  inquiryMsg?: string;
-}
-
 // Global Site Settings
 export interface SiteSettings {
   heroTitle: string;
@@ -164,23 +128,9 @@ export interface SiteSettings {
   phone: string;
   address: string;
   showStockStatus: boolean;
-  youtubeVideoUrl?: string;
-  siteLogo?: string;
-  instagramReels?: string[];
-  heroSlides?: HeroSlideSettings[];
-}
-
-
-// Vendedor / Atendimento WhatsApp
-export interface Vendedor {
-  id: string;
-  nome: string;
-  telefone: string;
-  email?: string;
-  cargo?: string;
-  fotoUrl?: string; // foto do vendedor ou logo em base64/URL
-  ativo: boolean;
-  createdAt: string;
+  heroImageUrl?: string;
+  logoUrl?: string;
+  bannerText?: string;
 }
 
 // Customer Inquiry / Quote Request
@@ -195,7 +145,23 @@ export interface InquiryLog {
   date: string;
   status: 'Novo' | 'Em Atendimento' | 'Concluído';
   notes?: string;
+  assignedSeller?: string;
 }
 
-export type Seller = Vendedor;
+// Seller / Sales Consultant
+export interface Seller {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  specialty?: string;
+  avatarUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
 

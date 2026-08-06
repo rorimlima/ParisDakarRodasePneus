@@ -1,140 +1,79 @@
 import React from 'react';
-import { Instagram, ExternalLink, Heart, MessageCircle, PlayCircle } from 'lucide-react';
-import { SiteSettings } from '../types';
+import { Instagram, Heart, MessageCircle, ExternalLink } from 'lucide-react';
 
-interface InstagramFeedProps {
-  siteSettings: SiteSettings;
+interface InstagramPost {
+  id: string;
+  vehicle: string;
+  setup: string;
+  image: string;
+  likes: number;
+  comments: number;
 }
 
-// Visual high-fidelity mock metadata for default reels to avoid iframe blocking
-const REELS_METADATA = [
+const PROFILE_URL = 'https://www.instagram.com/parisdakarrodas/';
+
+// Imagens pedidas já redimensionadas e comprimidas na origem (payload menor).
+const INSTAGRAM_POSTS: InstagramPost[] = [
   {
-    id: 'DF_L0z2Pv9d',
-    url: 'https://www.instagram.com/reel/DF_L0z2Pv9d/',
-    cover: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80',
-    title: 'Ford Ranger Raptor',
-    desc: 'Preparação bruta com Rodas Forjadas Dakar Aro 17" e Pneus Dakar Mud-Terrain 35" instalados.',
-    likes: '1.2k',
-    comments: '48'
+    id: 'post-1',
+    vehicle: 'Toyota Hilux GR-Sport 2026',
+    setup: 'Rodas Forged Heavy-Duty 17x9 + pneus 35" Mud Terrain',
+    image: 'https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=560&q=70',
+    likes: 1240,
+    comments: 86
   },
   {
-    id: 'DEd4WyxP7bX',
-    url: 'https://www.instagram.com/reel/DEd4WyxP7bX/',
-    cover: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=600&q=80',
-    title: 'Toyota Hilux SW4',
-    desc: 'Kit Lift de Suspensão 2.5" e Rodas Heavy-Duty Black Edition em teste off-road extremo.',
-    likes: '890',
-    comments: '32'
+    id: 'post-2',
+    vehicle: 'Ford Ranger Raptor V6',
+    setup: 'Rodas Dakar Tactical 20x9.5 + kit lift 2.5" Nitro',
+    image: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=560&q=70',
+    likes: 980,
+    comments: 64
   },
   {
-    id: 'DEtP3y0vNfW',
-    url: 'https://www.instagram.com/reel/DEtP3y0vNfW/',
-    cover: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=600&q=80',
-    title: 'Dodge RAM 2500',
-    desc: 'O monstro equipado com Rodas Tactical Forged 20x10 e Pneus Mud 37". Presença imponente!',
-    likes: '2.4k',
-    comments: '115'
+    id: 'post-3',
+    vehicle: 'Chevrolet S10 High Country 4x4',
+    setup: 'Rodas Satin Bronze 18" + pneus All-Terrain 285/70R17',
+    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=560&q=70',
+    likes: 1850,
+    comments: 112
   },
   {
-    id: 'DDy-H9mPF2k',
-    url: 'https://www.instagram.com/reel/DDy-H9mPF2k/',
-    cover: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
-    title: 'Triton L200 Savana',
-    desc: 'Espaçadores Billet Alumínio 38mm e Pneus All-Terrain prontos para trilhas pesadas.',
-    likes: '950',
-    comments: '24'
+    id: 'post-4',
+    vehicle: 'RAM 2500 Laramie Night Edition',
+    setup: 'Combo 20x10 ET-24 + pneus 37" e espaçadores billet 38mm',
+    image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=560&q=70',
+    likes: 2100,
+    comments: 145
   }
 ];
 
-const DEFAULT_REELS = [
-  'https://www.instagram.com/reel/DF_L0z2Pv9d/',
-  'https://www.instagram.com/reel/DEd4WyxP7bX/',
-  'https://www.instagram.com/reel/DEtP3y0vNfW/',
-  'https://www.instagram.com/reel/DDy-H9mPF2k/'
-];
-
-export const InstagramFeed: React.FC<InstagramFeedProps> = ({ siteSettings }) => {
-  const getInstagramId = (urlOrId: string): string => {
-    if (!urlOrId) return '';
-    const match = urlOrId.match(/(?:instagram\.com\/(?:p|reel|tv)\/)([a-zA-Z0-9_-]+)/i);
-    return match ? match[1] : urlOrId.trim();
-  };
-
-  const reelsToDisplay = siteSettings.instagramReels && siteSettings.instagramReels.length === 4
-    ? siteSettings.instagramReels
-    : DEFAULT_REELS;
-
-  const getReelMetadata = (url: string, index: number) => {
-    const id = getInstagramId(url);
-    const matched = REELS_METADATA.find(m => m.id === id);
-    if (matched) return matched;
-    
-    // Fallback for custom added reels in admin panel
-    const fallbacks = [
-      {
-        id,
-        url: url.startsWith('http') ? url : `https://www.instagram.com/reel/${id}/`,
-        cover: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=600&q=80',
-        title: 'Projeto 4x4 Custom',
-        desc: 'Confira as especificações deste projeto em nossa página oficial.',
-        likes: '350',
-        comments: '12'
-      },
-      {
-        id,
-        url: url.startsWith('http') ? url : `https://www.instagram.com/reel/${id}/`,
-        cover: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=600&q=80',
-        title: 'Preparação Dakar Spec',
-        desc: 'Confira o teste completo deste conjunto de rodas e pneus.',
-        likes: '420',
-        comments: '18'
-      },
-      {
-        id,
-        url: url.startsWith('http') ? url : `https://www.instagram.com/reel/${id}/`,
-        cover: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=600&q=80',
-        title: 'Monster Truck Build',
-        desc: 'Upgrade de suspensão e pneus de alto desempenho.',
-        likes: '510',
-        comments: '22'
-      },
-      {
-        id,
-        url: url.startsWith('http') ? url : `https://www.instagram.com/reel/${id}/`,
-        cover: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=600&q=80',
-        title: 'Expedição Offroad',
-        desc: 'Montagem especial para expedições de longa distância e overland.',
-        likes: '280',
-        comments: '9'
-      }
-    ];
-    return fallbacks[index % fallbacks.length];
-  };
-
+export const InstagramFeed: React.FC = () => {
   return (
-    <section className="py-12 bg-slate-50 dark:bg-zinc-950 border-t border-b border-slate-200 dark:border-zinc-800 transition-colors">
+    <section className="pd-page border-t pd-border py-14" aria-labelledby="instagram-titulo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-100 dark:bg-pink-950/40 text-pink-600 dark:text-pink-500 border border-pink-200 dark:border-pink-850/40 text-xs font-bold uppercase mb-2">
-              <Instagram className="w-3.5 h-3.5" />
-              <span>@parisdakarrodas no Instagram</span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white uppercase tracking-tight font-heading">
-              Projetos &amp; Caminhonetes Preparadas
+            <span className="pd-badge pd-badge-brand mb-3">
+              <Instagram className="w-3 h-3" aria-hidden="true" />
+              @parisdakarrodas
+            </span>
+            <h2
+              id="instagram-titulo"
+              className="pd-serif text-2xl sm:text-3xl font-extrabold uppercase tracking-tight pd-text"
+            >
+              Projetos e caminhonetes preparadas
             </h2>
-            <p className="text-xs sm:text-sm text-slate-555 dark:text-zinc-400 mt-1">
-              Confira montagens e expedições reais em caminhonetes 4x4 enviadas pelos nossos clientes em todo o Brasil.
+            <p className="text-sm pd-text-2 mt-2 max-w-xl leading-relaxed">
+              Montagens e expedições reais em caminhonetes 4x4 enviadas por clientes de todo o Brasil.
             </p>
           </div>
 
           <a
-            href="https://www.instagram.com/parisdakarrodas/"
+            href={PROFILE_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 text-white font-bold text-xs uppercase shadow-md hover:opacity-90 transition shrink-0"
+            className="btn btn-outline shrink-0"
           >
             <Instagram className="w-4 h-4" />
             <span>Seguir no Instagram</span>
@@ -142,73 +81,46 @@ export const InstagramFeed: React.FC<InstagramFeedProps> = ({ siteSettings }) =>
           </a>
         </div>
 
-        {/* Grid of Instagram Highlights (Preview Cards to bypass blocking) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {reelsToDisplay.map((url, index) => {
-            const meta = getReelMetadata(url, index);
-            if (!meta.id) return null;
-            return (
-              <a
-                key={index}
-                href={meta.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group relative rounded-2xl overflow-hidden bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-md hover:shadow-xl hover:border-red-650 dark:hover:border-red-900/60 transition-all duration-300 flex flex-col h-[400px]"
-              >
-                {/* Background Image Container */}
-                <div className="relative w-full h-full overflow-hidden">
-                  <img
-                    src={meta.cover}
-                    alt={meta.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  
-                  {/* Subtle Instagram Watermark */}
-                  <div className="absolute top-3 left-3 bg-black/50 backdrop-blur-sm px-2.5 py-1 rounded-lg text-[10px] font-bold text-white flex items-center gap-1.5 border border-white/10">
-                    <Instagram className="w-3.5 h-3.5 text-pink-400" />
-                    <span>@parisdakarrodas</span>
-                  </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {INSTAGRAM_POSTS.map((post) => (
+            <a
+              key={post.id}
+              href={PROFILE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pd-card pd-card-hover group overflow-hidden block"
+            >
+              <div className="aspect-[4/3] w-full overflow-hidden relative pd-surface-2">
+                <img
+                  src={post.image}
+                  alt={post.vehicle}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  decoding="async"
+                  width={560}
+                  height={420}
+                  referrerPolicy="no-referrer"
+                />
 
-                  {/* Top Right Duration Tag */}
-                  <div className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest text-zinc-300 border border-white/5">
-                    Reel
-                  </div>
-
-                  {/* Play Icon Hover Overlay */}
-                  <div className="absolute inset-0 bg-black/35 group-hover:bg-black/50 transition-all duration-300 flex items-center justify-center">
-                    <PlayCircle className="w-12 h-12 text-white/80 group-hover:text-white group-hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                  </div>
-
-                  {/* Card bottom text area */}
-                  <div className="absolute bottom-0 inset-x-0 p-4 bg-gradient-to-t from-black via-black/85 to-transparent text-white space-y-1.5 flex flex-col justify-end pt-12">
-                    <h3 className="text-sm font-extrabold italic tracking-tight text-white uppercase flex items-center gap-1">
-                      <span>{meta.title}</span>
-                    </h3>
-                    <p className="text-[11px] text-zinc-300 line-clamp-2 leading-relaxed">
-                      {meta.desc}
-                    </p>
-                    
-                    {/* Likes & Comments Counters */}
-                    <div className="flex items-center gap-4 pt-1.5 text-[10px] text-zinc-400 border-t border-zinc-900/60 mt-1">
-                      <span className="flex items-center gap-1">
-                        <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
-                        <strong>{meta.likes}</strong>
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <MessageCircle className="w-3.5 h-3.5 text-sky-400 fill-sky-400" />
-                        <strong>{meta.comments}</strong>
-                      </span>
-                      <span className="ml-auto text-[9px] font-bold text-red-400 uppercase tracking-widest flex items-center gap-0.5">
-                        Assistir <ExternalLink className="w-2.5 h-2.5" />
-                      </span>
-                    </div>
-                  </div>
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 text-white text-sm font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <Heart className="w-4 h-4 fill-current" aria-hidden="true" />
+                    {post.likes}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <MessageCircle className="w-4 h-4" aria-hidden="true" />
+                    {post.comments}
+                  </span>
                 </div>
-              </a>
-            );
-          })}
-        </div>
+              </div>
 
+              <div className="p-4 space-y-1">
+                <h3 className="text-xs font-bold pd-text truncate">{post.vehicle}</h3>
+                <p className="text-[0.68rem] pd-text-3 pd-clamp-2 leading-snug">{post.setup}</p>
+              </div>
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   );

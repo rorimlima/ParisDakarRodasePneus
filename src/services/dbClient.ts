@@ -15,41 +15,7 @@ class AntigravityDBClient {
   private productsStore: Map<string, ProductRecord> = new Map();
 
   constructor() {
-    // Dados iniciais de demonstração pré-populados
-    const initialProducts: ProductRecord[] = [
-      {
-        id: 'prod-001',
-        sku: 'RODA-BBS-17-01',
-        name: 'Roda Esportiva BBS Aro 17 Furação 4x100 Grafite',
-        category: 'RODA',
-        brand: 'BBS',
-        price: 3890.0,
-        stockQuantity: 12,
-        rimSize: '17',
-        width: '7.5',
-        aspectRatio: undefined,
-        createdAt: new Date('2026-08-01T10:00:00.000Z').toISOString(),
-        updatedAt: new Date('2026-08-01T10:00:00.000Z').toISOString(),
-        version: 1,
-      },
-      {
-        id: 'prod-002',
-        sku: 'PNEU-MICHELIN-225-45-17',
-        name: 'Pneu Michelin Pilot Sport 5 225/45 R17 94Y',
-        category: 'PNEU',
-        brand: 'Michelin',
-        price: 850.0,
-        stockQuantity: 40,
-        rimSize: '17',
-        width: '225',
-        aspectRatio: '45',
-        createdAt: new Date('2026-08-01T11:00:00.000Z').toISOString(),
-        updatedAt: new Date('2026-08-01T11:00:00.000Z').toISOString(),
-        version: 1,
-      },
-    ];
-
-    initialProducts.forEach((p) => this.productsStore.set(p.sku, p));
+    // Zero dados de demonstração: apenas itens reais do banco
   }
 
   /**

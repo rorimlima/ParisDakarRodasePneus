@@ -1,472 +1,558 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
 import { Header } from './components/Header';
-import { HeroSection } from './components/HeroSection';
+import { Hero } from './components/Hero';
 import { SearchDashboard } from './components/SearchDashboard';
 import { ProductCard } from './components/ProductCard';
-import { ProductDetailModal } from './components/ProductDetailModal';
+import { StoreLocation } from './components/StoreLocation';
 import { InstagramFeed } from './components/InstagramFeed';
-import { AuthModal } from './components/AuthModal';
-import { AdminDashboard } from './components/AdminDashboard';
-import { ArchitectureViewer } from './components/ArchitectureViewer';
 import { Footer } from './components/Footer';
-
-import { storageService } from './services/storageService';
+import { useTheme } from './hooks/useTheme';
 import { useCatalogoPublico } from './hooks/useCatalogo';
+import { storageService } from './services/storageService';
 import {
   Product,
   ProductCategory,
+  VehicleSearchFilter,
   SizeSearchFilter,
   B2BUser,
   UserSession,
-  SiteSettings
+  SiteSettings,
+  Seller,
+  CartItem
 } from './types';
-import { Filter, PackageCheck, Building2, PhoneCall, Lock, Loader2, MapPin, Phone, Clock } from 'lucide-react';
+import { Filter, PackageCheck, Building2, PhoneCall, Lock, X, Heart, ShoppingCart } from 'lucide-react';
+
+/*
+ * Telas pesadas ficam em chunks separados: o visitante que só navega no
+ * catálogo nunca baixa o painel admin, o portal de login nem os modais.
+ */
+const ProductDetailModal = lazy(() =>
+  import('./components/ProductDetailModal').then((m) => ({ default: m.ProductDetailModal }))
+);
+const AuthModal = lazy(() => import('./components/AuthModal').then((m) => ({ default: m.AuthModal })));
+const AdminDashboard = lazy(() =>
+  import('./components/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
+);
+const ArchitectureViewer = lazy(() =>
+  import('./components/ArchitectureViewer').then((m) => ({ default: m.ArchitectureViewer }))
+);
+const WhatsAppSellerModal = lazy(() =>
+  import('./components/WhatsAppSellerModal').then((m) => ({ default: m.WhatsAppSellerModal }))
+);
+const FavoritosCarrinho = lazy(() =>
+  import('./components/FavoritosCarrinho').then((m) => ({ default: m.FavoritosCarrinho }))
+);
+
+const EMPTY_B2B_USER: B2BUser = {
+  isLoggedIn: false,
+  companyName: '',
+  cnpj: '',
+  taxRegime: 'Simples Nacional',
+  phone: '',
+  email: ''
+};
+
+const CATEGORY_LABELS: Record<string, string> = {
+  rodas: 'Rodas off-road',
+  pneus: 'Pneus',
+  'kits-lift': 'Kits de lift',
+  combos: 'Combos',
+  acessorios: 'Acessórios'
+};
 
 export default function App() {
-  // Dark Mode State with localStorage persistence
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    const saved = localStorage.getItem('theme');
-    return saved ? saved === 'dark' : true;
-  });
+  const { isDark, toggleTheme } = useTheme();
+  const { produtosExibicao } = useCatalogoPublico();
 
-  /**
-   * Catálogo público: o hook assina apenas produtos com `ativo == true`.
-   * Produto desativado ou com estoque zerado não chega sequer ao cliente —
-   * a restrição está na query, nas Security Rules e no filtro do hook.
-   */
-  const {
-    produtosExibicao: products,
-    gruposComProdutos,
-    carregando: carregandoCatalogo
-  } = useCatalogoPublico();
-
+  // Exibir produtos reais do Firestore ou do banco local, sem dados mock fictícios
+  const [localProducts, setLocalProducts] = useState<Product[]>(() => storageService.getProducts());
+  const products = useMemo(() => {
+    if (produtosExibicao && produtosExibicao.length > 0) {
+      return produtosExibicao;
+    }
+    return localProducts;
+  }, [produtosExibicao, localProducts]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
   const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
+  const [sellers, setSellers] = useState<Seller[]>(() => storageService.getSellers());
 
-  // View Mode ('store' or 'admin')
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
 
-  // Computed B2B User for compatibility with ProductCard and Modals
-  const b2bUser: B2BUser = currentSession.type === 'b2b' && currentSession.b2bUser
-    ? currentSession.b2bUser
-    : { isLoggedIn: false, companyName: '', cnpj: '', taxRegime: 'Simples Nacional', phone: '', email: '' };
+  const b2bUser: B2BUser =
+    currentSession.type === 'b2b' && currentSession.b2bUser ? currentSession.b2bUser : EMPTY_B2B_USER;
 
-  // Filters State
+  // Filtros
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<ProductCategory | 'todos'>('todos');
+  const [vehicleFilter, setVehicleFilter] = useState<VehicleSearchFilter | null>(null);
   const [sizeFilter, setSizeFilter] = useState<SizeSearchFilter | null>(null);
-  const [activeBrand, setActiveBrand] = useState<string | null>(null);
 
-  // Modals State
+  // Modais
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<'b2c' | 'b2b' | 'admin'>('b2c');
   const [isArchitectureViewerOpen, setIsArchitectureViewerOpen] = useState<boolean>(false);
+  const [isSellerModalOpen, setIsSellerModalOpen] = useState<boolean>(false);
+  const [pendingWhatsAppMsg, setPendingWhatsAppMsg] = useState<string | undefined>(undefined);
+  const [pendingProductContext, setPendingProductContext] = useState<Product | undefined>(undefined);
 
-  // Sync Dark Mode class with HTML root element
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
+  // Favoritos e Carrinho (apenas para clientes B2C logados)
+  const [favorites, setFavorites] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
-
-  // Open Auth Modal with specific tab
-  const handleOpenAuthModal = (tab: 'b2c' | 'b2b' | 'admin' = 'b2c') => {
+  const handleOpenAuthModal = useCallback((tab: 'b2c' | 'b2b' | 'admin' = 'b2c') => {
     setAuthModalTab(tab);
     setIsAuthModalOpen(true);
-  };
+  }, []);
 
-  // WhatsApp Consultation Handler
-  const handleConsultWhatsApp = (messageText?: string, productContext?: Product) => {
-    const rawNumber = siteSettings.whatsappNumber || '5511999998888';
-    const cleanNumber = rawNumber.replace(/\D/g, '');
-    const defaultMsg = 'Olá equipe Paris Dakar! Gostaria de consultar rodas e pneus para meu veículo.';
-    const encoded = encodeURIComponent(messageText || defaultMsg);
+  // --- FAVORITOS ---
+  const handleAddToFavorites = useCallback((product: Product) => {
+    setFavorites((prev) => prev.find((p) => p.id === product.id) ? prev : [...prev, product]);
+  }, []);
 
-    // Log lead inquiry if productContext is passed
-    if (productContext) {
+  const handleRemoveFavorite = useCallback((productId: string) => {
+    setFavorites((prev) => prev.filter((p) => p.id !== productId));
+  }, []);
+
+  // --- CARRINHO ---
+  const handleAddToCart = useCallback((product: Product) => {
+    setCart((prev) => {
+      const existing = prev.find((item) => item.product.id === product.id);
+      if (existing) return prev.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+      return [...prev, { product, quantity: 1 }];
+    });
+  }, []);
+
+  const handleRemoveFromCart = useCallback((productId: string) => {
+    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  }, []);
+
+  const handleUpdateCartQty = useCallback((productId: string, qty: number) => {
+    setCart((prev) => prev.map((item) => item.product.id === productId ? { ...item, quantity: qty } : item));
+  }, []);
+
+  const handleClearCart = useCallback(() => setCart([]), []);
+
+  const logInquiry = useCallback(
+    (productContext: Product, notes: string, assignedSeller?: string) => {
       storageService.addInquiry({
-        clientName: currentSession.b2cUser?.fullName || currentSession.b2bUser?.companyName || 'Cliente Visitante',
+        clientName:
+          currentSession.b2cUser?.fullName || currentSession.b2bUser?.companyName || 'Cliente visitante',
         clientType: currentSession.type === 'b2b' ? 'CNPJ' : 'CPF',
-        clientDocument: currentSession.b2cUser?.cpf || currentSession.b2bUser?.cnpj || 'Não Informado',
+        clientDocument: currentSession.b2cUser?.cpf || currentSession.b2bUser?.cnpj || 'Não informado',
         clientPhone: currentSession.b2cUser?.phone || currentSession.b2bUser?.phone || 'WhatsApp',
         productName: productContext.name,
         productSku: productContext.sku,
-        notes: `Consulta enviada via WhatsApp pelo site.`
+        notes,
+        assignedSeller
       });
+    },
+    [currentSession]
+  );
+
+  const openWhatsApp = useCallback((rawNumber: string, message: string) => {
+    let cleanNumber = rawNumber.replace(/\D/g, '');
+    if (!cleanNumber.startsWith('55') && cleanNumber.length <= 11) {
+      cleanNumber = `55${cleanNumber}`;
     }
+    window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+  }, []);
 
-    window.open(`https://wa.me/${cleanNumber}?text=${encoded}`, '_blank');
-  };
+  const executeWhatsAppOpen = useCallback(
+    (seller: Seller, messageText?: string, productContext?: Product) => {
+      const message =
+        messageText || `Olá ${seller.name}! Gostaria de consultar rodas e pneus na Paris Dakar.`;
 
-  // Filter Products Logic
-  const filteredProducts = products.filter((product) => {
-    // 1. Category Filter
-    if (activeCategory !== 'todos' && product.category !== activeCategory) {
-      return false;
-    }
-
-    // 2. Text Search Query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchName = product.name.toLowerCase().includes(q);
-      const matchBrand = product.brand.toLowerCase().includes(q);
-      const matchSku = product.sku.toLowerCase().includes(q);
-      const matchAro = product.specs.aro?.toLowerCase().includes(q);
-      const matchPneu = product.specs.medidaPneu?.toLowerCase().includes(q);
-      const matchVehicles = product.compatibleVehicles.some((v) => v.toLowerCase().includes(q));
-
-      if (!matchName && !matchBrand && !matchSku && !matchAro && !matchPneu && !matchVehicles) {
-        return false;
+      if (productContext) {
+        logInquiry(
+          productContext,
+          `Atendimento direcionado para o vendedor: ${seller.name} (${seller.phone})`,
+          seller.name
+        );
       }
-    }
 
-    // 3. Vehicle Brand Filter
-    if (activeBrand) {
-      const brandLower = activeBrand.toLowerCase();
-      const matchBrandName = product.brand.toLowerCase().includes(brandLower);
-      const matchCompatibleBrand = product.compatibleVehicles.some((v) => v.toLowerCase().includes(brandLower));
+      openWhatsApp(seller.phone, message);
+      setIsSellerModalOpen(false);
+    },
+    [logInquiry, openWhatsApp]
+  );
 
-      if (!matchBrandName && !matchCompatibleBrand) {
-        return false;
-      }
-    }
+  const executeWhatsAppCentral = useCallback(
+    (messageText?: string, productContext?: Product) => {
+      const message =
+        messageText || 'Olá equipe Paris Dakar! Gostaria de consultar rodas e pneus para meu veículo.';
 
-    // 4. Size Filter
-    if (sizeFilter) {
-      if (sizeFilter.aro && product.specs.aro && !product.specs.aro.includes(sizeFilter.aro.replace('"', ''))) {
-        return false;
+      if (productContext) {
+        logInquiry(productContext, 'Consulta enviada via WhatsApp central.');
       }
-      if (sizeFilter.furacao && product.specs.furacao && product.specs.furacao !== sizeFilter.furacao) {
-        return false;
+
+      openWhatsApp(siteSettings.whatsappNumber || '5511999998888', message);
+      setIsSellerModalOpen(false);
+    },
+    [logInquiry, openWhatsApp, siteSettings.whatsappNumber]
+  );
+
+  const handleConsultWhatsApp = useCallback(
+    (messageText?: string, productContext?: Product) => {
+      const activeSellers = sellers.filter((s) => s.isActive);
+
+      if (activeSellers.length > 1) {
+        setPendingWhatsAppMsg(messageText);
+        setPendingProductContext(productContext);
+        setIsSellerModalOpen(true);
+      } else if (activeSellers.length === 1) {
+        executeWhatsAppOpen(activeSellers[0], messageText, productContext);
+      } else {
+        executeWhatsAppCentral(messageText, productContext);
       }
-      if (sizeFilter.medidaPneu && sizeFilter.medidaPneu.trim()) {
-        const qMedida = sizeFilter.medidaPneu.toLowerCase().replace(/\s+/g, '');
-        const prodMedida = (product.specs.medidaPneu || '').toLowerCase().replace(/\s+/g, '');
-        const prodName = product.name.toLowerCase();
-        if (!prodMedida.includes(qMedida) && !prodName.includes(sizeFilter.medidaPneu.toLowerCase())) {
+    },
+    [sellers, executeWhatsAppOpen, executeWhatsAppCentral]
+  );
+
+  const scrollToId = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  const clearAllFilters = useCallback(() => {
+    setVehicleFilter(null);
+    setSizeFilter(null);
+    setSearchQuery('');
+    setActiveCategory('todos');
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    const filtered = products.filter((product) => {
+      // Itens desativados no painel admin não aparecem na loja
+      if (product.isActive === false) return false;
+
+      // Filtro: apenas produtos com estoque > 4
+      if ((product.stockQuantity ?? 0) <= 4) return false;
+
+      if (activeCategory !== 'todos' && product.category !== activeCategory) return false;
+
+      if (query) {
+        const haystack = [
+          product.name,
+          product.brand,
+          product.sku,
+          product.specs.aro,
+          product.specs.medidaPneu,
+          ...product.compatibleVehicles
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+
+        if (!haystack.includes(query)) return false;
+      }
+
+      if (vehicleFilter?.marca) {
+        const brand = vehicleFilter.marca.toLowerCase();
+        const model = vehicleFilter.modelo?.toLowerCase();
+        const compatible = product.compatibleVehicles.some((v) => {
+          const lower = v.toLowerCase();
+          return lower.includes(brand) && (model ? lower.includes(model) : true);
+        });
+        if (!compatible) return false;
+      }
+
+      if (sizeFilter) {
+        if (
+          sizeFilter.aro &&
+          product.specs.aro &&
+          !product.specs.aro.includes(sizeFilter.aro.replace('"', ''))
+        ) {
           return false;
         }
+        if (sizeFilter.furacao && product.specs.furacao && product.specs.furacao !== sizeFilter.furacao) {
+          return false;
+        }
+        if (sizeFilter.tipoPneu && product.specs.tipoPneu && product.specs.tipoPneu !== sizeFilter.tipoPneu) {
+          return false;
+        }
+        // Filtro por referência / SKU
+        if (sizeFilter.referencia) {
+          const ref = sizeFilter.referencia.toLowerCase();
+          if (!product.sku.toLowerCase().includes(ref) && !product.brand.toLowerCase().includes(ref)) {
+            return false;
+          }
+        }
       }
-      if (sizeFilter.tipoPneu && product.specs.tipoPneu && product.specs.tipoPneu !== sizeFilter.tipoPneu) {
-        return false;
-      }
-    }
 
-    return true;
-  });
+      return true;
+    });
 
-  // If in Admin Dashboard view mode and Admin is authenticated
+    // Ordenar: produtos com badge 'PGA' primeiro
+    return filtered.sort((a, b) => {
+      const aPGA = a.badge?.toUpperCase().includes('PGA') ? 0 : 1;
+      const bPGA = b.badge?.toUpperCase().includes('PGA') ? 0 : 1;
+      return aPGA - bPGA;
+    });
+  }, [products, activeCategory, searchQuery, vehicleFilter, sizeFilter]);
+
+  const hasActiveFilters =
+    Boolean(vehicleFilter) || Boolean(sizeFilter) || Boolean(searchQuery) || activeCategory !== 'todos';
+
+  // Painel administrativo (rota interna)
   if (viewMode === 'admin' && currentSession.type === 'admin' && currentSession.adminUser) {
     return (
-      <AdminDashboard
-        adminUser={currentSession.adminUser}
-        onExitAdmin={() => setViewMode('store')}
-        onSiteSettingsUpdated={(settings) => setSiteSettings(settings)}
-      />
+      <Suspense fallback={<FullScreenLoader label="Carregando painel administrativo" />}>
+        <AdminDashboard
+          adminUser={currentSession.adminUser}
+          onExitAdmin={() => setViewMode('store')}
+          onProductsUpdated={(updated) => {
+            storageService.saveProducts(updated);
+            setLocalProducts(updated);
+          }}
+          onSiteSettingsUpdated={setSiteSettings}
+          onSellersUpdated={setSellers}
+        />
+      </Suspense>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-white transition-colors duration-250 flex flex-col font-sans">
-      
-      {/* 1. Header Navbar */}
+    <div id="topo" className="pd-page min-h-screen flex flex-col">
       <Header
-        darkMode={darkMode}
-        onToggleDarkMode={() => setDarkMode(!darkMode)}
+        isDark={isDark}
+        onToggleTheme={toggleTheme}
         currentSession={currentSession}
-        onOpenAuthModal={(tab) => handleOpenAuthModal(tab)}
+        onOpenAuthModal={handleOpenAuthModal}
         onOpenAdminDashboard={() => setViewMode('admin')}
-        onOpenArchitectureViewer={() => setIsArchitectureViewerOpen(true)}
         onSearchChange={setSearchQuery}
         searchQuery={searchQuery}
         onConsultWhatsApp={handleConsultWhatsApp}
         announcementText={siteSettings.announcementText}
-        siteLogo={siteSettings.siteLogo}
-        onSelectCategory={(cat) => {
-          setActiveCategory(cat);
-          setActiveBrand(null); // Reset brand selection when explicitly choosing a catalog category
-        }}
       />
 
-      {/* 2. Unified Hero Section (Simulador 3D + Video) */}
-      <HeroSection
+      <Hero
+        title={siteSettings.heroTitle}
+        subtitle={siteSettings.heroSubtitle}
         onConsultWhatsApp={handleConsultWhatsApp}
-        onExploreCatalog={() => {
-          const section = document.getElementById('catalog-section');
-          if (section) section.scrollIntoView({ behavior: 'smooth' });
-        }}
-        siteSettings={siteSettings}
+        onExploreCatalog={() => scrollToId('catalog-section')}
+        onOpenLocation={() => scrollToId('localizacao')}
       />
 
-      {/* 3. Main Catalog Section */}
-      <main id="catalog-section" className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-        
-        {/* Search & Filter Dashboard */}
+      <main
+        id="catalog-section"
+        className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 scroll-mt-24"
+      >
         <SearchDashboard
-          onApplySizeFilter={(filter) => setSizeFilter(filter)}
+          onApplyVehicleFilter={setVehicleFilter}
+          onApplySizeFilter={setSizeFilter}
           activeCategory={activeCategory}
-          onSelectCategory={(cat) => setActiveCategory(cat)}
-          categorias={gruposComProdutos}
-          activeBrand={activeBrand}
-          onSelectBrand={setActiveBrand}
+          onSelectCategory={setActiveCategory}
         />
 
-        {/* Filter Feedback Banner */}
-        {(sizeFilter || searchQuery || activeCategory !== 'todos' || activeBrand) && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 text-xs text-red-700 dark:text-red-300">
-            <div className="flex items-center gap-2 font-medium">
-              <Filter className="w-4 h-4 text-red-650 dark:text-red-550" />
-              <span>
-                Filtros ativos:{' '}
-                {activeCategory !== 'todos' && <strong>[Categoria: {activeCategory}] </strong>}
-                {activeBrand && <strong>[Veículo: {activeBrand}] </strong>}
-                {sizeFilter?.aro && <strong>[Aro: {sizeFilter.aro}] </strong>}
-                {sizeFilter?.furacao && <strong>[Furação: {sizeFilter.furacao}] </strong>}
-                {searchQuery && <strong>[Busca: "{searchQuery}"] </strong>}
-              </span>
+        {hasActiveFilters && (
+          <div className="pd-card p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <Filter className="w-4 h-4 pd-brand-text shrink-0" aria-hidden="true" />
+              <span className="pd-text-2 font-medium">Filtros ativos:</span>
+
+              {activeCategory !== 'todos' && (
+                <span className="pd-badge pd-badge-brand">
+                  {CATEGORY_LABELS[activeCategory] || activeCategory}
+                </span>
+              )}
+              {vehicleFilter?.marca && (
+                <span className="pd-badge pd-badge-brand">
+                  {vehicleFilter.marca} {vehicleFilter.modelo}
+                </span>
+              )}
+              {sizeFilter?.aro && <span className="pd-badge pd-badge-brand">Aro {sizeFilter.aro}</span>}
+              {sizeFilter?.furacao && <span className="pd-badge pd-badge-brand">{sizeFilter.furacao}</span>}
+              {searchQuery && <span className="pd-badge pd-badge-brand">“{searchQuery}”</span>}
             </div>
 
-            <button
-              onClick={() => {
-                setSizeFilter(null);
-                setSearchQuery('');
-                setActiveCategory('todos');
-                setActiveBrand(null);
-              }}
-              className="text-red-700 dark:text-white underline font-bold hover:text-red-800 dark:hover:text-amber-400"
-            >
-              Limpar Todos os Filtros
+            <button type="button" onClick={clearAllFilters} className="btn btn-subtle btn-sm">
+              <X className="w-3.5 h-3.5" />
+              <span>Limpar filtros</span>
             </button>
           </div>
         )}
 
-        {/* Section Heading & Items Count */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
+        {/* Cabeçalho do catálogo */}
+        <div className="flex flex-wrap items-end justify-between gap-4 pb-4 border-b pd-border">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2 font-heading">
-              <PackageCheck className="w-5 h-5 text-red-650 dark:text-red-500" />
-              <span>Catálogo de Produtos em Pronta Entrega</span>
+            <h2 className="pd-serif text-xl sm:text-2xl font-extrabold uppercase tracking-tight pd-text flex items-center gap-2.5">
+              <PackageCheck className="w-5 h-5 pd-brand-text" aria-hidden="true" />
+              <span>Catálogo — pronta entrega</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-zinc-400 font-normal">
-              Exibindo <strong className="text-red-700 dark:text-red-400 font-semibold">{filteredProducts.length}</strong> de{' '}
-              {products.length} produtos ativos em estoque com cotação direta via WhatsApp.
+            <p className="text-xs pd-text-3 mt-1.5">
+              <strong className="pd-brand-text">{filteredProducts.length}</strong>{' '}
+              {filteredProducts.length === 1 ? 'item disponível' : 'itens disponíveis'} com cotação via
+              WhatsApp.
             </p>
           </div>
 
           {currentSession.type === 'b2b' && (
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#111111] border border-amber-500/35 text-amber-600 dark:text-amber-400 text-xs font-bold transition">
-              <Building2 className="w-4 h-4" />
-              <span>Pessoa Jurídica: {currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName}</span>
-            </div>
+            <span className="pd-badge pd-badge-gold">
+              <Building2 className="w-3.5 h-3.5" aria-hidden="true" />
+              {currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName}
+            </span>
           )}
 
           {currentSession.type === 'admin' && (
-            <button
-              onClick={() => setViewMode('admin')}
-              className="px-3.5 py-1.5 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-black uppercase tracking-wider flex items-center gap-2 transition"
-            >
-              <Lock className="w-4 h-4" />
-              <span>Painel Admin</span>
+            <button type="button" onClick={() => setViewMode('admin')} className="btn btn-primary btn-sm">
+              <Lock className="w-3.5 h-3.5" />
+              <span>Gerenciar catálogo</span>
             </button>
           )}
         </div>
 
-        {/* Product Cards Grid */}
-        {carregandoCatalogo ? (
-          <div className="text-center py-16 space-y-3">
-            <Loader2 className="w-8 h-8 mx-auto animate-spin text-[#8B0000]" />
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">
-              Carregando catálogo...
-            </p>
-          </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 b2bUser={b2bUser}
-                onOpenDetails={(p) => setSelectedProduct(p)}
+                onOpenDetails={setSelectedProduct}
                 onConsultWhatsApp={(msg) => handleConsultWhatsApp(msg, product)}
                 onOpenB2BModal={() => handleOpenAuthModal('b2b')}
+                isB2CLoggedIn={currentSession.type === 'b2c'}
+                isFavorited={favorites.some((f) => f.id === product.id)}
+                onAddToFavorites={() => handleAddToFavorites(product)}
+                onRemoveFromFavorites={() => handleRemoveFavorite(product.id)}
+                onAddToCart={() => { handleAddToCart(product); setIsCartOpen(true); }}
               />
             ))}
           </div>
         ) : (
-          <div className="text-center py-16 px-4 rounded-2xl bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 space-y-4 shadow-sm transition">
-            <div className="w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30 text-red-650 dark:text-red-550 flex items-center justify-center mx-auto border border-red-200 dark:border-red-900/40">
-              <Filter className="w-8 h-8" />
+          <div className="pd-card text-center py-16 px-6 space-y-4">
+            <div
+              className="w-14 h-14 rounded-full pd-surface-2 pd-brand-text flex items-center justify-center mx-auto border pd-border"
+              aria-hidden="true"
+            >
+              <Filter className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              Nenhum item encontrado para esta combinação de filtros
-            </h3>
-            <p className="text-xs text-slate-550 dark:text-gray-400 max-w-md mx-auto">
-              Nossa equipe técnica pode encomendar conjuntos sob medida para a furação e offset exatos do seu projeto 4x4.
+            <h3 className="text-base font-bold pd-text">Nenhum item para esta combinação de filtros</h3>
+            <p className="text-xs pd-text-3 max-w-md mx-auto leading-relaxed">
+              Nossa equipe técnica encomenda conjuntos sob medida para a furação e o offset exatos do seu
+              projeto 4x4.
             </p>
             <button
-              onClick={() => handleConsultWhatsApp("Olá! Não encontrei a medida exata no site. Podem me ajudar com uma cotação sob medida?")}
-              className="btn-paris inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-xs uppercase"
+              type="button"
+              onClick={() =>
+                handleConsultWhatsApp(
+                  'Olá! Não encontrei a medida exata no site. Podem me ajudar com uma cotação sob medida?'
+                )
+              }
+              className="btn btn-primary btn-lg"
             >
               <PhoneCall className="w-4 h-4" />
-              <span>Consultar Especialista no WhatsApp</span>
+              <span>Consultar especialista</span>
             </button>
           </div>
         )}
-
       </main>
 
-      {/* 4. Instagram Social Proof Showcase */}
-      <InstagramFeed siteSettings={siteSettings} />
+      <StoreLocation
+        address={siteSettings.address}
+        phone={siteSettings.phone}
+        onConsultWhatsApp={handleConsultWhatsApp}
+      />
 
-      {/* 4.5. Google Maps Location Section */}
-      <section id="showroom-section" className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10">
-        <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 rounded-2xl p-6 sm:p-8 shadow-lg dark:shadow-2xl transition-colors">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            {/* Info Column */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#8B0000] dark:text-red-500">
-                  Como nos encontrar
-                </span>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight font-heading">
-                  Showroom Principal
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400">
-                  Visite-nos para ver de perto nossa seleção exclusiva de rodas forjadas heavy-duty e pneus off-road. Nossa equipe de especialistas está pronta para orientar seu projeto 4x4.
-                </p>
-              </div>
+      <InstagramFeed />
 
-              <div className="space-y-4 pt-2">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-red-100 dark:bg-red-950/40 border border-red-200 dark:border-red-800/30 flex items-center justify-center text-[#8B0000] dark:text-red-500 shrink-0">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Endereço</h4>
-                    <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">{siteSettings.address}</p>
-                  </div>
-                </div>
-
-                {siteSettings.phone && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-                      <Phone className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Telefone</h4>
-                      <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">{siteSettings.phone}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/30 flex items-center justify-center text-amber-600 dark:text-amber-500 shrink-0">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-700 dark:text-zinc-300 uppercase tracking-wider">Horário de Funcionamento</h4>
-                    <p className="text-xs text-slate-600 dark:text-zinc-400 mt-0.5">Segunda a Sexta: 08h às 18h | Sábado: 08h às 12h</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 flex flex-col sm:flex-row gap-3">
-                <a
-                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(siteSettings.address)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2 shadow-lg hover:shadow-red-900/35"
-                >
-                  <MapPin className="w-4 h-4" />
-                  <span>Traçar Rota no Google Maps</span>
-                </a>
-
-                <button
-                  onClick={() => handleConsultWhatsApp("Olá! Gostaria de agendar uma visita ao showroom para ver modelos de rodas e pneus.")}
-                  className="bg-transparent border border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/20 text-slate-800 dark:text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition flex items-center justify-center gap-2"
-                >
-                  <PhoneCall className="w-4 h-4 text-emerald-500" />
-                  Agendar Visita
-                </button>
-              </div>
-            </div>
-
-            {/* Map Column (Clickable to calculate route directly) */}
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(siteSettings.address)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lg:col-span-7 h-[350px] sm:h-[400px] w-full rounded-2xl overflow-hidden border border-slate-200 dark:border-white/10 shadow-inner relative group block cursor-pointer"
-              title="Clique para calcular a rota da sua localização até a nossa loja no Google Maps"
-            >
-              {/* Map Iframe */}
-              <iframe
-                title="Paris Dakar Localização"
-                width="100%"
-                height="100%"
-                frameBorder="0"
-                style={{ border: 0 }}
-                src={`https://maps.google.com/maps?q=${encodeURIComponent(siteSettings.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                allowFullScreen
-                className="w-full h-full opacity-90 dark:opacity-80 dark:invert-[0.9] dark:hue-rotate-[180deg] transition-all duration-300 group-hover:opacity-100 group-hover:scale-105 pointer-events-none"
-              />
-
-              {/* Hover Badge Overlay */}
-              <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl text-white text-[11px] font-bold uppercase tracking-wider flex items-center gap-2 shadow-xl group-hover:bg-red-700 transition">
-                <MapPin className="w-3.5 h-3.5 text-red-400 group-hover:text-white animate-bounce" />
-                <span>Clique para Traçar Rota</span>
-              </div>
-            </a>
-
-          </div>
-        </div>
-      </section>
-
-      {/* 5. Footer Section */}
-      <div id="footer-section">
-        <Footer
-          onConsultWhatsApp={handleConsultWhatsApp}
-          onOpenB2BModal={() => handleOpenAuthModal('b2b')}
-          onOpenArchitectureViewer={() => setIsArchitectureViewerOpen(true)}
-          siteLogo={siteSettings.siteLogo}
-        />
-      </div>
-
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        b2bUser={b2bUser}
-        onConsultWhatsApp={(msg) => selectedProduct && handleConsultWhatsApp(msg, selectedProduct)}
+      <Footer
+        onConsultWhatsApp={handleConsultWhatsApp}
         onOpenB2BModal={() => handleOpenAuthModal('b2b')}
+        onOpenArchitectureViewer={() => setIsArchitectureViewerOpen(true)}
+        onOpenAdminPanel={() => handleOpenAuthModal('admin')}
       />
 
-      {/* Auth Portal Modal (CPF / CNPJ / ADMIN) */}
-      <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
-        currentSession={currentSession}
-        initialTab={authModalTab}
-        onLoginSuccess={(newSession) => {
-          setCurrentSession(newSession);
-          if (newSession.type === 'admin') {
-            setViewMode('admin');
-          }
-        }}
-      />
-
-      {/* Next.js & Vercel Architecture Viewer Modal */}
-      {isArchitectureViewerOpen && (
-        <ArchitectureViewer onClose={() => setIsArchitectureViewerOpen(false)} />
+      {/* Botão flutuante do carrinho — apenas para clientes B2C logados */}
+      {currentSession.type === 'b2c' && (
+        <button
+          type="button"
+          onClick={() => setIsCartOpen(true)}
+          className="fixed bottom-6 right-6 z-30 w-14 h-14 rounded-full bg-[#8B0000] text-white shadow-2xl flex items-center justify-center hover:bg-red-700 transition-all hover:scale-110 border-2 border-red-900"
+          aria-label="Abrir favoritos e carrinho"
+        >
+          <ShoppingCart className="w-6 h-6" />
+          {cart.length > 0 && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[#8B0000] rounded-full text-[10px] font-black flex items-center justify-center border border-[#8B0000]">
+              {cart.reduce((s, i) => s + i.quantity, 0)}
+            </span>
+          )}
+        </button>
       )}
 
+      {/* Chunks sob demanda */}
+      <Suspense fallback={null}>
+        {selectedProduct && (
+          <ProductDetailModal
+            product={selectedProduct}
+            onClose={() => setSelectedProduct(null)}
+            b2bUser={b2bUser}
+            onConsultWhatsApp={(msg) => handleConsultWhatsApp(msg, selectedProduct)}
+            onOpenB2BModal={() => handleOpenAuthModal('b2b')}
+          />
+        )}
+
+        {isAuthModalOpen && (
+          <AuthModal
+            isOpen={isAuthModalOpen}
+            onClose={() => setIsAuthModalOpen(false)}
+            currentSession={currentSession}
+            initialTab={authModalTab}
+            onLoginSuccess={(newSession) => {
+              setCurrentSession(newSession);
+              if (newSession.type === 'admin') setViewMode('admin');
+            }}
+          />
+        )}
+
+        {isArchitectureViewerOpen && (
+          <ArchitectureViewer onClose={() => setIsArchitectureViewerOpen(false)} />
+        )}
+
+        {isSellerModalOpen && (
+          <WhatsAppSellerModal
+            isOpen={isSellerModalOpen}
+            onClose={() => setIsSellerModalOpen(false)}
+            sellers={sellers}
+            productName={pendingProductContext?.name}
+            onSelectSeller={(seller) =>
+              executeWhatsAppOpen(seller, pendingWhatsAppMsg, pendingProductContext)
+            }
+            onFallbackCentral={() => executeWhatsAppCentral(pendingWhatsAppMsg, pendingProductContext)}
+          />
+        )}
+
+        {isCartOpen && (
+          <FavoritosCarrinho
+            isOpen={isCartOpen}
+            onClose={() => setIsCartOpen(false)}
+            favorites={favorites}
+            cart={cart}
+            currentB2CUser={currentSession.b2cUser}
+            sellers={sellers}
+            onRemoveFavorite={handleRemoveFavorite}
+            onAddToCart={handleAddToCart}
+            onRemoveFromCart={handleRemoveFromCart}
+            onUpdateQty={handleUpdateCartQty}
+            onClearCart={handleClearCart}
+            onSendToWhatsApp={(msg) => handleConsultWhatsApp(msg)}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }
+
+const FullScreenLoader: React.FC<{ label: string }> = ({ label }) => (
+  <div className="pd-page min-h-screen flex flex-col items-center justify-center gap-4">
+    <div
+      className="w-9 h-9 rounded-full border-2 border-transparent animate-spin"
+      style={{ borderTopColor: 'var(--pd-brand)', borderRightColor: 'var(--pd-brand)' }}
+      aria-hidden="true"
+    />
+    <p className="text-xs font-bold uppercase tracking-widest pd-text-3">{label}</p>
+  </div>
+);

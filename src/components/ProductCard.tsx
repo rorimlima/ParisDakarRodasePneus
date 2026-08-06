@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Eye } from 'lucide-react';
+import { MessageCircle, Eye, Star, Heart, ShoppingCart } from 'lucide-react';
 import { Product, B2BUser } from '../types';
 
 interface ProductCardProps {
@@ -8,194 +8,209 @@ interface ProductCardProps {
   onOpenDetails: (product: Product) => void;
   onConsultWhatsApp: (message: string) => void;
   onOpenB2BModal: () => void;
+  // Favoritos e carrinho (apenas B2C logado)
+  isB2CLoggedIn?: boolean;
+  isFavorited?: boolean;
+  onAddToFavorites?: () => void;
+  onRemoveFromFavorites?: () => void;
+  onAddToCart?: () => void;
 }
+
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   b2bUser,
   onOpenDetails,
   onConsultWhatsApp,
-  onOpenB2BModal
+  isB2CLoggedIn = false,
+  isFavorited = false,
+  onAddToFavorites,
+  onRemoveFromFavorites,
+  onAddToCart
 }) => {
-  // Format price
-  const formattedPrice = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  }).format(b2bUser.isLoggedIn && product.b2bPrice ? product.b2bPrice : product.price);
+  const effectivePrice = b2bUser.isLoggedIn && product.b2bPrice ? product.b2bPrice : product.price;
+  const formattedPrice = brl.format(effectivePrice);
+  const formattedOriginalPrice = product.originalPrice ? brl.format(product.originalPrice) : null;
 
-  const formattedOriginalPrice = product.originalPrice
-    ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.originalPrice)
-    : null;
-
-  // Format WhatsApp message routing
   const handleWhatsAppRoute = (e: React.MouseEvent) => {
     e.stopPropagation();
 
     const specsSummary = [
-      product.specs.aro ? `Aro ${product.specs.aro}` : null,
-      product.specs.furacao ? `Furação: ${product.specs.furacao}` : null,
-      product.specs.offset ? `Offset: ${product.specs.offset}` : null,
-      product.specs.tala ? `Tala: ${product.specs.tala}` : null,
-      product.specs.medidaPneu ? `Medida: ${product.specs.medidaPneu}` : null,
-      product.specs.acabamento ? `Cor: ${product.specs.acabamento}` : null
+      product.specs.aro && `Aro ${product.specs.aro}`,
+      product.specs.furacao && `Furação: ${product.specs.furacao}`,
+      product.specs.offset && `Offset: ${product.specs.offset}`,
+      product.specs.tala && `Tala: ${product.specs.tala}`,
+      product.specs.medidaPneu && `Medida: ${product.specs.medidaPneu}`,
+      product.specs.acabamento && `Cor: ${product.specs.acabamento}`
     ]
       .filter(Boolean)
       .join(' | ');
 
-    const msg = `Olá equipe Paris Dakar Rodas e Pneus! 🏁\n\nGostaria de consultar a disponibilidade e fechar o pedido do item:\n\n📌 *${product.name}*\n🏷️ *SKU:* ${product.sku}\n🔧 *Especificações:* ${specsSummary}\n💰 *Valor:* ${formattedPrice}\n\nPor favor, confirmem a compatibilidade com o meu veículo!`;
-
-    onConsultWhatsApp(msg);
+    onConsultWhatsApp(
+      `Olá equipe Paris Dakar Rodas e Pneus! 🏁\n\nGostaria de consultar a disponibilidade do item:\n\n📌 *${product.name}*\n🏷️ *SKU:* ${product.sku}\n🔧 *Especificações:* ${specsSummary}\n💰 *Valor:* ${formattedPrice}\n\nPor favor, confirmem a compatibilidade com o meu veículo!`
+    );
   };
 
   return (
-    <div
+    <article
       onClick={() => onOpenDetails(product)}
-      className="group cursor-pointer flex flex-col bg-white dark:bg-[#111111] border border-slate-200 dark:border-white/10 hover:border-[#8B0000] rounded-xl overflow-hidden shadow-sm dark:shadow-lg transition-all duration-300 relative"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpenDetails(product);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Ver especificações de ${product.name}`}
+      className="pd-card pd-card-hover group cursor-pointer flex flex-col overflow-hidden"
     >
-      {/* Product Image & Badge Overlay */}
-      <div className="relative aspect-[4/3] w-full bg-slate-100 dark:bg-[#1a1a1a] overflow-hidden flex items-center justify-center">
+      {/* Imagem */}
+      <div className="relative aspect-[4/3] w-full pd-surface-2 overflow-hidden">
         <img
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
+          decoding="async"
+          width={640}
+          height={480}
         />
 
-        {/* Badge Overlay */}
         {product.badge && (
-          <div className="absolute top-2.5 left-2.5 bg-red-900/90 text-white border border-red-700/60 px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase shadow-sm">
+          <span className="absolute top-3 left-3 pd-badge !bg-[var(--pd-brand)] !text-white !border-transparent shadow-md">
             {product.badge}
-          </div>
+          </span>
         )}
 
-        {/* Quick View Floating Button */}
-        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-          <span className="px-3.5 py-1.5 rounded-lg bg-zinc-900/90 text-white text-xs font-medium tracking-wide flex items-center gap-1.5 border border-white/20 shadow-lg">
-            <Eye className="w-3.5 h-3.5 text-red-500" />
-            Ver Especificações
+        <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <span className="btn btn-sm btn-outline">
+            <Eye className="w-3.5 h-3.5" />
+            Ver especificações
           </span>
         </div>
+
+        {/* Botões de favorito e carrinho — apenas B2C logado */}
+        {isB2CLoggedIn && (
+          <div className="absolute top-2 right-2 flex flex-col gap-1.5 z-10">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); isFavorited ? onRemoveFromFavorites?.() : onAddToFavorites?.(); }}
+              className={`w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 border ${
+                isFavorited
+                  ? 'bg-[#8B0000] border-red-900 text-white'
+                  : 'bg-white/90 border-white/50 text-gray-600 hover:text-[#8B0000]'
+              }`}
+              aria-label={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              title={isFavorited ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+            >
+              <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current' : ''}`} />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onAddToCart?.(); }}
+              className="w-8 h-8 rounded-full bg-white/90 border border-white/50 flex items-center justify-center shadow-lg transition-all hover:scale-110 hover:bg-[#8B0000] hover:text-white hover:border-red-900 text-gray-600"
+              aria-label="Adicionar ao carrinho"
+              title="Adicionar ao carrinho"
+            >
+              <ShoppingCart className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Card Content Body */}
-      <div className="p-4 flex-1 flex flex-col justify-between space-y-3.5">
-        
-        <div className="space-y-1.5">
-          {/* Categoria & código do produto (Produto_Codigo do ERP) */}
-          <div className="flex items-center justify-between text-[10px] gap-2">
-            <span className="font-semibold uppercase tracking-wider text-red-600 dark:text-red-400 truncate">
-              {product.categoriaNome || product.brand}
+      {/* Conteúdo */}
+      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-4">
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between gap-2 text-[0.62rem]">
+            <span className="font-bold uppercase tracking-[0.14em] pd-brand-text truncate">
+              {product.brand}
             </span>
 
-            <span
-              className="shrink-0 font-mono font-medium text-slate-500 dark:text-zinc-400 bg-slate-100 dark:bg-zinc-900 border border-slate-200 dark:border-white/10 px-1.5 py-0.5 rounded"
-              title="Código do produto"
-            >
-              #{product.sku}
+            <span className="flex items-center gap-1 pd-gold-text font-bold shrink-0">
+              <Star className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
+              {product.rating}
+              <span className="pd-text-3 font-normal">({product.reviewsCount})</span>
             </span>
           </div>
 
-          {/* Product Title */}
-          <h3 className="text-xs sm:text-sm font-semibold tracking-tight text-slate-900 dark:text-white line-clamp-2 leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors font-heading">
+          <h3 className="text-sm font-bold uppercase tracking-tight pd-text pd-clamp-2 leading-snug">
             {product.name}
           </h3>
 
-          {/* Clean Specification Table */}
-          <div className="pt-1">
-            <table className="clean-table bg-slate-100 dark:bg-zinc-900/70 rounded overflow-hidden">
-              <tbody>
-                {product.specs.aro && (
-                  <tr>
-                    <th>Aro</th>
-                    <td className="font-medium font-mono text-slate-900 dark:text-white">{product.specs.aro}</td>
-                    {product.specs.furacao && (
-                      <>
-                        <th>Furação</th>
-                        <td className="font-medium font-mono text-white">{product.specs.furacao}</td>
-                      </>
-                    )}
-                  </tr>
-                )}
-                {(product.specs.offset || product.specs.tala) && (
-                  <tr>
-                    {product.specs.tala && (
-                      <>
-                        <th>Tala</th>
-                        <td className="font-mono">{product.specs.tala}</td>
-                      </>
-                    )}
-                    {product.specs.offset && (
-                      <>
-                        <th>Offset</th>
-                        <td className="font-mono">{product.specs.offset}</td>
-                      </>
-                    )}
-                  </tr>
-                )}
-                {product.specs.medidaPneu && (
-                  <tr>
-                    <th>Medida</th>
-                    <td colSpan={3} className="font-medium font-mono text-red-650 dark:text-red-400">
-                      {product.specs.medidaPneu}
-                    </td>
-                  </tr>
-                )}
-                {product.specs.acabamento && (
-                  <tr>
-                    <th>Acabamento</th>
-                    <td colSpan={3} className="truncate max-w-[140px] text-slate-700 dark:text-zinc-300">
-                      {product.specs.acabamento}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <table className="clean-table">
+            <tbody>
+              {product.specs.aro && (
+                <tr>
+                  <th scope="row">Aro</th>
+                  <td className="font-bold pd-mono">{product.specs.aro}</td>
+                  {product.specs.furacao && (
+                    <>
+                      <th scope="row">Furação</th>
+                      <td className="font-bold pd-mono">{product.specs.furacao}</td>
+                    </>
+                  )}
+                </tr>
+              )}
+              {(product.specs.offset || product.specs.tala) && (
+                <tr>
+                  {product.specs.tala && (
+                    <>
+                      <th scope="row">Tala</th>
+                      <td className="pd-mono">{product.specs.tala}</td>
+                    </>
+                  )}
+                  {product.specs.offset && (
+                    <>
+                      <th scope="row">Offset</th>
+                      <td className="pd-mono">{product.specs.offset}</td>
+                    </>
+                  )}
+                </tr>
+              )}
+              {product.specs.medidaPneu && (
+                <tr>
+                  <th scope="row">Medida</th>
+                  <td colSpan={3} className="font-bold pd-mono pd-brand-text">
+                    {product.specs.medidaPneu}
+                  </td>
+                </tr>
+              )}
+              {product.specs.acabamento && (
+                <tr>
+                  <th scope="row">Acabamento</th>
+                  <td colSpan={3} className="truncate pd-text-2">
+                    {product.specs.acabamento}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {/* Price & WhatsApp Action Routing */}
-        <div className="pt-2.5 border-t border-slate-100 dark:border-white/5 space-y-2.5">
-          
-          {/* Clean Pure Price Display */}
-          <div className="flex items-baseline justify-between">
-            <div>
+        {/* Preço e ação */}
+        <div className="pt-3.5 border-t pd-hairline space-y-3">
+          <div className="flex items-end justify-between gap-2">
+            <div className="min-w-0">
               {formattedOriginalPrice && (
-                <span className="text-xs text-slate-400 dark:text-zinc-500 line-through mr-2">
-                  {formattedOriginalPrice}
-                </span>
+                <span className="text-xs pd-text-3 line-through mr-2">{formattedOriginalPrice}</span>
               )}
-              <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
-                {formattedPrice}
-              </span>
-              <span className="text-[10px] text-slate-500 dark:text-zinc-400 block font-normal tracking-normal mt-0.5">
-                Até 10x sem juros ou PIX
+              <span className="text-lg font-extrabold pd-text">{formattedPrice}</span>
+              <span className="block text-[0.6rem] font-bold uppercase tracking-wider pd-text-3 mt-0.5">
+                Em até 10x sem juros ou PIX
               </span>
             </div>
 
-            <div className="text-right shrink-0">
-              <span className="text-[10px] font-medium tracking-normal text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40 block">
-                Pronta Entrega
-              </span>
-              {product.unidadeLabel && (
-                <span className="text-[10px] text-zinc-500 block mt-0.5">
-                  {product.stockQuantity} {product.unidadeLabel}
-                </span>
-              )}
-            </div>
+            <span className="pd-badge pd-badge-success shrink-0">Pronta entrega</span>
           </div>
 
-          {/* WhatsApp Routing Direct Button */}
-          <button
-            onClick={handleWhatsAppRoute}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center space-x-2 transition-all shadow-sm"
-          >
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span>Falar com Especialista</span>
+          <button type="button" onClick={handleWhatsAppRoute} className="btn btn-whats btn-block">
+            <MessageCircle className="w-4 h-4" />
+            <span>Falar com especialista</span>
           </button>
-
         </div>
-
       </div>
-    </div>
+    </article>
   );
 };

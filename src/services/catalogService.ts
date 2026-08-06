@@ -145,9 +145,9 @@ export function criarProdutoDeErp(dados: DadosErpProduto): ProdutoCatalogo {
     estoqueDescricao: sanitizarTexto(dados.estoqueDescricao, 80),
     empresa: sanitizarTexto(dados.empresa, 80),
     valorVenda: paraNumero(dados.valorVenda, 0),
-    // Produto novo entra desativado: sem ficha técnica preenchida ele não deve ir ao ar.
-    ativoManual: false,
-    ativo: false,
+    // Produto novo entra ativado por padrão se houver estoque positivo.
+    ativoManual: quantidade > 0,
+    ativo: quantidade > 0,
     fichaTecnica: {},
     marcasAtendidas: [],
     modelosAtendidos: [],
@@ -300,7 +300,15 @@ export const catalogService = {
     return onSnapshot(
       query(collection(exigirDb(), COLECOES.produtos), ...restricoes, orderBy('descricao')),
       (snap) => callback(snap.docs.map(paraProduto)),
-      (erro) => console.error('[catalogo] assinatura de produtos falhou', erro)
+      (erro) => {
+        console.error('[catalogo] assinatura de produtos falhou, tentando fallback getDocs', erro);
+        getDocs(query(collection(exigirDb(), COLECOES.produtos), ...restricoes))
+          .then((snap) => callback(snap.docs.map(paraProduto)))
+          .catch((err) => {
+            console.error('[catalogo] fallback getDocs também falhou', err);
+            callback([]);
+          });
+      }
     );
   },
 

@@ -1,18 +1,17 @@
 import {
   Product,
   SiteSettings,
-  HeroSlideSettings,
   B2BUser,
   CpfClient,
   AdminUser,
   UserSession,
   InquiryLog,
-  Vendedor
+  Seller
 } from '../types';
-import { MOCK_PRODUCTS } from '../data/mockProducts';
+import { doc, setDoc } from 'firebase/firestore';
+import { obterDb, COLECOES } from '../firebase/config';
 
 const STORAGE_KEYS = {
-
   PRODUCTS: 'pd_products',
   SITE_SETTINGS: 'pd_site_settings',
   CPF_USERS: 'pd_cpf_users',
@@ -20,66 +19,32 @@ const STORAGE_KEYS = {
   ADMIN_USERS: 'pd_admin_users',
   USER_SESSION: 'pd_user_session',
   INQUIRIES: 'pd_inquiries',
-  VENDEDORES: 'pd_vendedores'
+  SELLERS: 'pd_sellers'
 };
 
-export const DEFAULT_HERO_SLIDES: HeroSlideSettings[] = [
-
+export const DEFAULT_SELLERS: Seller[] = [
   {
-    id: 'truck-wheel',
-    image: '/hero_3d_truck_wheel.jpg',
-    tag: 'BEDUÍNO 3D EXCLUSIVE',
-    title: 'PARIS DAKAR',
-    highlight: 'FORGED 3D',
-    subtitle: 'Rodas Forjadas Heavy-Duty & Pneus Off-Road de Alta Performance para Caminhonetes 4x4',
-    inquiryMsg: 'Olá! Vi a Roda Forjada 3D para Caminhonete 4x4 no site Paris Dakar e gostaria de solicitar um orçamento.'
+    id: 'seller-001',
+    name: 'Rodrigo Lima',
+    phone: '(11) 99999-8888',
+    email: 'rodrigo.vendas@parisdakar.com.br',
+    specialty: 'Consultor Técnico 4x4 & Rodas Heavy-Duty',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+    createdAt: '2026-01-15'
   },
   {
-    id: 'beduino-emblem',
-    image: '/hero_3d_beduino_emblem.jpg',
-    tag: 'LIGA FORGED AERO T6',
-    title: 'EMBLEMA 3D',
-    highlight: 'BEDUÍNO LUXO',
-    subtitle: 'O Símbolo Lendário do Rali Paris Dakar esculpido em Alumínio Aeroespacial com Acabamento 3D',
-    inquiryMsg: 'Olá! Gostaria de saber mais sobre as rodas com o Emblema 3D Beduíno em liga forjada T6.'
-  },
-  {
-    id: 'desert-rally',
-    image: '/hero_3d_desert_rally.jpg',
-    tag: 'BEADLOCK PERFORMANCE',
-    title: 'RALLY DAKAR',
-    highlight: 'OFF-ROAD 4x4',
-    subtitle: 'Engenharia de Máxima Resistência em Terrenos Desérticos com Rodas Beadlock de Alta Carga',
-    inquiryMsg: 'Olá! Vi o visual Rally Dakar Off-Road no site e gostaria de consultar combos para meu veículo.'
-  },
-  {
-    id: 'wheel-main',
-    image: '/hero_beduino_wheel_3d.jpg',
-    tag: 'DESIGN PATENTEADO',
-    title: 'RODAS ESPORTIVAS',
-    highlight: 'MONOBLOCO 3D',
-    subtitle: 'Acabamento Monobloco em Dark Chrome com Calota Central Beduíno Tridimensional',
-    inquiryMsg: 'Olá! Tenho interesse nas Rodas Esportivas Monobloco 3D da Paris Dakar.'
-  },
-  {
-    id: 'orbit-glow',
-    image: '/hero_beduino_close_3d.jpg',
-    tag: 'MOTION RENDER 4K',
-    title: 'ÓRBITA BEDUÍNO',
-    highlight: 'GLOW EFFECT',
-    subtitle: 'Efeito Luminescente Neon & Detalhes Tridimensionais de Precisão Milimétrica',
-    inquiryMsg: 'Olá! Gostaria de consultar os modelos de rodas com acabamento Beduíno Glow.'
-  },
-  {
-    id: 'logo-render',
-    image: '/logo_3d_dark.jpg',
-    tag: 'SHOWROOM PREMIUM',
-    title: 'PARIS DAKAR',
-    highlight: 'RODAS & PNEUS',
-    subtitle: 'Excelência, Garantia de Compatibilidade Técnica e Tradição na Linha Off-Road e Esportiva',
-    inquiryMsg: 'Olá equipe Paris Dakar! Gostaria de falar com um especialista em rodas e pneus de luxo.'
+    id: 'seller-002',
+    name: 'Eduardo Dakar',
+    phone: '(11) 98888-7777',
+    email: 'eduardo.dakar@parisdakar.com.br',
+    specialty: 'Especialista em Pneus Off-Road & Lift Kits',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    isActive: true,
+    createdAt: '2026-02-01'
   }
 ];
+
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   heroTitle: 'Especialistas em Caminhonetes 4x4',
@@ -88,26 +53,18 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   whatsappNumber: '5511999998888',
   phone: '(11) 3456-7890',
   address: 'Av. das Nações Unidas, 12901 - Morumbi, São Paulo - SP',
-  showStockStatus: true,
-  youtubeVideoUrl: 'https://www.youtube.com/embed/5qap5aO4i9A',
-  instagramReels: [
-    'https://www.instagram.com/reel/DF_L0z2Pv9d/',
-    'https://www.instagram.com/reel/DEd4WyxP7bX/',
-    'https://www.instagram.com/reel/DEtP3y0vNfW/',
-    'https://www.instagram.com/reel/DDy-H9mPF2k/'
-  ],
-  heroSlides: DEFAULT_HERO_SLIDES
+  showStockStatus: true
 };
-
 
 export const DEFAULT_SENIOR_ADMIN: AdminUser = {
   id: 'admin-senior-001',
   name: 'Master Supremo',
-  email: 'onaeror@gmail.com',
+  email: 'admin@parisdakar.com.br',
   role: 'senior',
   grantedBySenior: true,
   createdAt: '2026-01-01'
 };
+
 
 export const DEFAULT_SAMPLE_B2B: B2BUser = {
   id: 'b2b-001',
@@ -137,50 +94,34 @@ export const DEFAULT_SAMPLE_CPF: CpfClient = {
 
 // Storage Service Class
 class StorageService {
-
-  // ---------------------------------------------------------------------
-  // Produtos — LEGADO.
-  //
-  // O catálogo real vive em `catalogService` (Firestore, com fallback local).
-  // Estes métodos permanecem apenas para não quebrar código antigo; nada no
-  // app os chama. Não escreva produto por aqui: esta via não aplica a regra
-  // "estoque zerado ⇒ fora do site" nem separa o custo do documento público.
-  // ---------------------------------------------------------------------
-
-  /** @deprecated use `catalogService.listarProdutos()` */
+  
+  // Products
   getProducts(): Product[] {
     const data = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (!data) {
-      this.saveProducts(MOCK_PRODUCTS);
-      return MOCK_PRODUCTS;
+      return [];
     }
     try {
       const parsed: Product[] = JSON.parse(data);
-      // Clean up stale mock data with beadlock references
-      const cleaned = parsed.map((p) => {
-        if (p.name.includes('Beadlock')) {
-          p.name = p.name.replace(/Beadlock Spec/gi, 'Heavy-Duty').replace(/Beadlock/gi, 'Heavy-Duty');
-        }
-        if (p.subcategory?.includes('Beadlock')) {
-          p.subcategory = 'Forjada Caminhonete 4x4';
-        }
-        if (p.badge?.includes('BEADLOCK')) {
-          p.badge = 'FORGED 4X4 HEAVY-DUTY';
-        }
-        return p;
-      });
-      return cleaned;
+      const realProducts = parsed.filter(
+        (p) =>
+          !p.id.startsWith('pd-rod-') &&
+          !p.id.startsWith('pd-pneu-') &&
+          !p.id.startsWith('pd-lift-') &&
+          !p.id.startsWith('pd-combo-') &&
+          !p.id.startsWith('pd-acess-') &&
+          !p.id.startsWith('prod-0')
+      );
+      return realProducts;
     } catch {
-      return MOCK_PRODUCTS;
+      return [];
     }
   }
 
-  /** @deprecated use `catalogService` */
   saveProducts(products: Product[]) {
     localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
   }
 
-  /** @deprecated use `catalogService` */
   saveProduct(product: Product): Product[] {
     const products = this.getProducts();
     const index = products.findIndex((p) => p.id === product.id);
@@ -193,7 +134,6 @@ class StorageService {
     return products;
   }
 
-  /** @deprecated use `catalogService` */
   deleteProduct(id: string): Product[] {
     const products = this.getProducts().filter((p) => p.id !== id);
     this.saveProducts(products);
@@ -208,19 +148,25 @@ class StorageService {
       return DEFAULT_SITE_SETTINGS;
     }
     try {
-      const parsed: SiteSettings = JSON.parse(data);
-      if (!parsed.heroSlides || !parsed.heroSlides.length) {
-        parsed.heroSlides = DEFAULT_HERO_SLIDES;
-      }
-      return parsed;
+      return JSON.parse(data);
     } catch {
       return DEFAULT_SITE_SETTINGS;
     }
   }
 
-
   saveSiteSettings(settings: SiteSettings) {
     localStorage.setItem(STORAGE_KEYS.SITE_SETTINGS, JSON.stringify(settings));
+    try {
+      const db = obterDb();
+      if (db) {
+        setDoc(doc(db, COLECOES.configuracoes, 'site'), {
+          ...settings,
+          atualizadoEm: new Date().toISOString()
+        }).catch((err) => console.warn('[storageService] erro ao salvar configuracoes no Firestore:', err));
+      }
+    } catch (e) {
+      console.warn('[storageService] firebase indisponivel para configuracoes:', e);
+    }
   }
 
   // CPF Users (B2C)
@@ -376,6 +322,17 @@ class StorageService {
     };
     inquiries.unshift(newLog);
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(inquiries));
+    try {
+      const db = obterDb();
+      if (db) {
+        setDoc(doc(db, COLECOES.cotacoes, newLog.id), {
+          ...newLog,
+          criadoEm: new Date().toISOString()
+        }).catch((err) => console.warn('[storageService] erro ao salvar cotacao no Firestore:', err));
+      }
+    } catch (e) {
+      console.warn('[storageService] firebase indisponivel para cotacao:', e);
+    }
     return newLog;
   }
 
@@ -389,69 +346,59 @@ class StorageService {
     return inquiries;
   }
 
-  // Vendedores / Equipe Comercial WhatsApp
-  getVendedores(): Vendedor[] {
-    const data = localStorage.getItem(STORAGE_KEYS.VENDEDORES);
+  // Sellers Management
+  getSellers(): Seller[] {
+    const data = localStorage.getItem(STORAGE_KEYS.SELLERS);
     if (!data) {
-      const initialSample: Vendedor[] = [
-        {
-          id: 'vend-001',
-          nome: 'Consultor Técnico Dakar',
-          telefone: '5511999998888',
-          email: 'vendas@parisdakarrodas.com.br',
-          cargo: 'Especialista em Rodas Forjadas e Pneus 4x4',
-          fotoUrl: '',
-          ativo: true,
-          createdAt: new Date().toISOString().split('T')[0]
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(initialSample));
-      return initialSample;
+      localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(DEFAULT_SELLERS));
+      return DEFAULT_SELLERS;
     }
     try {
       return JSON.parse(data);
     } catch {
-      return [];
+      return DEFAULT_SELLERS;
     }
   }
 
-  saveVendedor(vendedor: Omit<Vendedor, 'id' | 'createdAt'> & { id?: string }): Vendedor[] {
-    const vendedores = this.getVendedores();
-    if (vendedor.id) {
-      const index = vendedores.findIndex((v) => v.id === vendedor.id);
-      if (index >= 0) {
-        vendedores[index] = {
-          ...vendedores[index],
-          ...vendedor
-        };
-      }
-    } else {
-      const newVendedor: Vendedor = {
-        ...vendedor,
-        id: `vend-${Date.now()}`,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      vendedores.unshift(newVendedor);
-    }
-    localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(vendedores));
-    return vendedores;
+  saveSellers(sellers: Seller[]): Seller[] {
+    localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(sellers));
+    return sellers;
   }
 
-  deleteVendedor(id: string): Vendedor[] {
-    const vendedores = this.getVendedores().filter((v) => v.id !== id);
-    localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(vendedores));
-    return vendedores;
+  addSeller(sellerData: Omit<Seller, 'id' | 'createdAt'>): Seller[] {
+    const sellers = this.getSellers();
+    const newSeller: Seller = {
+      ...sellerData,
+      id: `seller-${Date.now()}`,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    sellers.unshift(newSeller);
+    return this.saveSellers(sellers);
   }
 
-  toggleVendedorStatus(id: string): Vendedor[] {
-    const vendedores = this.getVendedores();
-    const item = vendedores.find((v) => v.id === id);
-    if (item) {
-      item.ativo = !item.ativo;
-      localStorage.setItem(STORAGE_KEYS.VENDEDORES, JSON.stringify(vendedores));
+  updateSeller(updatedSeller: Seller): Seller[] {
+    const sellers = this.getSellers();
+    const index = sellers.findIndex((s) => s.id === updatedSeller.id);
+    if (index >= 0) {
+      sellers[index] = updatedSeller;
     }
-    return vendedores;
+    return this.saveSellers(sellers);
+  }
+
+  deleteSeller(id: string): Seller[] {
+    const sellers = this.getSellers().filter((s) => s.id !== id);
+    return this.saveSellers(sellers);
+  }
+
+  toggleSellerStatus(id: string): Seller[] {
+    const sellers = this.getSellers();
+    const seller = sellers.find((s) => s.id === id);
+    if (seller) {
+      seller.isActive = !seller.isActive;
+    }
+    return this.saveSellers(sellers);
   }
 }
 
 export const storageService = new StorageService();
+

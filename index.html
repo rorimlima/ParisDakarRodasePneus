@@ -2,16 +2,50 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Paris Dakar Rodas e Pneus | Especialista 4x4 & Off-Road</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <title>Paris Dakar Rodas e Pneus — Rodas Forjadas & Pneus Off-Road 4x4</title>
+    <meta
+      name="description"
+      content="Rodas forjadas heavy-duty, pneus Mud-Terrain e All-Terrain e kits de lift para caminhonetes 4x4. Consultoria técnica de furação, offset e tala direto no WhatsApp."
+    />
+
+    <!-- Ícone do site nos navegadores (emblema Paris Dakar) -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#8B0000" />
+    <meta name="theme-color" content="#0A0908" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F6F5F3" media="(prefers-color-scheme: light)" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Paris Dakar Rodas e Pneus" />
+    <meta property="og:title" content="Paris Dakar Rodas e Pneus — Especialistas em Caminhonetes 4x4" />
+    <meta
+      property="og:description"
+      content="Rodas forjadas, pneus off-road e kits de lift com consultoria técnica especializada."
+    />
+    <meta property="og:image" content="/favicon.svg" />
+
+    <!--
+      Tema aplicado antes da primeira pintura para não haver "flash" de tela escura
+      ao abrir o site no modo claro. Mantém a escolha salva do visitante.
+    -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('pd_theme');
+          var prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+          var dark = saved ? saved === 'dark' : !prefersLight;
+          document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.style.backgroundColor = dark ? '#0A0908' : '#F6F5F3';
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
-

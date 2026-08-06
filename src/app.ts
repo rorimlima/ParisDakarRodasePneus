@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { helmetMiddleware, corsOptions } from './config/security.js';
 import { errorHandlerMiddleware, notFoundMiddleware } from './middlewares/errorHandler.js';
+import { getDatabaseHealth } from './services/dbHealth.js';
 
 import importRoutes from './routes/importRoutes.js';
 import catalogRoutes from './routes/catalogRoutes.js';
@@ -27,6 +28,16 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     security: 'ENABLED',
   });
+});
+
+// 4.1. Diagnóstico da camada de dados (credenciais, Firestore e store ativo)
+app.get('/health/db', async (_req, res, next) => {
+  try {
+    const report = await getDatabaseHealth();
+    res.status(report.status === 'down' ? 503 : 200).json(report);
+  } catch (error) {
+    next(error);
+  }
 });
 
 // 5. Montagem das Rotas da Aplicação Backend
