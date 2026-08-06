@@ -8,7 +8,7 @@ import {
   InquiryLog,
   Seller
 } from '../types';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { obterDb, COLECOES } from '../firebase/config';
 
 const STORAGE_KEYS = {
@@ -152,6 +152,22 @@ class StorageService {
     } catch {
       return DEFAULT_SITE_SETTINGS;
     }
+  }
+
+  async fetchSiteSettings(): Promise<SiteSettings | null> {
+    try {
+      const db = obterDb();
+      if (!db) return null;
+      const snap = await getDoc(doc(db, COLECOES.configuracoes, 'site'));
+      if (snap.exists()) {
+        const data = snap.data() as SiteSettings;
+        localStorage.setItem(STORAGE_KEYS.SITE_SETTINGS, JSON.stringify(data));
+        return data;
+      }
+    } catch (e) {
+      console.warn('[storageService] erro ao carregar configuracoes do Firestore:', e);
+    }
+    return null;
   }
 
   saveSiteSettings(settings: SiteSettings) {

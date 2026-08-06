@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { SearchDashboard } from './components/SearchDashboard';
@@ -75,6 +75,14 @@ export default function App() {
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
   const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
   const [sellers, setSellers] = useState<Seller[]>(() => storageService.getSellers());
+
+  useEffect(() => {
+    storageService.fetchSiteSettings().then((remoteSettings) => {
+      if (remoteSettings) {
+        setSiteSettings(remoteSettings);
+      }
+    });
+  }, []);
 
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
 
