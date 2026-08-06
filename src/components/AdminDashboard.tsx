@@ -52,6 +52,7 @@ import {
 import { storageService } from '../services/storageService';
 import { catalogService } from '../services/catalogService';
 import { listaParaExibicao } from '../utils/produtoAdapter';
+import { ProductPhotoManager } from './ProductPhotoManager';
 import { ProdutoCatalogo } from '../types/catalog';
 import { formatCNPJ, formatCPF } from '../utils/validation';
 
@@ -150,7 +151,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [newProdStock, setNewProdStock] = useState<number>(10);
   const [newProdInStock, setNewProdInStock] = useState(true);
   const [newProdBadge, setNewProdBadge] = useState('NOVIDADE 2026');
-  const [newProdImg, setNewProdImg] = useState('https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=800&q=80');
+  const [newProdImages, setNewProdImages] = useState<string[]>([]);
   const [newProdDesc, setNewProdDesc] = useState('');
 
   // Product Specs Form State
@@ -307,7 +308,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               inStock: (normRow['stockQuantity'] || 10) > 0,
               isActive: true,
               badge: 'PLANILHA 2026',
-              image: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=800&q=80',
+              image: '',
               description: 'Produto cadastrado via importação de planilha.',
               specs: {
                 aro: normRow['aro'] || '17"',
@@ -374,7 +375,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       originalPrice: Number(newProdOrigPrice),
       isWholesaleOnly: false,
       badge: newProdBadge,
-      image: newProdImg,
+      image: newProdImages[0] || '',
+      secondaryImages: newProdImages.slice(1),
       description: newProdDesc || 'Produto de alta performance Paris Dakar Off-Road.',
       specs: {
         aro: specAro,
@@ -402,6 +404,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setProducts(nextProducts);
       onProductsUpdated(nextProducts);
       setIsAddProductModalOpen(false);
+      setNewProdImages([]);
       showToast('Novo produto salvo no Firestore e exposto no site!');
     } catch (err: any) {
       showToast(`Erro ao salvar no Firestore: ${err.message}`);
@@ -1664,82 +1667,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase pd-text-2 block mb-1">Foto do Produto</label>
-                <div className="space-y-2">
-                  {/* Preview */}
-                  {newProdImg && (
-                    <div className="relative w-full h-36 rounded-lg overflow-hidden border pd-border pd-surface-2">
-                      <img
-                        src={newProdImg}
-                        alt="Preview do produto"
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setNewProdImg('')}
-                        className="absolute top-2 right-2 w-6 h-6 bg-red-900/80 text-white rounded-full flex items-center justify-center text-xs font-bold hover:bg-red-700 transition"
-                        title="Remover imagem"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  )}
-                  {/* Upload buttons */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <label
-                      htmlFor="upload-produto-computador"
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 pd-surface-2 border pd-border rounded cursor-pointer hover:border-[#8B0000] transition text-xs font-bold pd-text-2"
-                      title="Selecionar arquivo do computador"
-                    >
-                      <Upload className="w-3.5 h-3.5 pd-brand-text" />
-                      Do Computador
-                      <input
-                        id="upload-produto-computador"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (ev) => setNewProdImg(ev.target?.result as string);
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-                    <label
-                      htmlFor="upload-produto-camera"
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 pd-surface-2 border pd-border rounded cursor-pointer hover:border-[#8B0000] transition text-xs font-bold pd-text-2"
-                      title="Tirar foto com a câmera"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5 pd-brand-text" />
-                      Câmera / Celular
-                      <input
-                        id="upload-produto-camera"
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          const reader = new FileReader();
-                          reader.onload = (ev) => setNewProdImg(ev.target?.result as string);
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-                  </div>
-                  {/* URL manual fallback */}
-                  <input
-                    type="text"
-                    value={newProdImg}
-                    onChange={(e) => setNewProdImg(e.target.value)}
-                    placeholder="Ou cole uma URL de imagem..."
-                    className="w-full px-3 py-2 rounded pd-surface-2 border pd-border pd-text text-[11px]"
-                  />
-                </div>
+                <label className="text-[10px] font-bold uppercase pd-text-2 block mb-1">Fotos Reais do Produto</label>
+                <ProductPhotoManager
+                  codigoProduto={newProdSku}
+                  images={newProdImages}
+                  onChange={setNewProdImages}
+                />
               </div>
 
 
@@ -1841,6 +1774,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     className="w-full px-3 py-2 rounded pd-surface-2 border pd-border pd-text font-mono"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-bold uppercase pd-text-2 block mb-1">Fotos Reais do Produto</label>
+                <ProductPhotoManager
+                  codigoProduto={editingProduct.sku || editingProduct.id}
+                  images={[editingProduct.image, ...(editingProduct.secondaryImages || [])].filter(Boolean)}
+                  onChange={(images) =>
+                    setEditingProduct({
+                      ...editingProduct,
+                      image: images[0] || '',
+                      secondaryImages: images.slice(1)
+                    })
+                  }
+                />
               </div>
 
               {/* TOGGLE EXPOR NO SITE NO EDIT MODAL */}

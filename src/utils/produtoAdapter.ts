@@ -17,25 +17,15 @@ export interface LinhaFichaTecnica {
   destaque?: boolean;
 }
 
-const IMAGEM_PADRAO_POR_GRUPO: Record<string, string> = {
-  rodas: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=800&q=80',
-  pneus: 'https://images.unsplash.com/photo-1600661653561-629509216228?auto=format&fit=crop&w=800&q=80',
-  'kits-lift': 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=800&q=80',
-  acessorios: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80',
-  iluminacao: 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=800&q=80',
-  engate: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?auto=format&fit=crop&w=800&q=80',
-  capota: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
-  usados: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80'
-};
-
-const IMAGEM_GENERICA =
-  'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=800&q=80';
-
 /**
  * Só aceita http(s). Bloqueia `javascript:` e `data:text/html`, que viram XSS
  * assim que a URL cai num href — a origem é um campo digitado no painel.
+ *
+ * Sem URL válida, retorna string vazia — não usamos mais fotos de banco de
+ * imagens (Unsplash) para representar produtos que não têm foto real ainda.
+ * `ProductCard`/`ProductDetailModal` mostram um placeholder neutro nesse caso.
  */
-export function urlDeImagemSegura(url: unknown, grupo?: string): string {
+export function urlDeImagemSegura(url: unknown): string {
   const bruto = typeof url === 'string' ? url.trim() : '';
   if (bruto) {
     try {
@@ -45,7 +35,7 @@ export function urlDeImagemSegura(url: unknown, grupo?: string): string {
       /* URL inválida — cai no padrão abaixo */
     }
   }
-  return (grupo && IMAGEM_PADRAO_POR_GRUPO[grupo]) || IMAGEM_GENERICA;
+  return '';
 }
 
 const comoTexto = (valor: ValorFichaTecnica | undefined): string | undefined => {
@@ -155,8 +145,8 @@ export function paraProdutoDeExibicao(
   produto: ProdutoCatalogo,
   categoria?: CategoriaCatalogo | null
 ): Product {
-  const imagens = (produto.imagens || []).map((img) => urlDeImagemSegura(img, produto.grupo));
-  const principal = imagens[0] || urlDeImagemSegura(undefined, produto.grupo);
+  const imagens = (produto.imagens || []).map((img) => urlDeImagemSegura(img)).filter(Boolean);
+  const principal = imagens[0] || '';
 
   return {
     id: produto.codigo,

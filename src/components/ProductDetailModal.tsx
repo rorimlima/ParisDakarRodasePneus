@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, MessageCircle, ShieldCheck, Truck, Car } from 'lucide-react';
+import { X, MessageCircle, ShieldCheck, Truck, Car, ImageOff } from 'lucide-react';
 import { Product, B2BUser } from '../types';
 
 interface ProductDetailModalProps {
@@ -49,7 +49,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
   if (!product) return null;
 
-  const imagesList = [product.image, ...(product.secondaryImages || [])];
+  const imagesList = [product.image, ...(product.secondaryImages || [])].filter(Boolean);
   const formattedPrice = brl.format(
     b2bUser.isLoggedIn && product.b2bPrice ? product.b2bPrice : product.price
   );
@@ -120,12 +120,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 sm:p-8">
           <div className="space-y-4">
             <div className="aspect-[4/3] w-full rounded-xl pd-surface-2 overflow-hidden border pd-border">
-              <img
-                src={selectedImage}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                decoding="async"
-              />
+              {selectedImage ? (
+                <img
+                  src={selectedImage}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  decoding="async"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2 pd-text-3">
+                  <ImageOff className="w-10 h-10" aria-hidden="true" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Foto real em breve</span>
+                </div>
+              )}
             </div>
 
             {imagesList.length > 1 && (

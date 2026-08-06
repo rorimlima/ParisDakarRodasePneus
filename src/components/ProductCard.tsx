@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Eye, Star, Heart, ShoppingCart } from 'lucide-react';
+import { MessageCircle, Eye, Star, Heart, ShoppingCart, ImageOff } from 'lucide-react';
 import { Product, B2BUser } from '../types';
 
 interface ProductCardProps {
@@ -68,15 +68,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Imagem */}
       <div className="relative aspect-[4/3] w-full pd-surface-2 overflow-hidden">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-          decoding="async"
-          width={640}
-          height={480}
-        />
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+            width={640}
+            height={480}
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 pd-text-3">
+            <ImageOff className="w-8 h-8" aria-hidden="true" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Foto em breve</span>
+          </div>
+        )}
 
         {product.badge && (
           <span className="absolute top-3 left-3 pd-badge !bg-[var(--pd-brand)] !text-white !border-transparent shadow-md">
