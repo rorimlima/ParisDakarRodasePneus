@@ -17,11 +17,18 @@ export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
   const brandRed = colorMode === 'white' ? '#FFFFFF' : '#8B0000';
   const subTextColor = colorMode === 'white' ? '#FFFFFF' : colorMode === 'light' ? '#1E293B' : '#8B0000';
 
+  // O ícone escala de forma fluida: nunca menor que 32px, nunca maior que
+  // o `height` pedido pelo componente. Em telas estreitas ele encolhe junto
+  // com a viewport em vez de forçar a largura do Header.
+  const numericHeight = typeof height === 'number' ? height : parseInt(String(height), 10) || 48;
+  const fluidSize = `clamp(32px, 9vw, ${numericHeight}px)`;
+
   // High-fidelity Tuareg Dakar Nomad Silhouette SVG
   const TuaregIcon = (
     <svg
-      width={height}
-      height={height}
+      width={numericHeight}
+      height={numericHeight}
+      style={{ width: fluidSize, height: fluidSize }}
       viewBox="0 0 120 120"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -73,18 +80,23 @@ export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
   }
 
   return (
-    <div className={`inline-flex items-center gap-3 select-none ${className}`}>
+    <div className={`inline-flex min-w-0 max-w-full items-center gap-2 sm:gap-3 select-none ${className}`}>
       {TuaregIcon}
       {variant !== 'icon' && (
-        <div className="flex flex-col justify-center leading-none">
+        // `min-w-0` permite que o bloco de texto encolha dentro do flex do
+        // Header. Sem ele, o min-content do logotipo (~200px) empurrava a
+        // largura da página em telas de 320–360px.
+        <div className="flex min-w-0 flex-col justify-center leading-none">
+          {/* Tracking e corpo do texto reduzidos no mobile: o letter-spacing
+              saiu do style inline para poder variar por breakpoint. */}
           <span
-            className="font-black tracking-wider text-lg sm:text-xl md:text-2xl font-serif uppercase leading-tight"
-            style={{ color: brandRed, fontFamily: 'Georgia, "Times New Roman", Times, serif', letterSpacing: '0.08em' }}
+            className="font-black text-base sm:text-xl md:text-2xl font-serif uppercase leading-tight tracking-[0.04em] sm:tracking-[0.08em]"
+            style={{ color: brandRed, fontFamily: 'Georgia, "Times New Roman", Times, serif' }}
           >
             PARIS DAKAR
           </span>
           <span
-            className="text-[0.62rem] sm:text-[0.7rem] font-bold tracking-[0.22em] font-serif italic uppercase mt-0.5"
+            className="text-[0.55rem] sm:text-[0.7rem] font-bold tracking-[0.12em] sm:tracking-[0.22em] font-serif italic uppercase mt-0.5"
             style={{ color: subTextColor, fontFamily: 'Georgia, "Times New Roman", Times, serif' }}
           >
             RODAS E PNEUS

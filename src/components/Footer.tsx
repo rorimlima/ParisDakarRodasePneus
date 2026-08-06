@@ -129,14 +129,19 @@ export const Footer: React.FC<FooterProps> = ({
 
         {/* Bottom Copyright */}
         <div className="mt-12 pt-6 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between text-[10px] text-gray-500 gap-4">
-          <p className="uppercase font-bold">© {new Date().getFullYear()} Paris Dakar Rodas e Pneus. Todos os direitos reservados.</p>
-          <div className="flex space-x-6 items-center">
+          <p className="uppercase font-bold text-center sm:text-left">© {new Date().getFullYear()} Paris Dakar Rodas e Pneus. Todos os direitos reservados.</p>
+
+          {/* `flex` sem wrap + `space-x-6` somavam ~380px de conteúdo numa
+              viewport de 360px: era a principal fonte de scroll lateral no
+              rodapé. Agora envolve em várias linhas e o divisor vertical
+              (que só faz sentido em linha única) some no mobile. */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 sm:gap-x-6">
             <div className="flex items-center">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></div>
+              <div className="w-2 h-2 shrink-0 rounded-full bg-emerald-500 mr-2 animate-pulse"></div>
               <span className="text-[10px] font-bold uppercase text-gray-400 tracking-tighter">Estoque Disponível</span>
             </div>
-            <div className="h-4 w-[1px] bg-gray-800"></div>
-            <div className="flex space-x-4">
+            <div className="hidden sm:block h-4 w-px bg-gray-800"></div>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1">
               <span className="text-[10px] font-black uppercase italic text-white/30">Performance</span>
               <span className="text-[10px] font-black uppercase italic text-white/30">Resistance</span>
               <span className="text-[10px] font-black uppercase italic text-white/30">Caminhonetes 4x4</span>

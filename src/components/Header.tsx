@@ -61,10 +61,12 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-        
-        {/* Brand Logo */}
-        <a href="#" className="flex items-center gap-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-2 sm:gap-4">
+
+        {/* Brand Logo — `min-w-0` + `shrink` deixam o logo ceder espaço no
+            mobile; itens flex têm `min-width: auto` por padrão e é isso que
+            gerava o estouro horizontal do Header. */}
+        <a href="#" className="flex min-w-0 shrink items-center gap-2">
           <ParisDakarLogo colorMode="default" height={44} />
         </a>
 
@@ -139,8 +141,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Mobile Menu Toggle */}
-        <div className="flex lg:hidden items-center gap-2">
+        {/* Mobile Menu Toggle — `shrink-0` garante que os botões de ação
+            nunca sejam comprimidos: quem cede espaço é o logo. */}
+        <div className="flex lg:hidden shrink-0 items-center gap-2">
           <button
             onClick={onToggleDarkMode}
             className="p-2 rounded-lg bg-slate-100 dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-800"

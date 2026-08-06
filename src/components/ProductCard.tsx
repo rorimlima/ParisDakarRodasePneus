@@ -142,7 +142,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 {product.specs.acabamento && (
                   <tr>
                     <th>Acabamento</th>
-                    <td colSpan={3} className="truncate max-w-[140px] text-gray-300">
+                    {/* `truncate max-w-[140px]` num <td> não funciona: table-layout
+                        ignora max-width e o `whitespace-nowrap` do truncate ainda
+                        forçava a tabela a crescer. Deixar quebrar é o correto. */}
+                    <td colSpan={3} className="text-gray-300">
                       {product.specs.acabamento}
                     </td>
                   </tr>
@@ -156,8 +159,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="pt-3 border-t border-white/5 space-y-3">
           
           {/* Clean Pure Price Display */}
-          <div className="flex items-baseline justify-between">
-            <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+            <div className="min-w-0">
               {formattedOriginalPrice && (
                 <span className="text-xs text-gray-500 line-through mr-2">
                   {formattedOriginalPrice}
@@ -171,7 +174,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </span>
             </div>
 
-            <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
+            <span className="shrink-0 text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
               Pronta Entrega
             </span>
           </div>

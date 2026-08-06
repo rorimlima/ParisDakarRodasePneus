@@ -276,11 +276,13 @@ export default function App() {
           </div>
         )}
 
-        {/* Section Heading & Items Count */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-              <PackageCheck className="w-6 h-6 text-[#8B0000]" />
+        {/* Section Heading & Items Count — `flex-wrap` + `min-w-0` para o
+            título longo e o botão de admin nunca disputarem a mesma linha
+            estreita no celular. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2">
+              <PackageCheck className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-[#8B0000]" />
               <span>Catálogo Paris Dakar // Pronta Entrega</span>
             </h2>
             <p className="text-xs text-gray-400">
@@ -298,9 +300,9 @@ export default function App() {
           {currentSession.type === 'admin' && (
             <button
               onClick={() => setViewMode('admin')}
-              className="px-3.5 py-1.5 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-black uppercase tracking-wider flex items-center gap-2 transition"
+              className="w-full sm:w-auto px-3.5 py-2 bg-[#8B0000] hover:bg-red-800 text-white rounded text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition"
             >
-              <Lock className="w-4 h-4" />
+              <Lock className="w-4 h-4 shrink-0" />
               <span>Gerenciar Catálogo no Painel Admin</span>
             </button>
           )}

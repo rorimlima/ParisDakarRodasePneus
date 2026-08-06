@@ -24,19 +24,22 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
   const activeSellers = sellers.filter((s) => s.isActive);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div 
-        className="relative w-full max-w-lg bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      {/* `max-h-[90vh]` + corpo com overflow-y-auto já mantêm o modal dentro
+          da tela; `max-h-[85dvh]` no mobile evita que a barra de endereço
+          dinâmica do Safari/Chrome corte o rodapé do modal. */}
+      <div
+        className="relative w-full max-w-lg max-h-[85dvh] sm:max-h-[90vh] bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#1a1a1a] via-[#161616] to-[#8B0000]/30 p-5 border-b border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+        <div className="bg-gradient-to-r from-[#1a1a1a] via-[#161616] to-[#8B0000]/30 p-4 sm:p-5 border-b border-white/10 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="w-10 h-10 shrink-0 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
               <MessageCircle className="w-6 h-6 animate-pulse" />
             </div>
-            <div>
-              <h3 className="text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
+            <div className="min-w-0">
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-white flex items-center gap-2">
                 Atendimento Especializado 4x4
               </h3>
               <p className="text-xs text-gray-400">
@@ -47,7 +50,7 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition"
+            className="w-8 h-8 shrink-0 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -55,9 +58,11 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
 
         {/* Product Context Banner if present */}
         {productName && (
-          <div className="bg-[#8B0000]/10 border-b border-[#8B0000]/30 px-5 py-2.5 flex items-center justify-between text-xs">
-            <span className="text-gray-300 font-medium">Item em Cotação:</span>
-            <span className="font-bold text-red-400 truncate max-w-[280px]" title={productName}>
+          <div className="bg-[#8B0000]/10 border-b border-[#8B0000]/30 px-4 sm:px-5 py-2.5 flex items-center justify-between gap-2 text-xs">
+            <span className="shrink-0 text-gray-300 font-medium">Item em Cotação:</span>
+            {/* `max-w-[280px]` fixo era maior que a área útil de um celular de
+                360px; `min-w-0` + `truncate` cortam na largura real disponível. */}
+            <span className="min-w-0 truncate font-bold text-red-400" title={productName}>
               {productName}
             </span>
           </div>
