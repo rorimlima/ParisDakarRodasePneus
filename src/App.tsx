@@ -13,6 +13,7 @@ import { Footer } from './components/Footer';
 import { WhatsAppSellerModal } from './components/WhatsAppSellerModal';
 import { storageService } from './services/storageService';
 import { onSessionChange } from './services/authService';
+import { addInquiry, getSiteSettings, listProducts, listSellers } from './services/dataService';
 import {
   Product,
   ProductCategory,
@@ -30,6 +31,7 @@ export default function App() {
   const [darkMode, setDarkMode] = useState<boolean>(true);
 
   // Persistent Storage States
+  // Estado inicial local; a fonte da verdade é carregada do Firestore no efeito abaixo.
   const [products, setProducts] = useState<Product[]>(() => storageService.getProducts());
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
   // A sessão é a que o Firebase Auth reportar — nunca o que estiver no localStorage.
@@ -87,6 +89,41 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+  // Catálogo, configurações e vendedores vêm do Firestore (ou do localStorage
+  // quando o Firebase ainda não está configurado neste ambiente).
+  useEffect(() => {
+    let ativo = true;
+
+    const carregar = async () => {
+      try {
+        const [produtos, configuracoes, vendedores] = await Promise.all([
+          listProducts(),
+          getSiteSettings(),
+          listSellers(),
+        ]);
+
+        if (!ativo) return;
+        setProducts(produtos);
+        setSiteSettings(configuracoes);
+        setSellers(vendedores);
+      } catch (erro) {
+        // Mantém o conteúdo local já carregado em vez de deixar a loja vazia.
+        console.error('[Dados] Falha ao carregar o catálogo do Firestore:', erro);
+      }
+    };
+
+    void carregar();
+    return () => {
+      ativo = false;
+    };
+  }, []);
+
+  // Registra o lead do WhatsApp sem interromper o atendimento se a gravação falhar.
+  const logInquiry = (inquiry: Parameters<typeof addInquiry>[0]) =>
+    addInquiry(inquiry).catch((erro) =>
+      console.error('[Dados] Não foi possível registrar o orçamento:', erro)
+    );
+
   // Open Auth Modal with specific tab
   const handleOpenAuthModal = (tab: 'b2c' | 'b2b' | 'admin' = 'b2c') => {
     setAuthModalTab(tab);
@@ -103,7 +140,7 @@ export default function App() {
     const encoded = encodeURIComponent(messageText || defaultMsg);
 
     if (productContext) {
-      storageService.addInquiry({
+      void logInquiry({
         clientName: currentSession.b2cUser?.fullName || currentSession.b2bUser?.companyName || 'Cliente Visitante',
         clientType: currentSession.type === 'b2b' ? 'CNPJ' : 'CPF',
         clientDocument: currentSession.b2cUser?.cpf || currentSession.b2bUser?.cnpj || 'Não Informado',
@@ -130,7 +167,7 @@ export default function App() {
     const encoded = encodeURIComponent(messageText || defaultMsg);
 
     if (productContext) {
-      storageService.addInquiry({
+      void logInquiry({
         clientName: currentSession.b2cUser?.fullName || currentSession.b2bUser?.companyName || 'Cliente Visitante',
         clientType: currentSession.type === 'b2b' ? 'CNPJ' : 'CPF',
         clientDocument: currentSession.b2cUser?.cpf || currentSession.b2bUser?.cnpj || 'Não Informado',

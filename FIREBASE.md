@@ -146,10 +146,36 @@ Admin SDK usa as credenciais padrão do ambiente — `FIREBASE_PRIVATE_KEY` só 
 necessária para execução fora do Google Cloud (servidor próprio, scripts locais
 como `set-admin`).
 
-## 8. Pendência conhecida
+## 8. Catálogo, configurações e vendedores no Firestore
 
-Catálogo, configurações do site, vendedores e orçamentos ainda vivem no
-`localStorage` (`src/services/storageService.ts`). As coleções e regras
-correspondentes já existem no Firestore; falta trocar o `storageService` por
-leituras e escritas reais para que o conteúdo passe a ser compartilhado entre
-dispositivos em vez de ficar preso ao navegador de quem cadastrou.
+`src/services/dataService.ts` é a única porta de entrada para catálogo,
+configurações do site, vendedores, orçamentos e as listas de clientes/contas B2B
+do painel admin. Com as variáveis `VITE_FIREBASE_*` preenchidas, ele lê e grava
+direto no Firestore; sem elas, cai para o `storageService` em `localStorage` — o
+site continua funcional em modo local (ex.: rodando `npm run dev:client` sem
+`.env`), só que sem compartilhar dados entre dispositivos.
+
+Pontos que valem atenção:
+
+- **Catálogo vazio na primeira execução**: se a coleção `products` ainda não foi
+  semeada, a loja mostra os produtos de exemplo (`src/data/mockProducts.ts`) em
+  vez de ficar vazia. Assim que o admin salvar/importar algo, o Firestore passa a
+  ser a fonte real.
+- **Importação de planilha** grava em lotes de até 400 documentos por
+  transação (limite do Firestore é 500 operações por lote).
+- **Cadastro de administrador** no painel não cria mais um registro fake: o
+  formulário agora instrui a rodar `npm run set-admin <UID>`, porque a permissão
+  real é um Custom Claim do Firebase Auth e a coleção `adminUsers` é só
+  descritiva — as regras recusam qualquer escrita nela vinda do navegador.
+- **Orçamentos (`inquiries`)**: as regras exigem usuário autenticado gravando em
+  seu próprio nome. Um visitante anônimo que aciona "Falar no WhatsApp" ainda
+  abre a conversa normalmente, mas o lead só é registrado no Firestore se
+  alguém estiver logado; sem sessão, ele cai no fallback local.
+
+## 9. Próximos passos sugeridos
+
+- Mover a listagem de produtos para paginação/`limit()` quando o catálogo
+  crescer — hoje `listProducts` busca a coleção inteira.
+- Code-splitting do bundle do frontend (o Vite já avisa no build: ~1.9 MB
+  minificado) — não é um problema de Firebase, mas afeta o tempo de carregamento
+  do Hosting.

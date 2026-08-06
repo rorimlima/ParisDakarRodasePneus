@@ -23,6 +23,7 @@
     "src/data/**",
     "src/services/storageService.ts",
     "src/services/authService.ts",
+    "src/services/dataService.ts",
     "src/config/firebaseClient.ts",
     "src/vite-env.d.ts",
     "src/tests/**"

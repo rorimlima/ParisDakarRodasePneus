@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import {
   Package,
@@ -51,6 +51,24 @@ import {
   Seller
 } from '../types';
 import { storageService } from '../services/storageService';
+import {
+  addSeller as addSellerRemote,
+  deleteProduct as deleteProductRemote,
+  deleteSeller as deleteSellerRemote,
+  getSiteSettings as getSiteSettingsRemote,
+  listB2BAccounts,
+  listCpfClients,
+  listAdminUsers,
+  listInquiries,
+  listProducts,
+  listSellers,
+  saveProduct as saveProductRemote,
+  saveProducts as saveProductsRemote,
+  saveSiteSettings as saveSiteSettingsRemote,
+  toggleSellerStatus as toggleSellerStatusRemote,
+  updateInquiryStatus as updateInquiryStatusRemote,
+  updateSeller as updateSellerRemote,
+} from '../services/dataService';
 import { formatCNPJ, formatCPF } from '../utils/validation';
 
 interface AdminDashboardProps {
@@ -78,6 +96,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(storageService.getAdminUsers());
   const [inquiries, setInquiries] = useState<InquiryLog[]>(storageService.getInquiries());
   const [sellers, setSellers] = useState<Seller[]>(storageService.getSellers());
+
+  // Carrega os dados reais do Firestore assim que o painel abre. O estado inicial
+  // acima é só o conteúdo local, usado enquanto a busca não termina (ou quando o
+  // Firebase não está configurado neste ambiente).
+  useEffect(() => {
+    let ativo = true;
+
+    const carregar = async () => {
+      try {
+        const [produtos, configuracoes, vendedores, clientesCpf, contasB2b, orcamentos, admins] =
+          await Promise.all([
+            listProducts(),
+            getSiteSettingsRemote(),
+            listSellers(),
+            listCpfClients(),
+            listB2BAccounts(),
+            listInquiries(),
+            listAdminUsers(),
+          ]);
+
+        if (!ativo) return;
+        setProducts(produtos);
+        setSiteSettings(configuracoes);
+        setSellers(vendedores);
+        setCpfClients(clientesCpf);
+        setCnpjClients(contasB2b);
+        setInquiries(orcamentos);
+        // A permissão real vive nos Custom Claims; se a coleção descritiva estiver
+        // vazia, mostra ao menos o administrador que está logado agora.
+        setAdminUsers(admins.length > 0 ? admins : [adminUser]);
+      } catch (erro) {
+        console.error('[Admin] Falha ao carregar os dados do Firestore:', erro);
+      }
+    };
+
+    void carregar();
+    return () => {
+      ativo = false;
+    };
+  }, [adminUser]);
 
   // Sellers Management Form State
   const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
@@ -146,12 +204,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE) ---
-  const handleToggleProductActive = (id: string) => {
+  const handleToggleProductActive = async (id: string) => {
     const prod = products.find((p) => p.id === id);
     if (prod) {
       const newStatus = prod.isActive === false ? true : false;
       const updated = { ...prod, isActive: newStatus };
-      const updatedList = storageService.saveProduct(updated);
+      const updatedList = await saveProductRemote(updated, products);
       setProducts(updatedList);
       onProductsUpdated(updatedList);
       showToast(
@@ -168,7 +226,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = new Uint8Array(event.target?.result as ArrayBuffer);
         const workbook = XLSX.read(data, { type: 'array' });
@@ -261,7 +319,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }
         });
 
-        storageService.saveProducts(currentProducts);
+        await saveProductsRemote(currentProducts);
         setProducts(currentProducts);
         onProductsUpdated(currentProducts);
         setIsImportModalOpen(false);
@@ -289,7 +347,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- CATALOG MANAGEMENT HANDLERS ---
-  const handleSaveNewProduct = (e: React.FormEvent) => {
+  const handleSaveNewProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProdName || !newProdSku) {
       showToast('Preencha ao menos Nome e SKU do produto.');
@@ -329,25 +387,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       reviewsCount: 1
     };
 
-    const updatedList = storageService.saveProduct(newProd);
+    const updatedList = await saveProductRemote(newProd, products);
     setProducts(updatedList);
     onProductsUpdated(updatedList);
     setIsAddProductModalOpen(false);
     showToast('Novo produto adicionado ao catálogo com sucesso!');
   };
 
-  const handleUpdateProduct = (prod: Product) => {
+  const handleUpdateProduct = async (prod: Product) => {
 
-    const updatedList = storageService.saveProduct(prod);
+    const updatedList = await saveProductRemote(prod, products);
     setProducts(updatedList);
     onProductsUpdated(updatedList);
     setEditingProduct(null);
     showToast('Produto atualizado com sucesso!');
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este produto do catálogo?')) {
-      const updatedList = storageService.deleteProduct(id);
+      const updatedList = await deleteProductRemote(id, products);
       setProducts(updatedList);
       onProductsUpdated(updatedList);
       showToast('Produto removido do catálogo.');
@@ -364,9 +422,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- SITE SETTINGS HANDLERS ---
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    storageService.saveSiteSettings(settingsForm);
+    await saveSiteSettingsRemote(settingsForm);
     setSiteSettings(settingsForm);
     onSiteSettingsUpdated(settingsForm);
     setSettingsSavedMsg('Configurações alteradas e salvas no banco do site!');
@@ -374,27 +432,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- ADMIN USERS HANDLERS ---
+  // A permissão de administrador é um Custom Claim assinado pelo Firebase: só o
+  // backend (Admin SDK) pode concedê-la, e as regras do Firestore recusam
+  // qualquer escrita em `adminUsers` vinda do navegador.
   const handleAddAdmin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdminName || !newAdminEmail) return;
 
-    const added = storageService.addAdminUser({
-      name: newAdminName,
-      email: newAdminEmail,
-      role: newAdminRole,
-      grantedBySenior: true
-    });
-
-    setAdminUsers([...adminUsers, added]);
+    setAdminSuccessMsg(
+      `Peça para ${newAdminName} criar a conta em ${newAdminEmail} e execute no servidor: npm run set-admin <UID>. ` +
+        'O UID aparece no Console do Firebase em Authentication > Users.'
+    );
     setNewAdminName('');
     setNewAdminEmail('');
-    setAdminSuccessMsg(`Administrador ${added.name} cadastrado e autorizado!`);
-    setTimeout(() => setAdminSuccessMsg(''), 3000);
+    setTimeout(() => setAdminSuccessMsg(''), 12000);
   };
 
   // --- INQUIRIES LOG HANDLERS ---
-  const handleInquiryStatusChange = (id: string, newStatus: 'Novo' | 'Em Atendimento' | 'Concluído') => {
-    const updated = storageService.updateInquiryStatus(id, newStatus);
+  const handleInquiryStatusChange = async (id: string, newStatus: 'Novo' | 'Em Atendimento' | 'Concluído') => {
+    const updated = await updateInquiryStatusRemote(id, newStatus, inquiries);
     setInquiries(updated);
     showToast('Status da cotação atualizado!');
   };
@@ -422,7 +478,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsSellerModalOpen(true);
   };
 
-  const handleSaveSeller = (e: React.FormEvent) => {
+  const handleSaveSeller = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sellerName || !sellerPhone) {
       showToast('Preencha o Nome e WhatsApp do vendedor.');
@@ -440,17 +496,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         avatarUrl: sellerAvatarUrl,
         isActive: sellerIsActive
       };
-      updatedSellers = storageService.updateSeller(updated);
+      updatedSellers = await updateSellerRemote(updated, sellers);
       showToast(`Vendedor ${sellerName} atualizado com sucesso!`);
     } else {
-      updatedSellers = storageService.addSeller({
-        name: sellerName,
-        phone: sellerPhone,
-        email: sellerEmail,
-        specialty: sellerSpecialty,
-        avatarUrl: sellerAvatarUrl,
-        isActive: sellerIsActive
-      });
+      updatedSellers = await addSellerRemote(
+        {
+          name: sellerName,
+          phone: sellerPhone,
+          email: sellerEmail,
+          specialty: sellerSpecialty,
+          avatarUrl: sellerAvatarUrl,
+          isActive: sellerIsActive
+        },
+        sellers
+      );
       showToast(`Vendedor ${sellerName} cadastrado com sucesso!`);
     }
 
@@ -459,16 +518,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsSellerModalOpen(false);
   };
 
-  const handleToggleSellerStatus = (id: string) => {
-    const updatedSellers = storageService.toggleSellerStatus(id);
+  const handleToggleSellerStatus = async (id: string) => {
+    const updatedSellers = await toggleSellerStatusRemote(id, sellers);
     setSellers(updatedSellers);
     if (onSellersUpdated) onSellersUpdated(updatedSellers);
     showToast('Status do vendedor alterado!');
   };
 
-  const handleDeleteSeller = (id: string, name: string) => {
+  const handleDeleteSeller = async (id: string, name: string) => {
     if (window.confirm(`Deseja realmente remover o vendedor ${name}?`)) {
-      const updatedSellers = storageService.deleteSeller(id);
+      const updatedSellers = await deleteSellerRemote(id, sellers);
       setSellers(updatedSellers);
       if (onSellersUpdated) onSellersUpdated(updatedSellers);
       showToast(`Vendedor ${name} removido.`);
