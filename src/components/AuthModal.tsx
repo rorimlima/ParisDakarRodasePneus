@@ -270,11 +270,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pd-overlay-bg pd-anim-rise overflow-y-auto">
-      <div className="relative w-full max-w-xl pd-surface rounded-2xl border pd-border shadow-2xl my-8 overflow-hidden pd-text">
-        
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 pd-overlay-bg pd-anim-rise overflow-y-auto overscroll-contain">
+      <div className="relative w-full max-w-xl pd-surface rounded-2xl border pd-border shadow-2xl my-4 sm:my-8 overflow-hidden pd-text">
+
         {/* Header Title */}
-        <div className="p-6 pd-bg-alt border-b pd-border flex items-center justify-between">
+        <div className="p-4 sm:p-6 pd-bg-alt border-b pd-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-[#8B0000] rounded flex items-center justify-center font-black italic text-xs text-white">
               PD
@@ -359,7 +359,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Body Form Content */}
-        <div className="p-6 space-y-5">
+        <div className="p-4 sm:p-6 space-y-5">
           
           {/* Feedback Messages */}
           {errorMsg && (
@@ -453,7 +453,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
                         CPF (11 dígitos) *
@@ -494,8 +494,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2">
                       <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
                         Endereço
                       </label>
@@ -622,7 +622,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
                         Nome Fantasia
@@ -676,7 +676,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
                         Inscrição Estadual (IE)

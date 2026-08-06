@@ -102,8 +102,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   ];
 
   return (
+    // `items-center` combinado com `overflow-y-auto` corta o topo de modais
+    // mais altos que a tela — e no celular este é sempre o caso. Alinhar ao
+    // topo no mobile mantém todo o conteúdo alcançável pela rolagem.
     <div
-      className="pd-overlay overflow-y-auto"
+      className="pd-overlay items-start sm:items-center overflow-y-auto overscroll-contain"
       role="dialog"
       aria-modal="true"
       aria-label={product.name}
@@ -111,7 +114,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="pd-modal max-w-4xl relative my-8">
+      <div className="pd-modal max-w-4xl relative my-4 sm:my-8">
         <button
           type="button"
           onClick={onClose}
@@ -121,7 +124,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <X className="w-4 h-4" />
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-7 p-6 sm:p-8">
+        {/* p-6 no mobile consumia 48px dos ~330px disponíveis; p-4 devolve
+            espaço útil ao conteúdo sem mexer no desktop. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 sm:p-8">
           {/* Galeria */}
           <div className="space-y-4">
             <div className="aspect-[4/3] w-full rounded-xl pd-surface-2 overflow-hidden border pd-border">
@@ -166,14 +171,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Informações */}
+          {/* Informações — `flex-wrap` evita que marca/SKU precisem de um
+              `pr-10` fixo para não colidir com o botão de fechar absoluto:
+              eles simplesmente quebram linha em telas estreitas. */}
           <div className="flex flex-col justify-between gap-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between gap-3 text-xs pr-10">
-                <span className="font-bold pd-brand-text uppercase tracking-[0.14em] truncate">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs pr-10">
+                <span className="font-bold pd-brand-text uppercase tracking-[0.14em]">
                   {product.brand} · {product.category}
                 </span>
-                <span className="pd-mono pd-text-3 text-[0.68rem] shrink-0">SKU {product.sku}</span>
+                <span className="pd-mono pd-text-3 text-[0.68rem] break-all">SKU {product.sku}</span>
               </div>
 
               <h2 className="pd-serif text-xl sm:text-2xl font-extrabold uppercase tracking-tight pd-text leading-tight">
@@ -204,6 +211,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <Car className="w-3.5 h-3.5 pd-brand-text" aria-hidden="true" />
                   Verificar compatibilidade no seu veículo
                 </label>
+                {/* O <input> tem largura intrínseca (~170px, atributo `size`
+                    padrão) e `flex-1` não a supera sem `min-w-0` — era isso
+                    que empurrava o botão "Checar" para fora da tela em 320px. */}
                 <div className="flex gap-2">
                   <input
                     id="checa-veiculo"
@@ -212,9 +222,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                     onChange={(e) => setVehicleQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleCheckCompatibility()}
                     placeholder="Ex: Hilux 2022, Ranger, S10..."
-                    className="pd-input"
+                    className="pd-input min-w-0 flex-1"
                   />
-                  <button type="button" onClick={handleCheckCompatibility} className="btn btn-subtle">
+                  <button
+                    type="button"
+                    onClick={handleCheckCompatibility}
+                    className="btn btn-subtle shrink-0"
+                  >
                     Checar
                   </button>
                 </div>
@@ -228,12 +242,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
             {/* Preço e ação */}
             <div className="pt-4 border-t pd-border space-y-3">
-              <div className="flex items-end justify-between gap-3">
-                <div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
                   <span className="pd-label mb-0.5">Valor unitário / jogo</span>
-                  <span className="text-2xl font-extrabold pd-text">{formattedPrice}</span>
+                  <span className="text-xl sm:text-2xl font-extrabold pd-text">{formattedPrice}</span>
                 </div>
-                <span className="pd-badge pd-badge-success">Estoque disponível</span>
+                <span className="pd-badge pd-badge-success shrink-0">Estoque disponível</span>
               </div>
 
               <button

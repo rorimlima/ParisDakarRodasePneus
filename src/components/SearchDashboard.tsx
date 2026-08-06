@@ -77,10 +77,10 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
   };
 
   return (
-    <div className="pd-card p-5 sm:p-7">
+    <div className="pd-card p-4 sm:p-7">
       {/* Cabeçalho e alternador de modo */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-5 border-b pd-border">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b pd-border">
+        <div className="min-w-0">
           <h2 className="text-xs font-bold uppercase tracking-[0.14em] pd-brand-text flex items-center gap-2 mb-1.5">
             <SlidersHorizontal className="w-4 h-4" aria-hidden="true" />
             <span>Busca inteligente</span>
@@ -91,7 +91,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
         </div>
 
         <div
-          className="pd-surface-2 border pd-border rounded-xl p-1 flex gap-1 w-full lg:w-auto"
+          className="pd-surface-2 border pd-border rounded-xl p-1 flex shrink-0 gap-1 w-full lg:w-auto"
           role="tablist"
           aria-label="Modo de busca"
         >
@@ -100,7 +100,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             role="tab"
             aria-selected={searchMode === 'vehicle'}
             onClick={() => setSearchMode('vehicle')}
-            className={`btn btn-sm flex-1 lg:flex-none ${
+            className={`btn btn-sm flex-1 lg:flex-none min-w-0 ${
               searchMode === 'vehicle' ? 'btn-primary' : 'btn-ghost'
             }`}
           >
@@ -113,7 +113,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             role="tab"
             aria-selected={searchMode === 'size'}
             onClick={() => setSearchMode('size')}
-            className={`btn btn-sm flex-1 lg:flex-none ${
+            className={`btn btn-sm flex-1 lg:flex-none min-w-0 ${
               searchMode === 'size' ? 'btn-primary' : 'btn-ghost'
             }`}
           >
@@ -189,14 +189,14 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <p className="flex items-center gap-2 text-xs pd-success-text font-medium">
               <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Furação exata e compatibilidade com os freios originais conferidas.</span>
             </p>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button type="button" onClick={handleResetFilters} className="btn btn-subtle">
+            <div className="flex shrink-0 items-stretch gap-2 w-full lg:w-auto">
+              <button type="button" onClick={handleResetFilters} className="btn btn-subtle shrink-0">
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Limpar</span>
               </button>
@@ -204,7 +204,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
               <button
                 type="button"
                 onClick={handleApplyVehicleSearch}
-                className="btn btn-primary flex-1 sm:flex-none"
+                className="btn btn-primary flex-1 lg:flex-none min-w-0"
               >
                 <Check className="w-4 h-4" />
                 <span>Filtrar compatíveis</span>
@@ -275,13 +275,17 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={handleResetFilters} className="btn btn-subtle">
+          <div className="flex items-stretch justify-end gap-2">
+            <button type="button" onClick={handleResetFilters} className="btn btn-subtle shrink-0">
               <RefreshCw className="w-3.5 h-3.5" />
               <span>Limpar</span>
             </button>
 
-            <button type="button" onClick={handleApplySizeSearch} className="btn btn-primary">
+            <button
+              type="button"
+              onClick={handleApplySizeSearch}
+              className="btn btn-primary flex-1 lg:flex-none min-w-0"
+            >
               <Filter className="w-4 h-4" />
               <span>Aplicar filtros</span>
             </button>

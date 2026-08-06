@@ -41,7 +41,7 @@ export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
   const uid = React.useId().replace(/:/g, '');
   const gradientId = `pdBrand-${uid}`;
 
-  const numericHeight = typeof height === 'number' ? height : 48;
+  const numericHeight = typeof height === 'number' ? height : parseInt(String(height), 10) || 48;
 
   const gradient = (
     <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -123,12 +123,14 @@ export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
     );
   }
 
-  // Padrão: emblema à esquerda, tipografia à direita
+  // Padrão: emblema à esquerda, tipografia à direita.
+  // `min-w-0` permite que o bloco encolha dentro do flex do Header em vez
+  // de forçar a largura da página em telas estreitas.
   return (
-    <span className={`${shell} ${invert} select-none ${className}`}>
-      <span className={`${inner} relative`}>
+    <span className={`${shell} ${invert} select-none min-w-0 max-w-full ${className}`}>
+      <span className={`${inner} relative min-w-0`}>
         {emblemBlock}
-        <span className={plate}>{wordmark(numericHeight * 2.35)}</span>
+        <span className={`${plate} min-w-0`}>{wordmark(numericHeight * 2.35)}</span>
         {enable3D && <span className="logo-3d__floor" aria-hidden="true" />}
       </span>
     </span>

@@ -354,11 +354,13 @@ export default function App() {
           </div>
         )}
 
-        {/* Cabeçalho do catálogo */}
-        <div className="flex flex-wrap items-end justify-between gap-4 pb-4 border-b pd-border">
-          <div>
-            <h2 className="pd-serif text-xl sm:text-2xl font-extrabold uppercase tracking-tight pd-text flex items-center gap-2.5">
-              <PackageCheck className="w-5 h-5 pd-brand-text" aria-hidden="true" />
+        {/* Cabeçalho do catálogo — `flex-wrap` + `min-w-0` no título evitam
+            que ele e o botão de admin disputem a mesma linha estreita no
+            celular. */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b pd-border">
+          <div className="min-w-0">
+            <h2 className="pd-serif text-lg sm:text-2xl font-extrabold uppercase tracking-tight pd-text flex items-center gap-2.5">
+              <PackageCheck className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 pd-brand-text" aria-hidden="true" />
               <span>Catálogo — pronta entrega</span>
             </h2>
             <p className="text-xs pd-text-3 mt-1.5">
@@ -382,8 +384,12 @@ export default function App() {
           )}
 
           {currentSession.type === 'admin' && (
-            <button type="button" onClick={() => setViewMode('admin')} className="btn btn-primary btn-sm">
-              <Lock className="w-3.5 h-3.5" />
+            <button
+              type="button"
+              onClick={() => setViewMode('admin')}
+              className="btn btn-primary btn-sm w-full sm:w-auto"
+            >
+              <Lock className="w-3.5 h-3.5 shrink-0" />
               <span>Gerenciar catálogo</span>
             </button>
           )}

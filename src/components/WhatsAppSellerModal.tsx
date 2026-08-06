@@ -40,9 +40,12 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="pd-modal max-w-lg flex flex-col">
+      {/* `max-h-[85dvh]` no mobile evita que a barra de endereço dinâmica do
+          Safari/Chrome corte o rodapé do modal; `pd-modal` já limita a
+          92vh e rola o conteúdo por padrão. */}
+      <div className="pd-modal max-w-lg max-h-[85dvh] sm:max-h-[90vh] flex flex-col">
         {/* Cabeçalho */}
-        <div className="p-5 border-b pd-border flex items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 border-b pd-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <span
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 pd-success-text"
@@ -55,7 +58,7 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
               <MessageCircle className="w-5 h-5" />
             </span>
             <div className="min-w-0">
-              <h2 className="text-base font-bold uppercase tracking-tight pd-text truncate">
+              <h2 className="text-sm sm:text-base font-bold uppercase tracking-tight pd-text truncate">
                 Atendimento especializado
               </h2>
               <p className="text-xs pd-text-3">Escolha um consultor para falar no WhatsApp</p>
@@ -68,9 +71,11 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
         </div>
 
         {productName && (
-          <div className="px-5 py-2.5 border-b pd-hairline pd-surface-2 flex items-center justify-between gap-3 text-xs">
+          <div className="px-4 sm:px-5 py-2.5 border-b pd-hairline pd-surface-2 flex items-center justify-between gap-2 text-xs">
             <span className="pd-text-3 font-medium shrink-0">Item em cotação:</span>
-            <span className="font-bold pd-brand-text truncate" title={productName}>
+            {/* `min-w-0` + `truncate` cortam na largura real disponível em vez
+                de um `max-w` fixo maior que a viewport de um celular. */}
+            <span className="min-w-0 font-bold pd-brand-text truncate" title={productName}>
               {productName}
             </span>
           </div>

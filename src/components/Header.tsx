@@ -103,8 +103,10 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Barra principal — o logo abre o site no topo */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-5">
+      {/* Barra principal — o logo abre o site no topo. `min-w-0`+`shrink` no
+          link do logo evitam o estouro horizontal no mobile (a largura
+          min-content do wordmark empurrava a página em telas estreitas). */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-2 sm:gap-4">
         <a
           href="#topo"
           onClick={(e) => {
@@ -112,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}
           aria-label="Paris Dakar Rodas e Pneus — início"
-          className="shrink-0"
+          className="flex min-w-0 shrink items-center gap-2"
         >
           <ParisDakarLogo variant="full" height={42} />
         </a>
@@ -165,8 +167,9 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Ações mobile */}
-        <div className="flex lg:hidden items-center gap-2">
+        {/* Ações mobile — `shrink-0` garante que os botões nunca sejam
+            comprimidos: quem cede espaço no flex é o logo, acima. */}
+        <div className="flex lg:hidden shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={onToggleTheme}
