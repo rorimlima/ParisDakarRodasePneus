@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { obterAuth } from '../firebase/config';
 import {
   X,
   User,
   Building2,
-  Lock,
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
@@ -300,8 +299,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }, 1000);
   };
 
-  // 5. Admin Login (Master Supremo) — com bloqueio após 5 tentativas
-  const handleAdminLogin = (e: React.FormEvent) => {
+  // 5. Admin Login — autenticação real via Firebase Auth + verificação de custom claim (role)
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -312,71 +313,62 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const cleanEmail = adminEmail.trim().toLowerCase();
-    const adminUsers = storageService.getAdminUsers();
-    const foundAdmin = adminUsers.find(
-      (a) => a.email.toLowerCase() === cleanEmail
-    );
+    if (!adminEmail || !adminPassword) {
+      setErrorMsg('Informe o e-mail e a senha do administrador.');
+      return;
+    }
 
-    const isMasterCredential =
-      (cleanEmail === 'admin@parisdakar.com.br' || cleanEmail === 'master@parisdakar.com.br') && adminPassword === 'adminparisrodas';
-    const isLegacyAdmin =
-      cleanEmail.includes('admin') && (adminPassword === 'adminparisrodas' || adminPassword === 'admin123');
+    const auth = obterAuth();
+    if (!auth) {
+      setErrorMsg('Autenticação administrativa indisponível: Firebase Auth não está configurado neste ambiente.');
+      return;
+    }
 
-    if (isMasterCredential || isLegacyAdmin || foundAdmin) {
+    setAdminLoading(true);
+    try {
+      const credential = await signInWithEmailAndPassword(auth, adminEmail.trim(), adminPassword);
+      const tokenResult = await credential.user.getIdTokenResult(true);
+      const claimRole = tokenResult.claims.role as string | undefined;
+
+      if (claimRole !== 'admin' && claimRole !== 'senior') {
+        await signOut(auth);
+        throw new Error('PERMISSAO_INSUFICIENTE');
+      }
+
       setAdminAttempts(0);
       setAdminLockedUntil(null);
+
       const activeAdmin: AdminUser = {
-        id: foundAdmin?.id || 'admin-senior-001',
-        name: 'Master Supremo',
-        email: cleanEmail || 'admin@parisdakar.com.br',
-        role: 'senior',
-        grantedBySenior: true,
-        createdAt: foundAdmin?.createdAt || new Date().toISOString().split('T')[0]
+        id: credential.user.uid,
+        name: credential.user.displayName || 'Administrador',
+        email: credential.user.email || adminEmail.trim(),
+        role: claimRole === 'senior' ? 'senior' : 'admin',
+        grantedBySenior: claimRole === 'senior',
+        createdAt: new Date().toISOString().split('T')[0]
       };
 
       const session: UserSession = { type: 'admin', adminUser: activeAdmin };
       storageService.saveUserSession(session);
-      setSuccessMsg('Autenticação de Administrador Master Supremo realizada com sucesso!');
+      setSuccessMsg('Autenticação de administrador realizada com sucesso!');
       setTimeout(() => {
         onLoginSuccess(session);
         onClose();
       }, 800);
-    } else {
+    } catch (err: any) {
       const newAttempts = adminAttempts + 1;
       setAdminAttempts(newAttempts);
-      // Trigger shake animation
       setAdminShake(true);
       setTimeout(() => setAdminShake(false), 600);
       if (newAttempts >= 5) {
         const lockUntil = Date.now() + 5 * 60 * 1000; // 5 minutes
         setAdminLockedUntil(lockUntil);
-        setErrorMsg(`🔒 Muitas tentativas incorretas. Acesso bloqueado por 5 minutos.`);
+        setErrorMsg('🔒 Muitas tentativas incorretas. Acesso bloqueado por 5 minutos.');
       } else {
-        setErrorMsg(`Credenciais inválidas. Tentativa ${newAttempts}/5. Após 5 tentativas, o acesso será bloqueado por 5 minutos.`);
+        setErrorMsg(`Credenciais inválidas ou sem permissão de administrador. Tentativa ${newAttempts}/5. Após 5 tentativas, o acesso será bloqueado por 5 minutos.`);
       }
+    } finally {
+      setAdminLoading(false);
     }
-  };
-
-  // Direct Master Supremo Access Trigger
-  const handleSeniorBypass = () => {
-    const seniorAdmin: AdminUser = {
-      id: 'admin-senior-001',
-      name: 'Master Supremo',
-      email: 'admin@parisdakar.com.br',
-      role: 'senior',
-      grantedBySenior: true,
-      createdAt: '2026-01-01'
-    };
-
-
-    const session: UserSession = { type: 'admin', adminUser: seniorAdmin };
-    storageService.saveUserSession(session);
-    setSuccessMsg('Acesso Master Supremo Concedido!');
-    setTimeout(() => {
-      onLoginSuccess(session);
-      onClose();
-    }, 500);
   };
 
   const handleLogout = () => {
@@ -433,47 +425,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
         )}
 
-        {/* 3 Major Category Tabs */}
-        <div className="grid grid-cols-3 border-b pd-border pd-page">
-          {/* Tab 1: CPF */}
-          <button
-            onClick={() => handleTabSwitch('b2c')}
-            className={`py-3 px-2 text-center text-xs font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
-              activeTab === 'b2c'
-                ? 'border-[#8B0000] pd-text pd-surface'
-                : 'border-transparent pd-text-3'
-            }`}
-          >
-            <User className="w-4 h-4 pd-info-text" />
-            <span>Cliente CPF</span>
-          </button>
+        {/* 2 Major Category Tabs — o acesso administrativo não é exposto aqui.
+            Ele só é alcançável pelo link discreto no rodapé, que abre o modal
+            diretamente com activeTab === 'admin' (sem uma aba clicável). */}
+        {activeTab !== 'admin' && (
+          <div className="grid grid-cols-2 border-b pd-border pd-page">
+            {/* Tab 1: CPF */}
+            <button
+              onClick={() => handleTabSwitch('b2c')}
+              className={`py-3 px-2 text-center text-xs font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
+                activeTab === 'b2c'
+                  ? 'border-[#8B0000] pd-text pd-surface'
+                  : 'border-transparent pd-text-3'
+              }`}
+            >
+              <User className="w-4 h-4 pd-info-text" />
+              <span>Cliente CPF</span>
+            </button>
 
-          {/* Tab 2: CNPJ */}
-          <button
-            onClick={() => handleTabSwitch('b2b')}
-            className={`py-3 px-2 text-center text-xs font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
-              activeTab === 'b2b'
-                ? 'border-[#8B0000] pd-text pd-surface'
-                : 'border-transparent pd-text-3'
-            }`}
-          >
-            <Building2 className="w-4 h-4 pd-gold-text" />
-            <span>Lojista CNPJ</span>
-          </button>
-
-          {/* Tab 3: Admin */}
-          <button
-            onClick={() => handleTabSwitch('admin')}
-            className={`py-3 px-2 text-center text-xs font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
-              activeTab === 'admin'
-                ? 'border-[#8B0000] pd-text pd-surface'
-                : 'border-transparent pd-text-3'
-            }`}
-          >
-            <Lock className="w-4 h-4 pd-brand-text" />
-            <span>Painel Admin</span>
-          </button>
-        </div>
+            {/* Tab 2: CNPJ */}
+            <button
+              onClick={() => handleTabSwitch('b2b')}
+              className={`py-3 px-2 text-center text-xs font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
+                activeTab === 'b2b'
+                  ? 'border-[#8B0000] pd-text pd-surface'
+                  : 'border-transparent pd-text-3'
+              }`}
+            >
+              <Building2 className="w-4 h-4 pd-gold-text" />
+              <span>Lojista CNPJ</span>
+            </button>
+          </div>
+        )}
 
         {/* Body Form Content */}
         <div className="p-4 sm:p-6 space-y-5">
@@ -953,24 +936,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                 <button
                   type="submit"
-                  disabled={!!(adminLockedUntil && Date.now() < adminLockedUntil)}
+                  disabled={adminLoading || !!(adminLockedUntil && Date.now() < adminLockedUntil)}
                   className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
                 >
                   <KeyRound className="w-4 h-4" />
-                  Entrar como Master Supremo
+                  {adminLoading ? 'Verificando credenciais...' : 'Entrar como Administrador'}
                 </button>
               </form>
-
-              {/* Direct Senior Master Access Trigger */}
-              <div className="pt-3 border-t pd-border text-center">
-                <button
-                  type="button"
-                  onClick={handleSeniorBypass}
-                  className="px-4 py-2 pd-surface-2 pd-row-hover pd-gold-text border border-amber-500/30 rounded text-[10px] font-bold uppercase tracking-widest transition"
-                >
-                  ⚡ Acesso Direto Master Supremo (onaeror@gmail.com)
-                </button>
-              </div>
             </div>
           )}
 

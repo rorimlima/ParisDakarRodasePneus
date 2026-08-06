@@ -243,18 +243,6 @@ export const Header: React.FC<HeaderProps> = ({
                   <Building2 className="w-4 h-4 pd-gold-text" />
                   <span>Área lojista CNPJ</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    onOpenAuthModal('admin');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="btn btn-subtle btn-block"
-                >
-                  <Lock className="w-4 h-4" />
-                  <span>Acesso restrito</span>
-                </button>
               </>
             )}
 
