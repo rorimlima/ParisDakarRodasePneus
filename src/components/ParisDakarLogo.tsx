@@ -125,10 +125,10 @@ export const ParisDakarLogo: React.FC<ParisDakarLogoProps> = ({
 
   // Padrão: emblema à esquerda, tipografia à direita
   return (
-    <span className={`${shell} ${invert} select-none ${className}`}>
-      <span className={`${inner} relative`}>
+    <span className={`${shell} ${invert} select-none min-w-0 max-w-full ${className}`}>
+      <span className={`${inner} relative min-w-0 max-w-full`}>
         {emblemBlock}
-        <span className={plate}>{wordmark(numericHeight * 2.35)}</span>
+        <span className={`${plate} min-w-0 flex-1`}>{wordmark(numericHeight * 2.35)}</span>
         {enable3D && <span className="logo-3d__floor" aria-hidden="true" />}
       </span>
     </span>

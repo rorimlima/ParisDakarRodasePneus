@@ -7,9 +7,15 @@
  * então o preço de reposição não chega nem por acidente ao bundle do site.
  */
 
-import { LinhaFichaTecnica, Product, ProductCategory, ProductSpecs, TireType } from '../types';
+import { Product, ProductCategory, ProductSpecs, TireType } from '../types';
 import { CategoriaCatalogo, ProdutoCatalogo, ValorFichaTecnica } from '../types/catalog';
 import { CAMPOS_POR_GRUPO, descreverUnidade, rotularUnidade } from '../config/fichaTecnica';
+
+export interface LinhaFichaTecnica {
+  label: string;
+  valor: string;
+  destaque?: boolean;
+}
 
 const IMAGEM_PADRAO_POR_GRUPO: Record<string, string> = {
   rodas: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=800&q=80',

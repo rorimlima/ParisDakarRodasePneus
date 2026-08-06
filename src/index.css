@@ -7,6 +7,52 @@
    ========================================================================== */
 
 @layer base {
+  /* ---------------------------------------------------------------
+     RESET RESPONSIVO — base antiquebra
+     O Preflight do Tailwind v4 já aplica `box-sizing: border-box` em
+     todos os elementos e `max-width: 100%` em <img>/<video>. Aqui
+     reforçamos os pontos que o Preflight NÃO cobre e que eram a causa
+     do scroll lateral neste projeto.
+     --------------------------------------------------------------- */
+
+  /* `clip` corta o transbordo horizontal SEM criar um container de
+     rolagem — diferente de `hidden`, que quebra o `position: sticky`
+     do Header e do painel Admin. */
+  html {
+    overflow-x: clip;
+    /* Evita a inflação automática de fonte do iOS em modo paisagem */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    overflow-x: clip;
+    min-width: 0;
+  }
+
+  /* Palavras longas sem espaço (SKU, medidas 285/70R17, e-mails, URLs)
+     não podem mais empurrar a largura da página. */
+  body,
+  h1, h2, h3, h4, h5, h6,
+  p, span, a, li, td, th, label, button {
+    overflow-wrap: break-word;
+  }
+
+  /* Mídia e canvas nunca extrapolam o container.
+     O <canvas> do Three.js recebe width/height inline em px pelo
+     renderer — sem isto ele estica a página em telas estreitas. */
+  /* Obs.: <table> fica fora desta regra de propósito — as tabelas do
+     painel Admin vivem dentro de wrappers `overflow-x-auto` e precisam
+     poder exceder a largura para rolar dentro da própria caixa. */
+  img, video, svg, canvas, iframe {
+    max-width: 100%;
+  }
+
+  img, video, canvas {
+    height: auto;
+    display: block;
+  }
+
   /* ---------- TEMA CLARO (padrão do :root) ---------- */
   :root {
     color-scheme: light;
@@ -660,6 +706,15 @@
   }
 }
 
+/* Canvas do Simulador 3D (Three.js).
+   O renderer escreve width/height inline em px; `max-width` (herdado do
+   reset acima) limita a largura, e `touch-action: pan-y` deixa o
+   usuário rolar a página verticalmente por cima do canvas enquanto o
+   arraste horizontal continua girando a roda. */
+canvas {
+  touch-action: pan-y;
+}
+
 @layer utilities {
   .pd-clamp-2 {
     display: -webkit-box;
@@ -715,6 +770,73 @@
   }
 }
 
+::-webkit-scrollbar-thumb:hover {
+  background: #B21B1B;
+}
+
+/* Custom Spec Table styling - Elegant Dark Theme */
+.clean-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8125rem;
+}
+
+/* A tabela tem até 4 colunas (Aro | valor | Furação | valor) dentro de um
+   card estreito. `overflow-wrap: anywhere` é o ponto-chave: diferente de
+   `break-word`, ele REDUZ o min-content da célula, então a tabela passa a
+   caber no card em qualquer breakpoint em vez de ser cortada. */
+.clean-table th,
+.clean-table td {
+  overflow-wrap: anywhere;
+}
+
+.clean-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  color: #9CA3AF;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.clean-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #FFFFFF;
+}
+
+.clean-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Red metallic highlight gradient */
+.btn-paris {
+  background: linear-gradient(135deg, #8B0000 0%, #500000 100%);
+  color: #FFFFFF;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 14px rgba(139, 0, 0, 0.35);
+  border: 1px solid rgba(139, 0, 0, 0.6);
+}
+
+.btn-paris:hover {
+  background: linear-gradient(135deg, #B21B1B 0%, #8B0000 100%);
+  box-shadow: 0 6px 20px rgba(178, 27, 27, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-paris:active {
+  transform: translateY(0);
+}
+
+/* Pulse badge for Off-road ready stock */
+@keyframes redPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
 .animate-pulse-red {
   animation: pdPulseDot 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
@@ -732,4 +854,37 @@
   60%      { transform: translateX(6px); }
   75%      { transform: translateX(-4px); }
   90%      { transform: translateX(4px); }
+}
+
+/* ===============================================================
+   MEDIA QUERY MOBILE — telas menores que 768px
+   =============================================================== */
+@media (max-width: 767px) {
+  /* iOS Safari dá zoom automático ao focar um campo com fonte < 16px.
+     Esse zoom desloca o viewport e é lido pelo usuário como "a tela
+     esticou". Quase todos os inputs do projeto usam text-xs (12px),
+     então forçamos 16px no mobile — o layout dos campos não muda,
+     porque todos são `w-full` ou `flex-1`. */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Tabela de especificações do ProductCard: padding ainda mais enxuto
+     no celular para sobrar largura para os valores técnicos. */
+  .clean-table {
+    font-size: 0.75rem;
+  }
+
+  .clean-table th,
+  .clean-table td {
+    padding: 5px 6px;
+  }
+
+  /* Barras de rolagem finas do desktop não fazem sentido no toque */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
 }

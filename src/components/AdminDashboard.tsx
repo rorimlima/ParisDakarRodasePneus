@@ -64,7 +64,7 @@ function productParaProdutoCatalogo(p: Product): ProdutoCatalogo {
     referencia: p.brand || p.sku || 'Paris Dakar',
     tipoProduto: p.subcategory || p.category || 'Rodas',
     categoriaSlug: catSlug,
-    grupo: catSlug,
+    grupo: catSlug as any,
     unidade: p.unidadeSigla || 'UN',
     unidadeLabel: p.unidadeLabel || 'unidades',
     quantidade: p.stockQuantity ?? (p.inStock ? 10 : 0),
@@ -72,15 +72,15 @@ function productParaProdutoCatalogo(p: Product): ProdutoCatalogo {
     ativoManual: p.isActive !== false,
     ativo: p.isActive !== false && (p.stockQuantity ?? 10) > 0,
     fichaTecnica: {
-      aro: p.specs?.aro,
-      furacao: p.specs?.furacao,
-      offset: p.specs?.offset,
-      tala: p.specs?.tala,
-      acabamento: p.specs?.acabamento,
-      medidaPneu: p.specs?.medidaPneu,
-      tipoPneu: p.specs?.tipoPneu,
-      garantia: p.specs?.garantia,
-      peso: p.specs?.peso
+      aro: p.specs?.aro ?? null,
+      furacao: p.specs?.furacao ?? null,
+      offset: p.specs?.offset ?? null,
+      tala: p.specs?.tala ?? null,
+      acabamento: p.specs?.acabamento ?? null,
+      medidaPneu: p.specs?.medidaPneu ?? null,
+      tipoPneu: p.specs?.tipoPneu ?? null,
+      garantia: p.specs?.garantia ?? null,
+      peso: p.specs?.peso ?? null
     },
     marcasAtendidas: p.compatibleVehicles || [],
     modelosAtendidos: [],
@@ -1515,8 +1515,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* ADD PRODUCT MODAL */}
       {isAddProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pd-overlay-bg overflow-y-auto">
-          <div className="relative w-full max-w-3xl pd-surface rounded-2xl border pd-border shadow-2xl my-8 overflow-hidden pd-text p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 pd-overlay-bg overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-3xl pd-surface rounded-2xl border pd-border shadow-2xl my-4 sm:my-8 overflow-hidden pd-text p-4 sm:p-6 space-y-4">
             
             <div className="flex items-center justify-between border-b pd-border pb-3">
               <h3 className="text-base font-black uppercase italic tracking-wider pd-text">
@@ -1530,7 +1530,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSaveNewProduct} className="space-y-4 text-xs">
+            <form onSubmit={handleAddProduct} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase pd-text-2 block mb-1">Nome do Produto *</label>
@@ -1777,8 +1777,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* EDIT PRODUCT MODAL */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pd-overlay-bg overflow-y-auto">
-          <div className="relative w-full max-w-2xl pd-surface rounded-2xl border pd-border shadow-2xl my-8 overflow-hidden pd-text p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 pd-overlay-bg overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-2xl pd-surface rounded-2xl border pd-border shadow-2xl my-4 sm:my-8 overflow-hidden pd-text p-4 sm:p-6 space-y-4">
             
             <div className="flex items-center justify-between border-b pd-border pb-3">
               <h3 className="text-base font-black uppercase italic tracking-wider pd-text">
@@ -1884,8 +1884,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* SPREADSHEET IMPORT MODAL (EXCEL / CSV) */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pd-overlay-bg overflow-y-auto">
-          <div className="relative w-full max-w-xl pd-surface rounded-2xl border border-emerald-600/40 shadow-2xl my-8 overflow-hidden pd-text p-6 space-y-5">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 pd-overlay-bg overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-xl pd-surface rounded-2xl border border-emerald-600/40 shadow-2xl my-4 sm:my-8 overflow-hidden pd-text p-4 sm:p-6 space-y-5">
             
             <div className="flex items-center justify-between border-b pd-border pb-3">
               <div className="flex items-center gap-2.5">
@@ -1966,8 +1966,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* MODAL: ADD / EDIT SELLER */}
       {isSellerModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pd-overlay-bg pd-anim-rise">
-          <div className="pd-surface border pd-border rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 pd-overlay-bg pd-anim-rise overflow-y-auto overscroll-contain">
+          <div className="pd-surface border pd-border rounded-2xl w-full max-w-md my-4 sm:my-0 p-4 sm:p-6 space-y-5 shadow-2xl relative">
             <div className="flex items-center justify-between border-b pd-border pb-3">
               <h3 className="text-base font-black pd-text uppercase tracking-wider flex items-center gap-2">
                 <Headphones className="w-5 h-5 pd-brand-text" />

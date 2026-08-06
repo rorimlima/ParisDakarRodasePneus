@@ -40,7 +40,7 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="pd-modal max-w-lg flex flex-col">
+      <div className="pd-modal max-w-lg max-h-[85dvh] sm:max-h-[90vh] flex flex-col">
         {/* Cabeçalho */}
         <div className="p-5 border-b pd-border flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
@@ -70,7 +70,7 @@ export const WhatsAppSellerModal: React.FC<WhatsAppSellerModalProps> = ({
         {productName && (
           <div className="px-5 py-2.5 border-b pd-hairline pd-surface-2 flex items-center justify-between gap-3 text-xs">
             <span className="pd-text-3 font-medium shrink-0">Item em cotação:</span>
-            <span className="font-bold pd-brand-text truncate" title={productName}>
+            <span className="font-bold pd-brand-text min-w-0 truncate" title={productName}>
               {productName}
             </span>
           </div>

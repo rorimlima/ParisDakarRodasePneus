@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import { firebaseApp } from '../config/firebase.js';
 import { dbClient } from './dbClient.js';
 
@@ -60,7 +60,7 @@ const checkFirestore = async (): Promise<DbCheck> => {
   const started = Date.now();
 
   try {
-    const firestore = admin.firestore(firebaseApp);
+    const firestore = getFirestore(firebaseApp);
     await withTimeout(firestore.listCollections(), 5000, 'firestore.listCollections');
 
     return {

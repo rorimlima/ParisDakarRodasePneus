@@ -139,54 +139,56 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {product.name}
           </h3>
 
-          <table className="clean-table">
-            <tbody>
-              {product.specs.aro && (
-                <tr>
-                  <th scope="row">Aro</th>
-                  <td className="font-bold pd-mono">{product.specs.aro}</td>
-                  {product.specs.furacao && (
-                    <>
-                      <th scope="row">Furação</th>
-                      <td className="font-bold pd-mono">{product.specs.furacao}</td>
-                    </>
-                  )}
-                </tr>
-              )}
-              {(product.specs.offset || product.specs.tala) && (
-                <tr>
-                  {product.specs.tala && (
-                    <>
-                      <th scope="row">Tala</th>
-                      <td className="pd-mono">{product.specs.tala}</td>
-                    </>
-                  )}
-                  {product.specs.offset && (
-                    <>
-                      <th scope="row">Offset</th>
-                      <td className="pd-mono">{product.specs.offset}</td>
-                    </>
-                  )}
-                </tr>
-              )}
-              {product.specs.medidaPneu && (
-                <tr>
-                  <th scope="row">Medida</th>
-                  <td colSpan={3} className="font-bold pd-mono pd-brand-text">
-                    {product.specs.medidaPneu}
-                  </td>
-                </tr>
-              )}
-              {product.specs.acabamento && (
-                <tr>
-                  <th scope="row">Acabamento</th>
-                  <td colSpan={3} className="truncate pd-text-2">
-                    {product.specs.acabamento}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <div className="pt-2">
+            <table className="clean-table">
+              <tbody>
+                {product.specs.aro && (
+                  <tr>
+                    <th scope="row">Aro</th>
+                    <td className="font-bold pd-mono">{product.specs.aro}</td>
+                    {product.specs.furacao && (
+                      <>
+                        <th scope="row">Furação</th>
+                        <td className="font-bold pd-mono">{product.specs.furacao}</td>
+                      </>
+                    )}
+                  </tr>
+                )}
+                {(product.specs.offset || product.specs.tala) && (
+                  <tr>
+                    {product.specs.tala && (
+                      <>
+                        <th scope="row">Tala</th>
+                        <td className="pd-mono">{product.specs.tala}</td>
+                      </>
+                    )}
+                    {product.specs.offset && (
+                      <>
+                        <th scope="row">Offset</th>
+                        <td className="pd-mono">{product.specs.offset}</td>
+                      </>
+                    )}
+                  </tr>
+                )}
+                {product.specs.medidaPneu && (
+                  <tr>
+                    <th scope="row">Medida</th>
+                    <td colSpan={3} className="font-bold pd-mono pd-brand-text">
+                      {product.specs.medidaPneu}
+                    </td>
+                  </tr>
+                )}
+                {product.specs.acabamento && (
+                  <tr>
+                    <th scope="row">Acabamento</th>
+                    <td colSpan={3} className="pd-text-2">
+                      {product.specs.acabamento}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Preço e ação */}

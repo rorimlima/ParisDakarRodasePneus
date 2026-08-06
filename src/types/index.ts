@@ -135,6 +135,7 @@ export interface SiteSettings {
   heroImageUrl?: string;
   logoUrl?: string;
   bannerText?: string;
+  youtubeVideoUrl?: string;
 }
 
 // Customer Inquiry / Quote Request
