@@ -35,8 +35,10 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
     sceneRef.current = scene;
 
     // 2. Camera Setup
-    const width = container.clientWidth || 600;
-    const height = container.clientHeight || 450;
+    // Nunca usar um fallback fixo maior que a viewport: num celular de 360px
+    // o antigo `|| 600` criava um canvas de 600px de largura.
+    const width = Math.floor(container.clientWidth) || Math.min(window.innerWidth, 600);
+    const height = Math.floor(container.clientHeight) || 450;
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(2.8, 1.2, 3.8);
     camera.lookAt(0, 0, 0);
@@ -245,6 +247,10 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
     domElem.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+    // No toque, o navegador cancela o pointer quando assume a rolagem da
+    // página. Sem tratar isso, `isDragging` ficava travado em true e a roda
+    // girava junto com o scroll do usuário.
+    window.addEventListener('pointercancel', onPointerUp);
 
     // 7. Animation Loop
     let animationFrameId: number;
@@ -263,8 +269,9 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
     // Resize observer
     const resizeObserver = new ResizeObserver(() => {
       if (!container || !rendererRef.current) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
+      const w = Math.floor(container.clientWidth);
+      const h = Math.floor(container.clientHeight);
+      if (w === 0 || h === 0) return;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
@@ -276,6 +283,7 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
       domElem.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
       resizeObserver.disconnect();
       renderer.dispose();
     };
@@ -326,17 +334,20 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
               Consulte e configure conjuntos de rodas forjadas heavy-duty, pneus Mud-Terrain / All-Terrain e kits de elevação de suspensão para caminhonetes 4x4 testados nos terrenos mais rigorosos do planeta.
             </p>
 
-            {/* Quick Specs Badges */}
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 text-center">
+            {/* Quick Specs Badges — 3 colunas em ~330px davam ~100px por card,
+                quebrando "Resistência" e "Atendimento" no meio. Mobile-first:
+                2 colunas no celular (o terceiro card ocupa a linha inteira),
+                3 colunas a partir de sm. */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-2">
+              <div className="min-w-0 p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 text-center">
                 <p className="text-xs text-zinc-400">Garantia</p>
                 <p className="font-bold text-white text-sm">5 Anos</p>
               </div>
-              <div className="p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 text-center">
+              <div className="min-w-0 p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 text-center">
                 <p className="text-xs text-zinc-400">Resistência</p>
                 <p className="font-bold text-white text-sm">Forged T6</p>
               </div>
-              <div className="p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 text-center">
+              <div className="min-w-0 col-span-2 sm:col-span-1 p-3 rounded-lg bg-zinc-900/90 border border-zinc-800 text-center">
                 <p className="text-xs text-zinc-400">Atendimento</p>
                 <p className="font-bold text-emerald-400 text-sm">WhatsApp</p>
               </div>
@@ -372,13 +383,13 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
             <div className="relative rounded-2xl bg-zinc-950/80 border border-zinc-800 p-2 sm:p-4 shadow-2xl backdrop-blur-sm">
               
               {/* Header Bar inside 3D Box */}
-              <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/80 text-xs">
-                <div className="flex items-center gap-2 text-zinc-300 font-mono">
-                  <Rotate3d className="w-4 h-4 text-red-500 animate-pulse" />
-                  <span>VISUALIZADOR 3D // DAKAR SPEC</span>
+              <div className="flex flex-wrap items-center justify-between gap-y-2 px-1 sm:px-3 py-2 border-b border-zinc-800/80 text-xs">
+                <div className="flex min-w-0 items-center gap-2 text-zinc-300 font-mono">
+                  <Rotate3d className="w-4 h-4 shrink-0 text-red-500 animate-pulse" />
+                  <span className="truncate">VISUALIZADOR 3D // DAKAR SPEC</span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <button
                     onClick={() => setIsRotating(!isRotating)}
                     className="p-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition"
@@ -423,33 +434,36 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
                   </div>
                 </div>
 
-                {/* Tread & Size Selectors */}
-                <div className="grid grid-cols-2 gap-3 pt-1 border-t border-zinc-800/60">
-                  <div>
+                {/* Tread & Size Selectors — empilhados no mobile e em duas
+                    colunas a partir de sm. Antes, 2 colunas fixas davam ~76px
+                    por botão e o texto "Mud Terrain (MT)" quebrava letra a
+                    letra; agora o rótulo longo só aparece a partir de sm. */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-zinc-800/60">
+                  <div className="min-w-0">
                     <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1">
                       Banda do Pneu
                     </label>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setSelectedTread('MT')}
-                        className={`flex-1 text-xs py-1 rounded border font-medium ${
+                        className={`min-w-0 flex-1 text-xs py-1.5 rounded border font-medium whitespace-nowrap ${
                           selectedTread === 'MT' ? 'bg-red-800 text-white border-red-500' : 'bg-zinc-800 text-zinc-400 border-zinc-700'
                         }`}
                       >
-                        Mud Terrain (MT)
+                        <span className="hidden sm:inline">Mud Terrain </span>MT
                       </button>
                       <button
                         onClick={() => setSelectedTread('AT')}
-                        className={`flex-1 text-xs py-1 rounded border font-medium ${
+                        className={`min-w-0 flex-1 text-xs py-1.5 rounded border font-medium whitespace-nowrap ${
                           selectedTread === 'AT' ? 'bg-red-800 text-white border-red-500' : 'bg-zinc-800 text-zinc-400 border-zinc-700'
                         }`}
                       >
-                        All Terrain (AT)
+                        <span className="hidden sm:inline">All Terrain </span>AT
                       </button>
                     </div>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1">
                       Diâmetro do Aro
                     </label>
@@ -458,7 +472,7 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
                         <button
                           key={size}
                           onClick={() => setRimSize(size)}
-                          className={`flex-1 text-xs py-1 rounded border font-bold ${
+                          className={`min-w-0 flex-1 text-xs py-1.5 rounded border font-bold whitespace-nowrap ${
                             rimSize === size ? 'bg-amber-600 text-white border-amber-400' : 'bg-zinc-800 text-zinc-400 border-zinc-700'
                           }`}
                         >

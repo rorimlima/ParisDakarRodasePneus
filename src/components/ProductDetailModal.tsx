@@ -60,8 +60,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-8 overflow-hidden text-white">
+    // `items-center` combinado com `overflow-y-auto` corta o topo de modais
+    // mais altos que a tela — e no celular este é sempre o caso. Alinhar ao
+    // topo no mobile mantém todo o conteúdo alcançável pela rolagem.
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto overscroll-contain">
+      <div className="relative w-full max-w-4xl bg-[#111111] rounded-2xl border border-white/10 shadow-2xl my-4 sm:my-8 overflow-hidden text-white">
         
         {/* Close Button */}
         <button
@@ -71,7 +74,9 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <X className="w-5 h-5" />
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 sm:p-8">
+        {/* p-6 no mobile consumia 48px dos ~330px disponíveis; p-4 devolve
+            espaço útil ao conteúdo sem mexer no desktop. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 sm:p-8">
           
           {/* Gallery Section */}
           <div className="space-y-4">
@@ -119,11 +124,11 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
           <div className="space-y-5 flex flex-col justify-between">
             
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs">
                 <span className="font-bold text-[#8B0000] uppercase tracking-widest">
                   {product.brand} // {product.category}
                 </span>
-                <span className="font-mono text-gray-400 text-[11px]">SKU: {product.sku}</span>
+                <span className="font-mono text-gray-400 text-[11px] break-all">SKU: {product.sku}</span>
               </div>
 
               <h2 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-white leading-tight">
@@ -201,17 +206,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                   <Car className="w-4 h-4 text-red-600" />
                   Verificar Compatibilidade no Seu Veículo:
                 </label>
+                {/* O <input> tem largura intrínseca (~170px, atributo `size`
+                    padrão) e `flex-1` não a supera sem `min-w-0` — era isso
+                    que empurrava o botão "Checar" para fora da tela em 320px. */}
                 <div className="flex gap-2">
                   <input
                     type="text"
                     value={vehicleQuery}
                     onChange={(e) => setVehicleQuery(e.target.value)}
                     placeholder="Ex: Hilux 2022, Ranger, Wrangler..."
-                    className="flex-1 px-3 py-2 rounded-xl text-xs bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-100"
+                    className="min-w-0 flex-1 px-3 py-2 rounded-xl text-xs bg-slate-100 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-100"
                   />
                   <button
                     onClick={handleCheckCompatibility}
-                    className="px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700"
+                    className="shrink-0 px-4 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700"
                   >
                     Checar
                   </button>
@@ -227,15 +235,15 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
             {/* Price & Action Footer */}
             <div className="pt-4 border-t border-slate-200 dark:border-zinc-800 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
                   <span className="text-xs text-slate-400 block">Valor Unitário / Jogo:</span>
-                  <span className="text-2xl font-black text-slate-900 dark:text-white">
+                  <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                     {formattedPrice}
                   </span>
                 </div>
 
-                <span className="text-xs text-emerald-500 font-bold bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-800/40">
+                <span className="shrink-0 text-xs text-emerald-500 font-bold bg-emerald-950/30 px-3 py-1 rounded-full border border-emerald-800/40">
                   Estoque Disponível
                 </span>
               </div>

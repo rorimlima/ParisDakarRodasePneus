@@ -113,16 +113,16 @@ CREATE TABLE b2b_profiles (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-4xl bg-[#111111] text-white rounded-2xl border border-white/10 shadow-2xl p-6 sm:p-8 my-8 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-4xl bg-[#111111] text-white rounded-2xl border border-white/10 shadow-2xl p-4 sm:p-8 my-4 sm:my-8 max-h-[90vh] flex flex-col overflow-hidden">
         
         {/* Header Bar */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded bg-[#8B0000]/20 border border-[#8B0000]/40 text-[#8B0000]">
+        <div className="flex items-center justify-between gap-3 pb-4 border-b border-white/10 shrink-0">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 p-2.5 rounded bg-[#8B0000]/20 border border-[#8B0000]/40 text-[#8B0000]">
               <Cpu className="w-6 h-6" />
             </div>
-            <div>
-              <h2 className="text-lg font-black uppercase italic tracking-tight text-white flex items-center gap-2">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-black uppercase italic tracking-tight text-white flex items-center gap-2">
                 <span>Arquitetura de Software Next.js / Vercel</span>
               </h2>
               <p className="text-xs text-gray-400">
@@ -133,14 +133,14 @@ CREATE TABLE b2b_profiles (
 
           <button
             onClick={onClose}
-            className="p-2.5 rounded-full bg-[#1a1a1a] text-gray-300 hover:bg-[#8B0000] hover:text-white transition border border-white/10"
+            className="shrink-0 p-2.5 rounded-full bg-[#1a1a1a] text-gray-300 hover:bg-[#8B0000] hover:text-white transition border border-white/10"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-2 pt-4 shrink-0">
+        <div className="flex flex-wrap gap-2 pt-4 shrink-0">
           <button
             onClick={() => setActiveTab('tree')}
             className={`flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition border ${
@@ -223,15 +223,15 @@ CREATE TABLE b2b_profiles (
         </div>
 
         {/* Deployment Note */}
-        <div className="pt-4 border-t border-zinc-800 shrink-0 flex items-center justify-between text-xs text-zinc-400">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        <div className="pt-4 border-t border-zinc-800 shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-zinc-400">
+          <div className="flex min-w-0 items-center gap-2">
+            <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-400" />
             <span>Pronto para Deploy imediato na Vercel com suporte a Serverless Functions.</span>
           </div>
 
           <button
             onClick={onClose}
-            className="btn-paris px-5 py-2 rounded-xl text-xs font-bold font-sans"
+            className="btn-paris w-full sm:w-auto shrink-0 px-5 py-2.5 rounded-xl text-xs font-bold font-sans"
           >
             Entendido / Voltar à Plataforma
           </button>
