@@ -99,6 +99,7 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [authModalTab, setAuthModalTab] = useState<'b2c' | 'b2b' | 'admin'>('b2c');
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [isArchitectureViewerOpen, setIsArchitectureViewerOpen] = useState<boolean>(false);
   const [isSellerModalOpen, setIsSellerModalOpen] = useState<boolean>(false);
   const [pendingWhatsAppMsg, setPendingWhatsAppMsg] = useState<string | undefined>(undefined);
@@ -109,8 +110,9 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const handleOpenAuthModal = useCallback((tab: 'b2c' | 'b2b' | 'admin' = 'b2c') => {
+  const handleOpenAuthModal = useCallback((tab: 'b2c' | 'b2b' | 'admin' = 'b2c', mode: 'login' | 'register' = 'login') => {
     setAuthModalTab(tab);
+    setAuthModalMode(mode);
     setIsAuthModalOpen(true);
   }, []);
 
@@ -519,6 +521,7 @@ export default function App() {
             onClose={() => setIsAuthModalOpen(false)}
             currentSession={currentSession}
             initialTab={authModalTab}
+            initialMode={authModalMode}
             onLoginSuccess={(newSession) => {
               setCurrentSession(newSession);
               if (newSession.type === 'admin') setViewMode('admin');

@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { obterAuth } from '../firebase/config';
 import {
   X,
   User,
@@ -23,6 +25,7 @@ interface AuthModalProps {
   currentSession: UserSession;
   onLoginSuccess: (session: UserSession) => void;
   initialTab?: 'b2c' | 'b2b' | 'admin';
+  initialMode?: 'login' | 'register';
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -30,10 +33,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   currentSession,
   onLoginSuccess,
-  initialTab = 'b2c'
+  initialTab = 'b2c',
+  initialMode = 'login'
 }) => {
   const [activeTab, setActiveTab] = useState<'b2c' | 'b2b' | 'admin'>(initialTab);
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialTab) setActiveTab(initialTab);
+      if (initialMode) setMode(initialMode);
+    }
+  }, [isOpen, initialTab, initialMode]);
 
   // Admin security — lockout after 5 failed attempts
   const [adminAttempts, setAdminAttempts] = useState(0);
@@ -124,13 +135,67 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
+  // Google Auth Handler
+  const handleGoogleLogin = async () => {
+    try {
+      setErrorMsg('');
+      const auth = obterAuth();
+      if (!auth) {
+        const demoUser: CpfClient = {
+          id: `b2c-google-${Date.now()}`,
+          fullName: 'Usuário Google',
+          cpf: '000.000.000-00',
+          email: 'usuario.google@gmail.com',
+          phone: '(11) 99999-9999',
+          address: 'Cadastrado via Google Auth',
+          cep: '00000-000',
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+        const session: UserSession = { type: 'b2c', b2cUser: demoUser };
+        storageService.saveUserSession(session);
+        onLoginSuccess(session);
+        onClose();
+        return;
+      }
+
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      const cpfUsers = storageService.getCpfUsers();
+      let existing = cpfUsers.find((u) => u.email.toLowerCase() === (user.email || '').toLowerCase());
+
+      if (!existing) {
+        existing = storageService.registerCpfUser({
+          fullName: user.displayName || 'Usuário Google',
+          cpf: '000.000.000-00',
+          email: user.email || '',
+          phone: user.phoneNumber || '(11) 99999-9999',
+          address: 'Cadastrado via Google Auth',
+          cep: '00000-000'
+        });
+      }
+
+      const session: UserSession = { type: 'b2c', b2cUser: existing };
+      storageService.saveUserSession(session);
+      setSuccessMsg(`Bem-vindo, ${existing.fullName}!`);
+      setTimeout(() => {
+        onLoginSuccess(session);
+        onClose();
+      }, 600);
+    } catch (err: any) {
+      console.error('[Google Auth Error]', err);
+      setErrorMsg(err.message || 'Erro ao realizar login com o Google.');
+    }
+  };
+
   // 2. CPF (B2C) Register
   const handleCpfRegister = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!cpfFullName || !cpfValue || !cpfEmail || !cpfRegPassword || !cpfBirthDate || !cpfAddress) {
-      setErrorMsg('Preencha todos os campos obrigatórios: Nome, CPF, Data de Nascimento, Endereço, E-mail e Senha.');
+    if (!cpfFullName || !cpfValue || !cpfEmail || !cpfRegPassword || !cpfAddress) {
+      setErrorMsg('Preencha os campos obrigatórios: Nome Completo, CPF, Endereço Completo, Celular, E-mail e Senha.');
       return;
     }
 
@@ -139,21 +204,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    const fullAddress = [cpfAddress, cpfCity, cpfState, cpfCep].filter(Boolean).join(', ');
-
     const newUser = storageService.registerCpfUser({
       fullName: cpfFullName,
       cpf: formatCPF(cpfValue),
       email: cpfEmail,
       phone: cpfPhone,
-      address: fullAddress,
+      address: cpfAddress,
       cep: cpfCep,
       birthDate: cpfBirthDate
     } as any);
 
     const session: UserSession = { type: 'b2c', b2cUser: newUser };
     storageService.saveUserSession(session);
-    setSuccessMsg('Cadastro de Cliente Final realizado com sucesso!');
+    setSuccessMsg('Conta criada com sucesso! Seja bem-vindo à Paris Dakar.');
     setTimeout(() => {
       onLoginSuccess(session);
       onClose();
@@ -458,40 +521,76 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
 
               {mode === 'login' ? (
-                <form onSubmit={handleCpfLogin} className="space-y-4">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                      CPF ou E-mail do Cliente
-                    </label>
-                    <input
-                      type="text"
-                      value={cpfLoginInput}
-                      onChange={(e) => setCpfLoginInput(e.target.value)}
-                      placeholder="000.000.000-00 ou seu@email.com"
-                      className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                      Senha
-                    </label>
-                    <input
-                      type="password"
-                      value={cpfPassword}
-                      onChange={(e) => setCpfPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
-                    />
-                  </div>
-
+                <div className="space-y-4">
+                  {/* Botão Entrar com Google */}
                   <button
-                    type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
+                    type="button"
+                    onClick={handleGoogleLogin}
+                    className="w-full py-3 px-4 rounded-xl pd-surface-2 border pd-border pd-text hover:bg-white/10 font-bold text-xs flex items-center justify-center gap-3 transition shadow-sm"
                   >
-                    Acessar Minha Conta (CPF)
+                    <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                      />
+                    </svg>
+                    <span>Entrar com o Google</span>
                   </button>
-                </form>
+
+                  <div className="relative my-4 flex items-center justify-center">
+                    <div className="border-t pd-border w-full" />
+                    <span className="pd-surface px-2 text-[10px] pd-text-3 font-bold uppercase absolute">
+                      ou entre com CPF / E-mail
+                    </span>
+                  </div>
+
+                  <form onSubmit={handleCpfLogin} className="space-y-4">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                        CPF ou E-mail do Cliente
+                      </label>
+                      <input
+                        type="text"
+                        value={cpfLoginInput}
+                        onChange={(e) => setCpfLoginInput(e.target.value)}
+                        placeholder="000.000.000-00 ou seu@email.com"
+                        className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                        Senha
+                      </label>
+                      <input
+                        type="password"
+                        value={cpfPassword}
+                        onChange={(e) => setCpfPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
+                    >
+                      Acessar Minha Conta (CPF)
+                    </button>
+                  </form>
+                </div>
               ) : (
                 <form onSubmit={handleCpfRegister} className="space-y-3">
                   <div>
@@ -523,7 +622,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                     <div>
                       <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                        Telefone / WhatsApp
+                        Celular / WhatsApp *
                       </label>
                       <input
                         type="text"
@@ -550,67 +649,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                      Data de Nascimento *
-                    </label>
-                    <input
-                      type="date"
-                      value={cpfBirthDate}
-                      onChange={(e) => setCpfBirthDate(e.target.value)}
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                      Endereço Completo (Rua, N°, Bairro) *
+                      Endereço Completo *
                     </label>
                     <input
                       type="text"
                       value={cpfAddress}
                       onChange={(e) => setCpfAddress(e.target.value)}
-                      placeholder="Rua das Camelias, 123, Jardim América"
+                      placeholder="Rua, Número, Bairro, Cidade - UF"
                       className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                        Cidade *
-                      </label>
-                      <input
-                        type="text"
-                        value={cpfCity}
-                        onChange={(e) => setCpfCity(e.target.value)}
-                        placeholder="São Paulo"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                        Estado
-                      </label>
-                      <input
-                        type="text"
-                        value={cpfState}
-                        onChange={(e) => setCpfState(e.target.value)}
-                        placeholder="SP"
-                        maxLength={2}
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
-                        CEP *
-                      </label>
-                      <input
-                        type="text"
-                        value={cpfCep}
-                        onChange={(e) => setCpfCep(e.target.value)}
-                        placeholder="00000-000"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
-                      />
-                    </div>
                   </div>
 
                   <div>
@@ -621,7 +668,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       type="password"
                       value={cpfRegPassword}
                       onChange={(e) => setCpfRegPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="Criar senha de acesso..."
                       className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
                     />
                   </div>
@@ -630,7 +677,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="submit"
                     className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg mt-2"
                   >
-                    Concluir Cadastro CPF
+                    Criar Minha Conta na Paris Dakar
                   </button>
                 </form>
               )}

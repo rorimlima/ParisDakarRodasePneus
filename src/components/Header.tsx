@@ -21,7 +21,7 @@ interface HeaderProps {
   isDark: boolean;
   onToggleTheme: () => void;
   currentSession: UserSession;
-  onOpenAuthModal: (tab?: 'b2c' | 'b2b' | 'admin') => void;
+  onOpenAuthModal: (tab?: 'b2c' | 'b2b' | 'admin', mode?: 'login' | 'register') => void;
   onOpenAdminDashboard: () => void;
   onSearchChange: (query: string) => void;
   searchQuery: string;
@@ -45,18 +45,9 @@ export const Header: React.FC<HeaderProps> = ({
   const themeLabel = isDark ? 'Ativar modo claro' : 'Ativar modo escuro';
 
   const accountButton = () => {
-    if (currentSession.type === 'admin') {
-      return (
-        <button type="button" onClick={onOpenAdminDashboard} className="btn btn-primary">
-          <Lock className="w-4 h-4" />
-          <span>Painel admin</span>
-        </button>
-      );
-    }
-
     if (currentSession.type === 'b2b') {
       return (
-        <button type="button" onClick={() => onOpenAuthModal('b2b')} className="btn btn-outline">
+        <button type="button" onClick={() => onOpenAuthModal('b2b', 'login')} className="btn btn-outline">
           <Building2 className="w-4 h-4 pd-gold-text" />
           <span className="max-w-[13rem] truncate">
             {currentSession.b2bUser?.tradeName || currentSession.b2bUser?.companyName || 'Conta PJ'}
@@ -67,7 +58,7 @@ export const Header: React.FC<HeaderProps> = ({
 
     if (currentSession.type === 'b2c') {
       return (
-        <button type="button" onClick={() => onOpenAuthModal('b2c')} className="btn btn-outline">
+        <button type="button" onClick={() => onOpenAuthModal('b2c', 'login')} className="btn btn-outline">
           <User className="w-4 h-4 pd-brand-text" />
           <span className="max-w-[13rem] truncate">
             {currentSession.b2cUser?.fullName || 'Minha conta'}
@@ -78,11 +69,11 @@ export const Header: React.FC<HeaderProps> = ({
 
     return (
       <div className="flex items-center gap-2">
-        <button type="button" onClick={() => onOpenAuthModal('b2c')} className="btn btn-outline">
+        <button type="button" onClick={() => onOpenAuthModal('b2c', 'login')} className="btn btn-outline" id="btn-entrar">
           <LogIn className="w-4 h-4 pd-brand-text" />
-          <span>Entrar</span>
+          <span>Entre</span>
         </button>
-        <button type="button" onClick={() => onOpenAuthModal('b2c')} className="btn btn-primary" id="btn-cadastrese">
+        <button type="button" onClick={() => onOpenAuthModal('b2c', 'register')} className="btn btn-primary" id="btn-cadastrese">
           <UserPlus className="w-4 h-4" />
           <span>Cadastre-se</span>
         </button>
