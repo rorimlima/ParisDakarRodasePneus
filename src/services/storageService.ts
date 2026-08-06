@@ -22,6 +22,10 @@ const STORAGE_KEYS = {
   SELLERS: 'pd_sellers'
 };
 
+// Sem avatarUrl: nenhum vendedor real ainda cadastrou uma foto própria. Os
+// componentes que exibem vendedor (WhatsAppSellerModal, AdminDashboard) já
+// caem para um avatar de iniciais quando avatarUrl está vazio — nunca uma
+// foto de banco de imagens fingindo ser um funcionário real.
 export const DEFAULT_SELLERS: Seller[] = [
   {
     id: 'seller-001',
@@ -29,7 +33,6 @@ export const DEFAULT_SELLERS: Seller[] = [
     phone: '(11) 99999-8888',
     email: 'rodrigo.vendas@parisdakar.com.br',
     specialty: 'Consultor Técnico 4x4 & Rodas Heavy-Duty',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
     isActive: true,
     createdAt: '2026-01-15'
   },
@@ -39,7 +42,6 @@ export const DEFAULT_SELLERS: Seller[] = [
     phone: '(11) 98888-7777',
     email: 'eduardo.dakar@parisdakar.com.br',
     specialty: 'Especialista em Pneus Off-Road & Lift Kits',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
     isActive: true,
     createdAt: '2026-02-01'
   }

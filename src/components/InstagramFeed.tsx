@@ -1,5 +1,5 @@
 import React from 'react';
-import { Instagram, Heart, MessageCircle, ExternalLink } from 'lucide-react';
+import { Instagram, Heart, MessageCircle, ExternalLink, ImageOff } from 'lucide-react';
 
 interface InstagramPost {
   id: string;
@@ -12,13 +12,15 @@ interface InstagramPost {
 
 const PROFILE_URL = 'https://www.instagram.com/parisdakarrodas/';
 
-// Imagens pedidas já redimensionadas e comprimidas na origem (payload menor).
+// Sem fotos de banco de imagens: até essas montagens serem sincronizadas com
+// posts reais do Instagram (via API/admin), cada card mostra um placeholder
+// neutro em vez de uma foto de estoque fingindo ser um cliente real.
 const INSTAGRAM_POSTS: InstagramPost[] = [
   {
     id: 'post-1',
     vehicle: 'Toyota Hilux GR-Sport 2026',
     setup: 'Rodas Forged Heavy-Duty 17x9 + pneus 35" Mud Terrain',
-    image: 'https://images.unsplash.com/photo-1578844251758-2f71da64c96f?auto=format&fit=crop&w=560&q=70',
+    image: '',
     likes: 1240,
     comments: 86
   },
@@ -26,7 +28,7 @@ const INSTAGRAM_POSTS: InstagramPost[] = [
     id: 'post-2',
     vehicle: 'Ford Ranger Raptor V6',
     setup: 'Rodas Dakar Tactical 20x9.5 + kit lift 2.5" Nitro',
-    image: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=560&q=70',
+    image: '',
     likes: 980,
     comments: 64
   },
@@ -34,7 +36,7 @@ const INSTAGRAM_POSTS: InstagramPost[] = [
     id: 'post-3',
     vehicle: 'Chevrolet S10 High Country 4x4',
     setup: 'Rodas Satin Bronze 18" + pneus All-Terrain 285/70R17',
-    image: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=560&q=70',
+    image: '',
     likes: 1850,
     comments: 112
   },
@@ -42,7 +44,7 @@ const INSTAGRAM_POSTS: InstagramPost[] = [
     id: 'post-4',
     vehicle: 'RAM 2500 Laramie Night Edition',
     setup: 'Combo 20x10 ET-24 + pneus 37" e espaçadores billet 38mm',
-    image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=560&q=70',
+    image: '',
     likes: 2100,
     comments: 145
   }
@@ -91,16 +93,23 @@ export const InstagramFeed: React.FC = () => {
               className="pd-card pd-card-hover group overflow-hidden block"
             >
               <div className="aspect-[4/3] w-full overflow-hidden relative pd-surface-2">
-                <img
-                  src={post.image}
-                  alt={post.vehicle}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                  decoding="async"
-                  width={560}
-                  height={420}
-                  referrerPolicy="no-referrer"
-                />
+                {post.image ? (
+                  <img
+                    src={post.image}
+                    alt={post.vehicle}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                    width={560}
+                    height={420}
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 pd-text-3">
+                    <ImageOff className="w-7 h-7" aria-hidden="true" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Foto em breve</span>
+                  </div>
+                )}
 
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 text-white text-sm font-bold">
                   <span className="flex items-center gap-1.5">
