@@ -178,7 +178,8 @@ export function paraProdutoDeExibicao(
     unidadeSigla: produto.unidade,
     unidadeLabel: rotularUnidade(produto.unidade, produto.quantidade),
     categoriaNome: categoria?.nomeExibicao || produto.tipoProduto,
-    fichaTecnicaCompleta: montarFichaCompleta(produto, categoria)
+    fichaTecnicaCompleta: montarFichaCompleta(produto, categoria),
+    isActive: produto.ativoManual !== false && produto.ativo
   };
 }
 

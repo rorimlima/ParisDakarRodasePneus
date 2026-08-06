@@ -7,49 +7,68 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper functions for role and authentication verification
+    function papel() {
+      return request.auth != null && request.auth.token.role is string
+        ? request.auth.token.role
+        : 'visitante';
+    }
+
+    function equipeAdministrativa() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && papel() in ['senior', 'gerencia', 'admin'];
+    }
+
     // Regras de Leitura e Escrita do Catálogo, Custos, Categorias e Importações
     match /products/{codigo} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if equipeAdministrativa();
     }
 
     match /productCosts/{codigo} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null && papel() in ['senior', 'gerencia'];
     }
 
     match /categories/{slug} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if equipeAdministrativa();
     }
 
     match /imports/{importId} {
-      allow read, write: if true;
+      allow read, write: if equipeAdministrativa();
     }
 
     match /settings/{documento} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if equipeAdministrativa();
     }
 
     match /users/{uid} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null && (request.auth.uid == uid || equipeAdministrativa());
     }
 
     match /clientsCpf/{uid} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null && (request.auth.uid == uid || equipeAdministrativa());
     }
 
     match /clientsCnpj/{uid} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null && (request.auth.uid == uid || equipeAdministrativa());
     }
 
     match /inquiries/{id} {
-      allow read, write: if true;
+      allow create: if true;
+      allow read, write: if equipeAdministrativa();
     }
 
     match /auditLog/{id} {
-      allow read, write: if true;
+      allow read: if request.auth != null && papel() in ['senior', 'gerencia'];
+      allow write: if false; // Apenas Admin SDK (server-side) pode escrever no log
     }
 
+    // Bloqueia qualquer outro documento não mapeado por padrão (Default Deny)
     match /{documento=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

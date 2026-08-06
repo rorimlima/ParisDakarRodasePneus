@@ -203,8 +203,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const newStatus = prod.isActive === false ? true : false;
       try {
         await catalogService.definirAtivacao(prod.sku || prod.id, newStatus);
-        const updated = { ...prod, isActive: newStatus };
+        const updated: Product = { ...prod, isActive: newStatus, inStock: newStatus && (prod.stockQuantity ?? 0) > 0 };
         storageService.saveProduct(updated);
+        const nextProducts = products.map((p) => (p.id === id || p.sku === id ? updated : p));
+        setProducts(nextProducts);
+        onProductsUpdated(nextProducts);
         showToast(
           newStatus
             ? `✓ Produto "${prod.name}" ATIVADO no Firestore e exposto no site!`
@@ -356,16 +359,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // --- CATALOG MANAGEMENT HANDLERS ---
-  const handleSaveNewProduct = async (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProdName || !newProdSku) {
-      showToast('Preencha ao menos Nome e SKU do produto.');
-      return;
-    }
-
+    const newProdId = newProdSku || `PD-${Date.now()}`;
     const newProd: Product = {
-      id: `pd-custom-${Date.now()}`,
-      sku: newProdSku,
+      id: newProdId,
+      sku: newProdSku || newProdId,
       name: newProdName,
       brand: newProdBrand,
       category: newProdCat,
@@ -399,6 +398,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       await catalogService.salvarProduto(productParaProdutoCatalogo(newProd));
       storageService.saveProduct(newProd);
+      const nextProducts = [newProd, ...products];
+      setProducts(nextProducts);
+      onProductsUpdated(nextProducts);
       setIsAddProductModalOpen(false);
       showToast('Novo produto salvo no Firestore e exposto no site!');
     } catch (err: any) {
@@ -410,6 +412,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       await catalogService.salvarProduto(productParaProdutoCatalogo(prod));
       storageService.saveProduct(prod);
+      const nextProducts = products.map((p) => (p.id === prod.id || p.sku === prod.sku ? prod : p));
+      setProducts(nextProducts);
+      onProductsUpdated(nextProducts);
       setEditingProduct(null);
       showToast('Produto atualizado com sucesso no Firestore!');
     } catch (err: any) {
@@ -424,6 +429,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         const codeToDelete = prod?.sku || id;
         await catalogService.excluirProduto(codeToDelete);
         storageService.deleteProduct(id);
+        const nextProducts = products.filter((p) => p.id !== id && p.sku !== id);
+        setProducts(nextProducts);
+        onProductsUpdated(nextProducts);
         showToast('Produto removido do catálogo Firestore.');
       } catch (err: any) {
         showToast(`Erro ao excluir produto no Firestore: ${err.message}`);

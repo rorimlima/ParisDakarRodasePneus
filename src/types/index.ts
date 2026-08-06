@@ -49,6 +49,10 @@ export interface Product {
   rating: number;
   reviewsCount: number;
   isActive?: boolean; // Se false, o produto fica oculto no site público (desativado)
+  unidadeSigla?: string;
+  unidadeLabel?: string;
+  categoriaNome?: string;
+  fichaTecnicaCompleta?: any;
 }
 
 
