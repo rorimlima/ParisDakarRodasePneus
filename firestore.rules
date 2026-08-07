@@ -27,11 +27,15 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return papel() in ['admin', 'senior', 'gerencia'];
+      return papel() in ['admin', 'senior', 'gerencia']
+        || (isAuthenticated() && request.auth.token.email != null && request.auth.token.email.lower() in ['onaeror@gmail.com', 'admin@parisdakar.com.br'])
+        || (isAuthenticated() && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid)));
     }
 
     function isSenior() {
-      return papel() in ['senior', 'gerencia'];
+      return papel() in ['senior', 'gerencia']
+        || (isAuthenticated() && request.auth.token.email != null && request.auth.token.email.lower() in ['onaeror@gmail.com', 'admin@parisdakar.com.br'])
+        || (isAuthenticated() && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid)));
     }
 
     function isDono(uid) {

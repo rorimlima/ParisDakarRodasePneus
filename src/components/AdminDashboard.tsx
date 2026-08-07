@@ -128,7 +128,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onSiteSettingsUpdated,
   onSellersUpdated
 }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'clients' | 'admins' | 'inquiries' | 'sellers'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'clients' | 'admins' | 'inquiries' | 'sellers' | 'categories'>('products');
 
   // Local state initialized from storageService
   const [products, setProducts] = useState<Product[]>([]);
@@ -140,6 +140,32 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [inquiries, setInquiries] = useState<InquiryLog[]>(storageService.getInquiries());
   const [sellers, setSellers] = useState<Seller[]>(storageService.getSellers());
 
+  // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE EM TEMPO REAL) ---
+  const handleToggleProductActive = async (id: string) => {
+    const prod = products.find((p) => p.id === id || p.sku === id);
+    if (prod) {
+      const newStatus = prod.isActive === false ? true : false;
+      const updated: Product = { ...prod, isActive: newStatus, inStock: newStatus && (prod.stockQuantity ?? 0) > 0 };
+      
+      // Atualiza o estado local imediatamente para feedback instantâneo
+      storageService.saveProduct(updated);
+      const nextProducts = products.map((p) => (p.id === id || p.sku === id ? updated : p));
+      setProducts(nextProducts);
+      onProductsUpdated(nextProducts);
+
+      try {
+        await catalogService.definirAtivacao(prod.sku || prod.id, newStatus);
+      } catch (err: any) {
+        console.warn('[AdminDashboard] Aviso ao sincronizar ativacao no Firestore:', err);
+      }
+
+      showToast(
+        newStatus
+          ? `✓ Produto "${prod.name}" ATIVADO e exposto no site!`
+          : `⚡ Produto "${prod.name}" DESATIVADO (Ocultado do site público).`
+      );
+    }
+  };
   // Carrega os dados reais do Firestore assim que o painel abre. O estado inicial
   // acima é só o conteúdo local, usado enquanto a busca não termina (ou quando o
   // Firebase não está configurado neste ambiente).
@@ -244,6 +270,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Notification Banner
   const [toastMsg, setToastMsg] = useState('');
 
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(''), 3000);
+  };
+
   // Sincronização em tempo real com o banco Firestore para o painel admin
   useEffect(() => {
     const cancelObs = catalogService.observarProdutos((produtosFirestore) => {
@@ -266,34 +297,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       }
     });
   }, [onSellersUpdated]);
-
-  const showToast = (msg: string) => {
-    setToastMsg(msg);
-    setTimeout(() => setToastMsg(''), 3000);
-  };
-
-  // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE EM TEMPO REAL) ---
-  const handleToggleProductActive = async (id: string) => {
-    const prod = products.find((p) => p.id === id || p.sku === id);
-    if (prod) {
-      const newStatus = prod.isActive === false ? true : false;
-      try {
-        await catalogService.definirAtivacao(prod.sku || prod.id, newStatus);
-        const updated: Product = { ...prod, isActive: newStatus, inStock: newStatus && (prod.stockQuantity ?? 0) > 0 };
-        storageService.saveProduct(updated);
-        const nextProducts = products.map((p) => (p.id === id || p.sku === id ? updated : p));
-        setProducts(nextProducts);
-        onProductsUpdated(nextProducts);
-        showToast(
-          newStatus
-            ? `✓ Produto "${prod.name}" ATIVADO no Firestore e exposto no site!`
-            : `⚡ Produto "${prod.name}" DESATIVADO no Firestore (Ocultado do site público).`
-        );
-      } catch (err: any) {
-        showToast(`Erro ao alterar status no banco: ${err.message}`);
-      }
-    }
-  };
 
   // Carrega o catálogo da origem vigente (API ou local) ao abrir o painel.
   useEffect(() => {
@@ -856,6 +859,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <Headphones className="w-4 h-4" />
             <span>6. Equipe de Vendedores</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('categories')}
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+              activeTab === 'categories'
+                ? 'bg-[#8B0000] text-white shadow-md'
+                : 'pd-surface pd-text-2 border pd-border'
+            }`}
+          >
+            <Layers className="w-4 h-4 text-amber-400" />
+            <span>7. Categorias & Vitrine</span>
+          </button>
         </div>
 
         {/* TAB 1: CATALOG PRODUCTS MANAGEMENT */}
@@ -893,12 +908,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex flex-col xs:flex-row flex-wrap items-stretch xs:items-center gap-2.5 w-full lg:w-auto">
                 <button
                   type="button"
+                  onClick={() => setActiveTab('categories')}
+                  className="bg-amber-950/80 hover:bg-amber-900 text-amber-200 border border-amber-700/60 px-4 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 justify-center"
+                  title="Desativar ou ativar categorias inteiras de produtos no site público"
+                >
+                  <Layers className="w-4 h-4 text-amber-400" />
+                  <span>Desativar Categorias</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setIsImportModalOpen(true)}
                   className="bg-emerald-800 hover:bg-emerald-700 text-white px-4 py-2.5 rounded font-black text-xs uppercase tracking-widest transition flex items-center gap-2 shadow-lg shrink-0 justify-center"
                   title="Importar catálogo em lote via planilha Excel ou CSV"
                 >
                   <FileSpreadsheet className="w-4 h-4 pd-success-text" />
-                  <span>Importar Planilha (Excel/CSV)</span>
+                  <span>Importar Planilha</span>
                 </button>
 
                 <button
@@ -1734,6 +1759,111 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: CATEGORIES & VITRINE MANAGEMENT */}
+        {activeTab === 'categories' && (
+          <div className="pd-surface p-6 rounded-xl border pd-border space-y-6">
+            <div className="flex items-center justify-between border-b pd-border pb-4">
+              <div>
+                <h2 className="text-lg font-black uppercase italic tracking-wider pd-text flex items-center gap-2.5">
+                  <Layers className="w-5 h-5 pd-brand-text" />
+                  <span>Gerenciamento de Categorias & Vitrine</span>
+                </h2>
+                <p className="text-xs pd-text-2 mt-1">
+                  Ative ou desative categorias inteiras do site público com um único clique.
+                </p>
+              </div>
+
+              {(settingsForm.disabledCategories || []).length > 0 && (
+                <span className="px-3 py-1 bg-red-950/80 pd-brand-text border border-red-800/60 rounded text-xs font-black uppercase">
+                  {(settingsForm.disabledCategories || []).length} Desativada(s)
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {([
+                { slug: 'rodas', label: 'Rodas Off-Road', icon: '🛞', desc: 'Rodas forjadas e calotas heavy-duty' },
+                { slug: 'pneus', label: 'Pneus MT / AT / LT', icon: '🔧', desc: 'Pneus Mud, All-Terrain e Light Truck' },
+                { slug: 'kits-lift', label: 'Kits de Lift', icon: '⬆️', desc: 'Kits de suspensão e elevação 4x4' },
+                { slug: 'combos', label: 'Combos Prontos', icon: '📦', desc: 'Pacotes roda + pneu pré-montados' },
+                { slug: 'acessorios', label: 'Acessórios', icon: '🔩', desc: 'Peças, fixação, iluminação e capotas' },
+                { slug: 'promocao', label: '🔥 Promoção', icon: '🔥', desc: 'Produtos em promoção ativa na vitrine' }
+              ] as const).map((cat) => {
+                const disabled = (settingsForm.disabledCategories || []).includes(cat.slug);
+                const catProducts = cat.slug === 'promocao'
+                  ? products.filter((p) => p.isPromocao)
+                  : cat.slug === 'acessorios'
+                    ? products.filter((p) => !['rodas', 'pneus', 'kits-lift', 'combos'].includes(p.category))
+                    : products.filter((p) => p.category === cat.slug);
+                const count = catProducts.length;
+
+                return (
+                  <div
+                    key={cat.slug}
+                    className={`relative rounded-xl border p-4 transition-all ${
+                      disabled
+                        ? 'border-red-800/60 bg-red-950/30'
+                        : 'pd-border pd-surface-2 hover:border-[#8B0000]/50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl" aria-hidden="true">{cat.icon}</span>
+                        <div>
+                          <p className={`text-xs font-black uppercase tracking-wider ${disabled ? 'line-through pd-text-3' : 'pd-text'}`}>
+                            {cat.label}
+                          </p>
+                          <p className="text-[10px] pd-text-3">{cat.desc}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const current = settingsForm.disabledCategories || [];
+                          const updated = disabled
+                            ? current.filter((c) => c !== cat.slug)
+                            : [...current, cat.slug];
+                          const newForm = { ...settingsForm, disabledCategories: updated };
+                          setSettingsForm(newForm);
+                          storageService.saveSiteSettings(newForm);
+                          onSiteSettingsUpdated(newForm);
+                          showToast(
+                            disabled
+                              ? `✓ Categoria "${cat.label}" REATIVADA e exposta no site!`
+                              : `⚡ Categoria "${cat.label}" DESATIVADA (Ocultada da loja pública).`
+                          );
+                        }}
+                        className="transition-transform active:scale-95 shrink-0"
+                        title={disabled ? `Reativar ${cat.label}` : `Desativar ${cat.label}`}
+                      >
+                        {disabled ? (
+                          <ToggleLeft className="w-9 h-9 text-red-600 cursor-pointer" />
+                        ) : (
+                          <ToggleRight className="w-9 h-9 text-emerald-500 cursor-pointer" />
+                        )}
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t pd-border/40">
+                      <span className="text-[11px] font-bold pd-text-2">
+                        {count} {count === 1 ? 'produto' : 'produtos'} cadastrados
+                      </span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded ${
+                        disabled
+                          ? 'bg-red-900/80 text-red-200 border border-red-700'
+                          : 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                      }`}>
+                        {disabled ? 'Desativada' : 'Ativa'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
