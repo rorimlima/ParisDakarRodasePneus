@@ -378,8 +378,42 @@ class StorageService {
     }
   }
 
+  async fetchSellers(): Promise<Seller[] | null> {
+    try {
+      const db = obterDb();
+      if (!db) return null;
+      const snap = await getDoc(doc(db, COLECOES.configuracoes, 'sellers'));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data && Array.isArray(data.sellers)) {
+          const sellersList = data.sellers as Seller[];
+          localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(sellersList));
+          return sellersList;
+        }
+      } else {
+        const sellersList = this.getSellers();
+        this.saveSellers(sellersList);
+        return sellersList;
+      }
+    } catch (e) {
+      console.warn('[storageService] erro ao carregar vendedores do Firestore:', e);
+    }
+    return null;
+  }
+
   saveSellers(sellers: Seller[]): Seller[] {
     localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(sellers));
+    try {
+      const db = obterDb();
+      if (db) {
+        setDoc(doc(db, COLECOES.configuracoes, 'sellers'), {
+          sellers,
+          atualizadoEm: new Date().toISOString()
+        }).catch((err) => console.warn('[storageService] erro ao salvar vendedores no Firestore:', err));
+      }
+    } catch (e) {
+      console.warn('[storageService] firebase indisponivel para vendedores:', e);
+    }
     return sellers;
   }
 

@@ -192,6 +192,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return () => cancelObs();
   }, [onProductsUpdated]);
 
+  // Carrega os vendedores do Firestore ao abrir o painel admin
+  useEffect(() => {
+    storageService.fetchSellers().then((remoteSellers) => {
+      if (remoteSellers && remoteSellers.length > 0) {
+        setSellers(remoteSellers);
+        if (onSellersUpdated) onSellersUpdated(remoteSellers);
+      }
+    });
+  }, [onSellersUpdated]);
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3000);

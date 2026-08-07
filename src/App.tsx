@@ -82,6 +82,11 @@ export default function App() {
         setSiteSettings(remoteSettings);
       }
     });
+    storageService.fetchSellers().then((remoteSellers) => {
+      if (remoteSellers && remoteSellers.length > 0) {
+        setSellers(remoteSellers);
+      }
+    });
   }, []);
 
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');

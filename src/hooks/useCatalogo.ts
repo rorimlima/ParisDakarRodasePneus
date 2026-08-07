@@ -69,11 +69,25 @@ export function useCatalogoPublico() {
     };
   }, []);
 
-  /** Defesa em profundidade: mesmo que a query devolvesse inativo, ele não é exibido. */
-  const publicaveis = useMemo(
-    () => estado.produtos.filter((p) => p.ativo && p.quantidade > 0),
-    [estado.produtos]
-  );
+  /** Defesa em profundidade: mesmo que a query devolvesse inativo, ele não é exibido. Limitamos pneus a no máximo 20 com maior estoque e valor. */
+  const publicaveis = useMemo(() => {
+    const todosAtivos = estado.produtos.filter((p) => p.ativo && p.quantidade > 0);
+    const pneusAtivos = todosAtivos.filter((p) => p.categoriaSlug === 'pneus');
+    const outrosAtivos = todosAtivos.filter((p) => p.categoriaSlug !== 'pneus');
+
+    // Ordenar pneus por quantidade (desc) e valorVenda (desc)
+    const pneusOrdenados = [...pneusAtivos].sort((a, b) => {
+      if (b.quantidade !== a.quantidade) {
+        return b.quantidade - a.quantidade;
+      }
+      return b.valorVenda - a.valorVenda;
+    });
+
+    // Pegar no máximo 20 pneus
+    const top20Pneus = pneusOrdenados.slice(0, 20);
+
+    return [...top20Pneus, ...outrosAtivos];
+  }, [estado.produtos]);
 
   const produtosExibicao: Product[] = useMemo(
     () => listaParaExibicao(publicaveis, estado.categorias),
