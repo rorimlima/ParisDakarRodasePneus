@@ -151,7 +151,7 @@ export const FavoritosCarrinho: React.FC<FavoritosCarrinhoProps> = ({
                       <p className="text-sm font-extrabold pd-brand-text">
                         {brl.format(product.price)}
                       </p>
-                      {product.specs.aro && (
+                      {product.specs?.aro && (
                         <p className="text-[10px] pd-text-3">Aro {product.specs.aro}</p>
                       )}
                     </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Eye, Star, Heart, ShoppingCart, ImageOff } from 'lucide-react';
+import { MessageCircle, Eye, Star, Heart, ShoppingCart, ImageOff, Flame } from 'lucide-react';
 import { Product, B2BUser } from '../types';
 
 interface ProductCardProps {
@@ -7,7 +7,7 @@ interface ProductCardProps {
   b2bUser: B2BUser;
   onOpenDetails: (product: Product) => void;
   onConsultWhatsApp: (message: string) => void;
-  onOpenB2BModal: () => void;
+  onOpenB2BModal?: () => void;
   // Favoritos e carrinho (apenas B2C logado)
   isB2CLoggedIn?: boolean;
   isFavorited?: boolean;
@@ -29,6 +29,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onRemoveFromFavorites,
   onAddToCart
 }) => {
+  const specs = product.specs || {};
   const effectivePrice = b2bUser.isLoggedIn && product.b2bPrice ? product.b2bPrice : product.price;
   const formattedPrice = brl.format(effectivePrice);
   const formattedOriginalPrice = product.originalPrice ? brl.format(product.originalPrice) : null;
@@ -37,12 +38,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     e.stopPropagation();
 
     const specsSummary = [
-      product.specs.aro && `Aro ${product.specs.aro}`,
-      product.specs.furacao && `Furação: ${product.specs.furacao}`,
-      product.specs.offset && `Offset: ${product.specs.offset}`,
-      product.specs.tala && `Tala: ${product.specs.tala}`,
-      product.specs.medidaPneu && `Medida: ${product.specs.medidaPneu}`,
-      product.specs.acabamento && `Cor: ${product.specs.acabamento}`
+      specs.aro && `Aro ${specs.aro}`,
+      specs.furacao && `Furação: ${specs.furacao}`,
+      specs.offset && `Offset: ${specs.offset}`,
+      specs.tala && `Tala: ${specs.tala}`,
+      specs.medidaPneu && `Medida: ${specs.medidaPneu}`,
+      specs.acabamento && `Cor: ${specs.acabamento}`
     ]
       .filter(Boolean)
       .join(' | ');
@@ -140,12 +141,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <span className="font-bold uppercase tracking-[0.14em] pd-brand-text truncate">
               {product.brand}
             </span>
-
-            <span className="flex items-center gap-1 pd-gold-text font-bold shrink-0">
-              <Star className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
-              {product.rating}
-              <span className="pd-text-3 font-normal">({product.reviewsCount})</span>
-            </span>
           </div>
 
           <h3 className="text-sm font-bold uppercase tracking-tight pd-text pd-clamp-2 leading-snug">
@@ -155,47 +150,47 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <div className="pt-2">
             <table className="clean-table">
               <tbody>
-                {product.specs.aro && (
+                {specs.aro && (
                   <tr>
                     <th scope="row">Aro</th>
-                    <td className="font-bold pd-mono">{product.specs.aro}</td>
-                    {product.specs.furacao && (
+                    <td className="font-bold pd-mono">{specs.aro}</td>
+                    {specs.furacao && (
                       <>
                         <th scope="row">Furação</th>
-                        <td className="font-bold pd-mono">{product.specs.furacao}</td>
+                        <td className="font-bold pd-mono">{specs.furacao}</td>
                       </>
                     )}
                   </tr>
                 )}
-                {(product.specs.offset || product.specs.tala) && (
+                {(specs.offset || specs.tala) && (
                   <tr className="hidden sm:table-row">
-                    {product.specs.tala && (
+                    {specs.tala && (
                       <>
                         <th scope="row">Tala</th>
-                        <td className="pd-mono">{product.specs.tala}</td>
+                        <td className="pd-mono">{specs.tala}</td>
                       </>
                     )}
-                    {product.specs.offset && (
+                    {specs.offset && (
                       <>
                         <th scope="row">Offset</th>
-                        <td className="pd-mono">{product.specs.offset}</td>
+                        <td className="pd-mono">{specs.offset}</td>
                       </>
                     )}
                   </tr>
                 )}
-                {product.specs.medidaPneu && (
+                {specs.medidaPneu && (
                   <tr>
                     <th scope="row">Medida</th>
                     <td colSpan={3} className="font-bold pd-mono pd-brand-text">
-                      {product.specs.medidaPneu}
+                      {specs.medidaPneu}
                     </td>
                   </tr>
                 )}
-                {product.specs.acabamento && (
+                {specs.acabamento && (
                   <tr>
                     <th scope="row">Acabamento</th>
                     <td colSpan={3} className="pd-text-2">
-                      {product.specs.acabamento}
+                      {specs.acabamento}
                     </td>
                   </tr>
                 )}
@@ -204,41 +199,42 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
 
           {/* Resumo compacto de specs — só nos cards estreitos (2 colunas no celular) */}
-          {(product.specs.aro || product.specs.medidaPneu) && (
+          {(specs.aro || specs.medidaPneu) && (
             <div className="flex xs:hidden flex-wrap gap-1 pt-1">
-              {product.specs.aro && (
+              {specs.aro && (
                 <span className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white px-1.5 py-0.5 rounded">
-                  Aro {product.specs.aro}
+                  Aro {specs.aro}
                 </span>
               )}
-              {product.specs.medidaPneu && (
+              {specs.medidaPneu && (
                 <span className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-[#1a1a1a] text-[#B21B1B] px-1.5 py-0.5 rounded truncate max-w-full">
-                  {product.specs.medidaPneu}
+                  {specs.medidaPneu}
                 </span>
               )}
             </div>
           )}
         </div>
 
-        {/* Preço e ação */}
-        <div className="pt-3.5 border-t pd-hairline space-y-3">
-          <div className="flex items-end justify-between gap-2">
-            <div className="min-w-0">
-              {formattedOriginalPrice && (
-                <span className="text-xs pd-text-3 line-through mr-2">{formattedOriginalPrice}</span>
-              )}
-              <span className="text-lg font-extrabold pd-text">{formattedPrice}</span>
-              <span className="block text-[0.6rem] font-bold uppercase tracking-wider pd-text-3 mt-0.5">
-                Em até 10x sem juros ou PIX
+        {/* Preço e Ação */}
+        <div className="pt-3 border-t pd-border flex items-center justify-between gap-2">
+          <div>
+            {formattedOriginalPrice && (
+              <span className="text-[10px] pd-text-3 line-through block">
+                {formattedOriginalPrice}
               </span>
-            </div>
-
-            <span className="pd-badge pd-badge-success shrink-0">Pronta entrega</span>
+            )}
+            <span className="text-base font-black italic pd-brand-text">
+              {formattedPrice}
+            </span>
           </div>
 
-          <button type="button" onClick={handleWhatsAppRoute} className="btn btn-whats btn-block">
-            <MessageCircle className="w-4 h-4" />
-            <span>Falar com especialista</span>
+          <button
+            type="button"
+            onClick={handleWhatsAppRoute}
+            className="bg-[#8B0000] hover:bg-red-800 text-white px-3 py-1.5 rounded text-[11px] font-bold uppercase tracking-wider transition flex items-center gap-1.5 shrink-0"
+          >
+            <MessageCircle className="w-3.5 h-3.5" />
+            <span>Cotar</span>
           </button>
         </div>
       </div>

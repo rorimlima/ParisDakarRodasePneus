@@ -69,14 +69,16 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     );
   };
 
+  const specs = product.specs || {};
+
   const handleWhatsAppConsult = () => {
     const specsSummary = [
-      product.specs.aro && `Aro ${product.specs.aro}`,
-      product.specs.furacao && `Furação: ${product.specs.furacao}`,
-      product.specs.offset && `Offset: ${product.specs.offset}`,
-      product.specs.tala && `Tala: ${product.specs.tala}`,
-      product.specs.medidaPneu && `Medida: ${product.specs.medidaPneu}`,
-      product.specs.acabamento && `Cor: ${product.specs.acabamento}`
+      specs.aro && `Aro ${specs.aro}`,
+      specs.furacao && `Furação: ${specs.furacao}`,
+      specs.offset && `Offset: ${specs.offset}`,
+      specs.tala && `Tala: ${specs.tala}`,
+      specs.medidaPneu && `Medida: ${specs.medidaPneu}`,
+      specs.acabamento && `Cor: ${specs.acabamento}`
     ]
       .filter(Boolean)
       .join(' | ');
@@ -87,14 +89,14 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   };
 
   const specRows: Array<[string, string | undefined, boolean?]> = [
-    ['Aro', product.specs.aro, true],
-    ['Furação (PCD)', product.specs.furacao, true],
-    ['Offset (ET)', product.specs.offset],
-    ['Tala (largura)', product.specs.tala],
-    ['Medida do pneu', product.specs.medidaPneu, true],
-    ['Tipo de banda', product.specs.tipoPneu],
-    ['Acabamento', product.specs.acabamento],
-    ['Peso do item', product.specs.peso]
+    ['Aro', specs.aro, true],
+    ['Furação (PCD)', specs.furacao, true],
+    ['Offset (ET)', specs.offset],
+    ['Tala (largura)', specs.tala],
+    ['Medida do pneu', specs.medidaPneu, true],
+    ['Tipo de banda', specs.tipoPneu],
+    ['Acabamento', specs.acabamento],
+    ['Peso do item', specs.peso]
   ];
 
   return (

@@ -371,22 +371,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           if (existingIdx >= 0) {
             const existing = currentProducts[existingIdx];
+            const existingSpecs = existing.specs || {};
             productToSave = {
               ...existing,
               name: normRow['name'] || existing.name,
               brand: normRow['brand'] || existing.brand,
+              category: normRow['category'] || existing.category,
               price: normRow['price'] > 0 ? normRow['price'] : existing.price,
               b2bPrice: normRow['b2bPrice'] > 0 ? normRow['b2bPrice'] : existing.b2bPrice,
               stockQuantity: normRow['stockQuantity'] >= 0 ? normRow['stockQuantity'] : existing.stockQuantity,
               inStock: (normRow['stockQuantity'] ?? existing.stockQuantity) > 0,
               isActive: true,
               specs: {
-                ...existing.specs,
-                aro: normRow['aro'] || existing.specs.aro,
-                furacao: normRow['furacao'] || existing.specs.furacao,
-                offset: normRow['offset'] || existing.specs.offset,
-                tala: normRow['tala'] || existing.specs.tala,
-                medidaPneu: normRow['medidaPneu'] || existing.specs.medidaPneu
+                ...existingSpecs,
+                aro: normRow['aro'] || existingSpecs.aro,
+                furacao: normRow['furacao'] || existingSpecs.furacao,
+                offset: normRow['offset'] || existingSpecs.offset,
+                tala: normRow['tala'] || existingSpecs.tala,
+                medidaPneu: normRow['medidaPneu'] || existingSpecs.medidaPneu
               }
             };
             currentProducts[existingIdx] = productToSave;

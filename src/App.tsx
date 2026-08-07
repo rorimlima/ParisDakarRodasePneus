@@ -302,8 +302,8 @@ export default function App() {
           product.name,
           product.brand,
           product.sku,
-          product.specs.aro,
-          product.specs.medidaPneu,
+          product.specs?.aro,
+          product.specs?.medidaPneu,
           ...(product.compatibleVehicles || [])
         ]
           .filter(Boolean)
@@ -322,15 +322,9 @@ export default function App() {
         if (vehicles.length > 0) {
           const compatible = vehicles.some((v) => {
             const lower = v.toLowerCase();
-            // Verifica a marca (suporta marca contida no texto ou texto contido na marca)
             if (!lower.includes(brand) && !brand.includes(lower)) return false;
-            
             if (!model) return true;
-            
-            // Verifica o modelo: correspondência direta
             if (lower.includes(model)) return true;
-            
-            // Correspondência por palavra principal (ex: "Hilux SRX" -> "Hilux")
             const modelWords = model.split(/\s+/).filter(w => w.length > 1);
             if (modelWords.length > 0) {
               const mainModelName = modelWords[0];
@@ -347,32 +341,30 @@ export default function App() {
 
       if (sizeFilter) {
         if (sizeFilter.aro) {
-          const productAro = product.specs.aro;
+          const productAro = product.specs?.aro;
           if (!productAro || !productAro.includes(sizeFilter.aro.replace('"', ''))) {
             return false;
           }
         }
         if (sizeFilter.furacao) {
-          const productFuracao = product.specs.furacao;
+          const productFuracao = product.specs?.furacao;
           if (!productFuracao || productFuracao !== sizeFilter.furacao) {
             return false;
           }
         }
         if (sizeFilter.tipoPneu) {
-          const productTipoPneu = product.specs.tipoPneu;
+          const productTipoPneu = product.specs?.tipoPneu;
           if (!productTipoPneu || productTipoPneu !== sizeFilter.tipoPneu) {
             return false;
           }
         }
-        // Filtro por medida de pneu — ex: "175/70R14", "265/70 R17"
-        // Busca no nome, SKU e campo medidaPneu do produto (normalizado: sem espaços, caixa baixa)
         if (sizeFilter.medidaPneu) {
           const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
           const needle = normalize(sizeFilter.medidaPneu);
           const haystack = [
             product.name,
             product.sku,
-            product.specs.medidaPneu || ''
+            product.specs?.medidaPneu || ''
           ].map(normalize).join(' ');
           if (!haystack.includes(needle)) return false;
         }
@@ -537,11 +529,11 @@ export default function App() {
                           <p className="text-[10px] font-bold uppercase tracking-widest pd-brand-text">{p.brand}</p>
                           <h3 className="text-lg font-black uppercase tracking-tight pd-text leading-tight">{p.name}</h3>
                           <p className="text-xs pd-text-3 line-clamp-2 leading-relaxed">{p.description}</p>
-                          {p.specs.aro && (
+                          {p.specs?.aro && (
                             <div className="flex flex-wrap gap-1.5 pt-1">
-                              {p.specs.aro && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">Aro {p.specs.aro}</span>}
-                              {p.specs.medidaPneu && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">{p.specs.medidaPneu}</span>}
-                              {p.specs.furacao && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">{p.specs.furacao}</span>}
+                              {p.specs?.aro && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">Aro {p.specs.aro}</span>}
+                              {p.specs?.medidaPneu && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">{p.specs.medidaPneu}</span>}
+                              {p.specs?.furacao && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">{p.specs.furacao}</span>}
                             </div>
                           )}
                         </div>
