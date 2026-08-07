@@ -93,10 +93,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
 
-  // Loading states for client registration and login
-  const [cpfLoading, setCpfLoading] = useState(false);
-  const [cnpjLoading, setCnpjLoading] = useState(false);
-
   // Feedback Messages
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -494,9 +490,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                     <button
                       type="submit"
-                      className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
+                      disabled={isSubmitting}
+                      className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
                     >
-                      Acessar Minha Conta (CPF)
+                      {isSubmitting ? 'Acessando...' : 'Acessar Minha Conta (CPF)'}
                     </button>
                   </form>
                 </div>

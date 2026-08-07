@@ -35,7 +35,10 @@ service cloud.firestore {
     }
 
     function isDono(uid) {
-      return isAuthenticated() && request.auth.uid == uid;
+      return isAuthenticated() && (
+        request.auth.uid == uid ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == uid.lower())
+      );
     }
 
     /** Campos que o documento não pode ganhar por escrita vinda do navegador. */
@@ -81,7 +84,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // --- Clientes B2C -------------------------------------------------------
+    // --- Clientes B2C (clients & clientsCpf) --------------------------------
 
     match /clients/{uid} {
       allow read: if isDono(uid) || isAdmin();
@@ -89,13 +92,33 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // --- Contas B2B ---------------------------------------------------------
-    //
-    // Aprovação e desconto valem dinheiro: o titular nunca os define. O
-    // autocadastro entra obrigatoriamente pendente e com desconto zero; só o
-    // administrador promove a conta depois.
+    match /clientsCpf/{uid} {
+      allow read: if isDono(uid) || isAdmin();
+      allow create, update: if (isDono(uid) && semEscalarPrivilegio()) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // --- Contas B2B (b2bAccounts & clientsCnpj) -----------------------------
 
     match /b2bAccounts/{uid} {
+      allow read: if isDono(uid) || isAdmin();
+
+      allow create: if isAdmin()
+        || (isDono(uid)
+            && semEscalarPrivilegio()
+            && request.resource.data.status == 'pending'
+            && request.resource.data.discountPercentage == 0);
+
+      allow update: if isAdmin()
+        || (isDono(uid)
+            && semEscalarPrivilegio()
+            && request.resource.data.status == resource.data.status
+            && request.resource.data.discountPercentage == resource.data.discountPercentage);
+
+      allow delete: if isAdmin();
+    }
+
+    match /clientsCnpj/{uid} {
       allow read: if isDono(uid) || isAdmin();
 
       allow create: if isAdmin()

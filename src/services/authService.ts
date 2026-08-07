@@ -5,6 +5,7 @@ import {
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
   type User,
@@ -81,6 +82,12 @@ export const describeAuthError = (error: unknown): string => {
       return 'Muitas tentativas seguidas. Aguarde alguns minutos antes de tentar novamente.';
     case 'auth/network-request-failed':
       return 'Falha de conexão com o Firebase. Verifique sua internet e tente de novo.';
+    case 'auth/internal-error':
+      return 'Instabilidade temporária no pop-up. Usando redirecionamento seguro para continuar...';
+    case 'auth/popup-blocked':
+      return 'Pop-up de login bloqueado pelo navegador. Redirecionando para o login do Google...';
+    case 'auth/popup-closed-by-user':
+      return 'A janela de autenticação do Google foi fechada antes de concluir.';
     case 'permission-denied':
       return 'Permissão negada pelas regras de segurança para esta operação.';
     default:
@@ -97,13 +104,14 @@ const isoDate = (value: unknown): string => {
   return new Date().toISOString().split('T')[0];
 };
 
-const buildAdminSession = (user: User): UserSession => {
+const buildAdminSession = (user: User, roleClaim?: string): UserSession => {
+  const role = roleClaim === 'admin' ? 'admin' : 'senior';
   const adminUser: AdminUser = {
     id: user.uid,
     name: user.displayName || 'Administrador',
     email: user.email || '',
-    role: 'senior',
-    grantedBySenior: true,
+    role: role,
+    grantedBySenior: role === 'senior',
     createdAt: isoDate(user.metadata.creationTime),
   };
   return { type: 'admin', adminUser };
@@ -111,41 +119,67 @@ const buildAdminSession = (user: User): UserSession => {
 
 /**
  * Monta a sessão da aplicação a partir do usuário autenticado: lê os Custom
- * Claims do token e, se não for admin, busca o perfil B2B ou B2C no Firestore.
+ * Claims do token e, se não for admin, busca/cria o perfil B2B ou B2C no Firestore.
  */
 export const resolveSession = async (user: User): Promise<UserSession> => {
   const token = await user.getIdTokenResult();
+  const claimRole = token.claims.role as string | undefined;
 
-  if (token.claims.role === 'admin') {
-    return buildAdminSession(user);
+  if (claimRole === 'admin' || claimRole === 'senior' || claimRole === 'gerencia') {
+    return buildAdminSession(user, claimRole);
   }
 
   const db = getFirebaseDb();
 
-  const b2bSnapshot = await getDoc(doc(db, B2B_COLLECTION, user.uid));
-  if (b2bSnapshot.exists()) {
-    const data = b2bSnapshot.data();
-    const b2bUser: B2BUser = {
-      id: user.uid,
-      isLoggedIn: true,
-      companyName: data.companyName ?? '',
-      tradeName: data.tradeName ?? data.companyName ?? '',
-      cnpj: data.cnpj ?? '',
-      taxRegime: (data.taxRegime as TaxRegime) ?? 'Simples Nacional',
-      stateRegistration: data.stateRegistration ?? 'Isento',
-      phone: data.phone ?? '',
-      email: data.email ?? user.email ?? '',
-      address: data.address ?? '',
-      // O desconto é definido pelo administrador; conta pendente compra sem desconto.
-      discountPercentage: typeof data.discountPercentage === 'number' ? data.discountPercentage : 0,
-      status: data.status === 'approved' || data.status === 'rejected' ? data.status : 'pending',
-      createdAt: isoDate(data.createdAt),
-    };
-    return { type: 'b2b', b2bUser };
+  try {
+    const b2bSnapshot = await getDoc(doc(db, B2B_COLLECTION, user.uid));
+    if (b2bSnapshot.exists()) {
+      const data = b2bSnapshot.data();
+      const b2bUser: B2BUser = {
+        id: user.uid,
+        isLoggedIn: true,
+        companyName: data.companyName ?? '',
+        tradeName: data.tradeName ?? data.companyName ?? '',
+        cnpj: data.cnpj ?? '',
+        taxRegime: (data.taxRegime as TaxRegime) ?? 'Simples Nacional',
+        stateRegistration: data.stateRegistration ?? 'Isento',
+        phone: data.phone ?? '',
+        email: data.email ?? user.email ?? '',
+        address: data.address ?? '',
+        discountPercentage: typeof data.discountPercentage === 'number' ? data.discountPercentage : 0,
+        status: data.status === 'approved' || data.status === 'rejected' ? data.status : 'pending',
+        createdAt: isoDate(data.createdAt),
+      };
+      return { type: 'b2b', b2bUser };
+    }
+  } catch (err) {
+    console.warn('[Auth] Erro ao buscar b2bAccounts:', err);
   }
 
-  const clientSnapshot = await getDoc(doc(db, CLIENTS_COLLECTION, user.uid));
-  const clientData = clientSnapshot.exists() ? clientSnapshot.data() : {};
+  let clientData: any = {};
+  const clientRef = doc(db, CLIENTS_COLLECTION, user.uid);
+  try {
+    const clientSnapshot = await getDoc(clientRef);
+    if (clientSnapshot.exists()) {
+      clientData = clientSnapshot.data();
+    } else {
+      // Se a conta no Firestore ainda não existir (ex: primeiro login Google/Auth), salva agora no Banco real
+      const newProfile = {
+        fullName: user.displayName || (user.email ? user.email.split('@')[0] : 'Cliente Paris Dakar'),
+        cpf: '',
+        email: user.email || '',
+        phone: user.phoneNumber || '',
+        address: '',
+        cep: '',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await setDoc(clientRef, newProfile);
+      clientData = newProfile;
+    }
+  } catch (err) {
+    console.error('[Auth] Erro ao sincronizar documento de cliente B2C no Firestore:', err);
+  }
 
   const b2cUser: CpfClient = {
     id: user.uid,
@@ -196,48 +230,48 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
 };
 
 /**
- * Login social. O perfil B2C só é criado se ainda não existir — reentrar pelo
- * Google nunca sobrescreve CPF, telefone e endereço já preenchidos pelo cliente.
+ * Login social via Google Auth com fallback automático para `signInWithRedirect`
+ * caso o navegador bloqueie popups ou apresente `auth/internal-error`.
  */
 export const loginWithGoogle = async (): Promise<UserSession> => {
   const auth = getFirebaseAuth();
-  const db = getFirebaseDb();
-  const credential = await signInWithPopup(auth, new GoogleAuthProvider());
-  const { user } = credential;
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
 
-  const perfil = doc(db, CLIENTS_COLLECTION, user.uid);
-  if (!(await getDoc(perfil)).exists()) {
-    await setDoc(perfil, {
-      fullName: user.displayName || user.email?.split('@')[0] || 'Cliente',
-      cpf: '',
-      email: user.email || '',
-      phone: user.phoneNumber || '',
-      address: '',
-      cep: '',
-      createdAt: serverTimestamp(),
-    });
+  try {
+    const credential = await signInWithPopup(auth, provider);
+    return await resolveSession(credential.user);
+  } catch (error: any) {
+    console.warn('[Google Auth] Erro no signInWithPopup, ativando fallback redirect:', error);
+    const code = error?.code ?? '';
+    if (
+      code === 'auth/internal-error' ||
+      code === 'auth/popup-blocked' ||
+      code === 'auth/cancelled-popup-request' ||
+      code === 'auth/operation-not-supported-in-this-environment' ||
+      code.includes('internal-error')
+    ) {
+      await signInWithRedirect(auth, provider);
+      return new Promise(() => {});
+    }
+    throw error;
   }
-
-  return resolveSession(user);
 };
 
-/**
- * Login do painel administrativo: exige o Custom Claim `role: admin`.
- * Uma conta comum que acerte a senha é deslogada imediatamente.
- */
 export const loginAsAdmin = async (email: string, password: string): Promise<UserSession> => {
   const auth = getFirebaseAuth();
   const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
   const token = await credential.user.getIdTokenResult();
+  const claimRole = token.claims.role as string | undefined;
 
-  if (token.claims.role !== 'admin') {
+  if (claimRole !== 'admin' && claimRole !== 'senior' && claimRole !== 'gerencia') {
     await signOut(auth);
     throw new Error(
       'Esta conta não tem permissão de administrador. Peça a um administrador para executar "npm run set-admin <UID>".'
     );
   }
 
-  return buildAdminSession(credential.user);
+  return buildAdminSession(credential.user, claimRole);
 };
 
 export const registerB2CClient = async (input: B2CRegistrationInput): Promise<UserSession> => {
