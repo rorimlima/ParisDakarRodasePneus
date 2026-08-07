@@ -49,11 +49,16 @@ export interface Product {
   rating: number;
   reviewsCount: number;
   isActive?: boolean; // Se false, o produto fica oculto no site público (desativado)
+  promocao?: boolean; // Marcado no cadastro — aparece na aba "Promoção" do site
+  destaque?: boolean; // Marcado no cadastro — entra no carrossel da aba "Destaque"
   unidadeSigla?: string;
   unidadeLabel?: string;
   categoriaNome?: string;
   fichaTecnicaCompleta?: any;
 }
+
+/** Categorias reais de produto + as duas abas virtuais de vitrine do site. */
+export type CatalogTab = ProductCategory | 'todos' | 'promocao' | 'destaque';
 
 
 export interface VehicleSearchFilter {
@@ -64,7 +69,7 @@ export interface VehicleSearchFilter {
 }
 
 export interface SizeSearchFilter {
-  category: ProductCategory | 'todos';
+  category: CatalogTab;
   aro: string;
   furacao: string;
   medidaPneu: string;

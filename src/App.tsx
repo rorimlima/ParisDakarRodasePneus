@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { SearchDashboard } from './components/SearchDashboard';
 import { ProductCard } from './components/ProductCard';
+import { DestaqueCarousel } from './components/DestaqueCarousel';
 import { StoreLocation } from './components/StoreLocation';
 import { InstagramFeed } from './components/InstagramFeed';
 import { Footer } from './components/Footer';
@@ -11,7 +12,7 @@ import { useCatalogoPublico } from './hooks/useCatalogo';
 import { storageService } from './services/storageService';
 import {
   Product,
-  ProductCategory,
+  CatalogTab,
   VehicleSearchFilter,
   SizeSearchFilter,
   B2BUser,
@@ -57,7 +58,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   pneus: 'Pneus',
   'kits-lift': 'Kits de lift',
   combos: 'Combos',
-  acessorios: 'Acessórios'
+  acessorios: 'Acessórios',
+  promocao: 'Promoção',
+  destaque: 'Destaques'
 };
 
 export default function App() {
@@ -96,7 +99,7 @@ export default function App() {
 
   // Filtros
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [activeCategory, setActiveCategory] = useState<ProductCategory | 'todos'>('todos');
+  const [activeCategory, setActiveCategory] = useState<CatalogTab>('todos');
   const [vehicleFilter, setVehicleFilter] = useState<VehicleSearchFilter | null>(null);
   const [sizeFilter, setSizeFilter] = useState<SizeSearchFilter | null>(null);
 
@@ -243,11 +246,16 @@ export default function App() {
       // Itens desativados no painel admin não aparecem na loja
       if (product.isActive === false) return false;
 
-      // Se a categoria ativa for 'todos' (página inicial), mostramos apenas pneus.
-      // Caso contrário, mostramos a categoria específica selecionada.
-      if (activeCategory === 'todos') {
+      // Abas virtuais de vitrine: filtram pela flag marcada no cadastro, não pela categoria real.
+      if (activeCategory === 'promocao') {
+        if (!product.promocao) return false;
+      } else if (activeCategory === 'destaque') {
+        if (!product.destaque) return false;
+      } else if (activeCategory === 'todos') {
+        // Se a categoria ativa for 'todos' (página inicial), mostramos apenas pneus.
         if (product.category !== 'pneus') return false;
       } else {
+        // Caso contrário, mostramos a categoria específica selecionada.
         if (product.category !== activeCategory) return false;
       }
 
@@ -401,7 +409,13 @@ export default function App() {
           <div className="min-w-0">
             <h2 className="pd-serif text-xl sm:text-2xl font-extrabold uppercase tracking-tight pd-text flex items-center gap-2.5">
               <PackageCheck className="w-5 h-5 shrink-0 pd-brand-text" aria-hidden="true" />
-              <span>Catálogo — pronta entrega</span>
+              <span>
+                {activeCategory === 'promocao'
+                  ? 'Promoção'
+                  : activeCategory === 'destaque'
+                    ? 'Destaques da loja'
+                    : 'Catálogo — pronta entrega'}
+              </span>
             </h2>
             <p className="text-xs pd-text-3 mt-1.5">
               <strong className="pd-brand-text">{filteredProducts.length}</strong>{' '}
@@ -429,7 +443,45 @@ export default function App() {
           )}
         </div>
 
-        {filteredProducts.length > 0 ? (
+        {activeCategory === 'destaque' ? (
+          filteredProducts.length > 0 ? (
+            <DestaqueCarousel
+              produtos={filteredProducts.slice(0, 4)}
+              b2bUser={b2bUser}
+              onOpenDetails={setSelectedProduct}
+              onConsultWhatsApp={handleConsultWhatsApp}
+              onOpenB2BModal={() => handleOpenAuthModal('b2b')}
+              isB2CLoggedIn={currentSession.type === 'b2c'}
+              favorites={favorites}
+              onAddToFavorites={handleAddToFavorites}
+              onRemoveFromFavorites={handleRemoveFavorite}
+              onAddToCart={(product) => { handleAddToCart(product); setIsCartOpen(true); }}
+            />
+          ) : (
+            <div className="pd-card text-center py-16 px-6 space-y-4">
+              <div
+                className="w-14 h-14 rounded-full pd-surface-2 pd-brand-text flex items-center justify-center mx-auto border pd-border"
+                aria-hidden="true"
+              >
+                <Filter className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold pd-text">Nenhum produto em destaque no momento</h3>
+              <p className="text-xs pd-text-3 max-w-md mx-auto leading-relaxed">
+                Nossa equipe está preparando os próximos destaques. Fale com um especialista enquanto isso.
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  handleConsultWhatsApp('Olá! Vi que vocês têm produtos em destaque. Podem me indicar as opções?')
+                }
+                className="btn btn-primary btn-lg"
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>Consultar especialista</span>
+              </button>
+            </div>
+          )
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredProducts.map((product) => (
               <ProductCard

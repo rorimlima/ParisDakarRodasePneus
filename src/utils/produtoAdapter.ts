@@ -175,7 +175,9 @@ export function paraProdutoDeExibicao(
     unidadeLabel: rotularUnidade(produto.unidade, produto.quantidade),
     categoriaNome: categoria?.nomeExibicao || produto.tipoProduto,
     fichaTecnicaCompleta: montarFichaCompleta(produto, categoria),
-    isActive: produto.ativoManual !== false && produto.ativo
+    isActive: produto.ativoManual !== false && produto.ativo,
+    promocao: produto.promocao === true,
+    destaque: produto.destaque === true
   };
 }
 

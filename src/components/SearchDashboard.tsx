@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Car, Ruler, SlidersHorizontal, RefreshCw, Check, Layers, Filter, ShieldCheck } from 'lucide-react';
+import { Car, Ruler, SlidersHorizontal, RefreshCw, Check, Layers, Filter, ShieldCheck, Tag, Sparkles } from 'lucide-react';
 import { VEHICLE_BRANDS, ARO_OPTIONS, FURACAO_OPTIONS } from '../data/mockProducts';
-import { ProductCategory, VehicleSearchFilter, SizeSearchFilter } from '../types';
+import { CatalogTab, VehicleSearchFilter, SizeSearchFilter } from '../types';
 
 interface SearchDashboardProps {
   onApplyVehicleFilter: (filter: VehicleSearchFilter | null) => void;
   onApplySizeFilter: (filter: SizeSearchFilter | null) => void;
-  activeCategory: ProductCategory | 'todos';
-  onSelectCategory: (cat: ProductCategory | 'todos') => void;
+  activeCategory: CatalogTab;
+  onSelectCategory: (cat: CatalogTab) => void;
 }
 
 const CATEGORIES = [
@@ -17,6 +17,12 @@ const CATEGORIES = [
   { id: 'kits-lift', label: 'Kits de lift' },
   { id: 'combos', label: 'Combos prontos' },
   { id: 'acessorios', label: 'Acessórios' }
+] as const;
+
+/** Abas virtuais de vitrine — não são categorias reais, filtram pelas flags do cadastro. */
+const VITRINE_TABS = [
+  { id: 'promocao', label: 'Promoção', icon: Tag },
+  { id: 'destaque', label: 'Destaques', icon: Sparkles }
 ] as const;
 
 const YEARS = Array.from({ length: 15 }, (_, i) => 2026 - i);
@@ -317,13 +323,38 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
           <button
             key={cat.id}
             type="button"
-            onClick={() => onSelectCategory(cat.id as ProductCategory | 'todos')}
+            onClick={() => onSelectCategory(cat.id as CatalogTab)}
             aria-pressed={activeCategory === cat.id}
             className={`pd-chip ${activeCategory === cat.id ? 'pd-chip-active' : ''}`}
           >
             {cat.label}
           </button>
         ))}
+
+        <span className="w-px h-4 pd-border border-l mx-1" aria-hidden="true" />
+
+        {VITRINE_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeCategory === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onSelectCategory(tab.id as CatalogTab)}
+              aria-pressed={isActive}
+              className={`pd-chip flex items-center gap-1.5 ${
+                isActive
+                  ? tab.id === 'promocao'
+                    ? '!bg-[#8B0000] !text-white !border-red-900'
+                    : '!bg-amber-600 !text-white !border-amber-700'
+                  : ''
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
