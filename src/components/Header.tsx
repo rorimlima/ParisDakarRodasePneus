@@ -11,11 +11,13 @@ import {
   User,
   Lock,
   LogIn,
+  LogOut,
   UserPlus,
   MapPin
 } from 'lucide-react';
 import { ParisDakarLogo } from './ParisDakarLogo';
 import { UserSession } from '../types';
+import { storageService } from '../services/storageService';
 
 interface HeaderProps {
   isDark: boolean;
@@ -64,6 +66,35 @@ export const Header: React.FC<HeaderProps> = ({
             {currentSession.b2cUser?.fullName || 'Minha conta'}
           </span>
         </button>
+      );
+    }
+
+    if (currentSession.type === 'admin') {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onOpenAdminDashboard()}
+            className="btn btn-outline"
+          >
+            <Lock className="w-4 h-4 pd-brand-text" />
+            <span className="max-w-[13rem] truncate">
+              Painel Admin ({currentSession.adminUser?.role})
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              storageService.clearUserSession();
+              window.location.reload();
+            }}
+            className="btn btn-outline border-red-800/60 hover:bg-red-950/40 text-red-500 hover:text-red-400"
+            title="Sair da Conta Admin"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sair</span>
+          </button>
+        </div>
       );
     }
 
@@ -207,17 +238,30 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div className="flex flex-col gap-2">
             {currentSession.type === 'admin' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenAdminDashboard();
-                  setMobileMenuOpen(false);
-                }}
-                className="btn btn-primary btn-block"
-              >
-                <Lock className="w-4 h-4" />
-                <span>Painel admin ({currentSession.adminUser?.role})</span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenAdminDashboard();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="btn btn-primary btn-block"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>Painel admin ({currentSession.adminUser?.role})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    storageService.clearUserSession();
+                    window.location.reload();
+                  }}
+                  className="btn btn-outline btn-block border-red-800/60 text-red-500"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sair da conta</span>
+                </button>
+              </>
             ) : (
               <>
                 <button

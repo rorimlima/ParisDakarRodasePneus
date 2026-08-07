@@ -622,6 +622,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <ArrowLeft className="w-4 h-4 pd-brand-text" />
             <span>Voltar para o Site</span>
           </button>
+          <button
+            onClick={() => {
+              storageService.clearUserSession();
+              window.location.reload();
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-red-950/40 hover:bg-red-900/40 border border-red-800/60 pd-brand-text text-xs font-bold uppercase tracking-wider rounded transition"
+            title="Encerrar sessão administrativa"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sair da Conta</span>
+          </button>
         </div>
       </header>
 
