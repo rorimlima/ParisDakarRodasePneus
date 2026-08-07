@@ -97,12 +97,17 @@ const isoDate = (value: unknown): string => {
   return new Date().toISOString().split('T')[0];
 };
 
-const buildAdminSession = (user: User): UserSession => {
+/** Papéis de Custom Claim que abrem o painel administrativo. */
+const PAPEIS_DE_PAINEL = ['admin', 'senior', 'gerencia'] as const;
+
+const buildAdminSession = (user: User, claimRole: string): UserSession => {
   const adminUser: AdminUser = {
     id: user.uid,
     name: user.displayName || 'Administrador',
     email: user.email || '',
-    role: 'senior',
+    // 'gerencia' enxerga custo igual 'senior' (ver PAPEIS_COM_ACESSO_A_CUSTO) —
+    // não existe like AdminRole próprio para ele, então herda o rótulo 'senior'.
+    role: claimRole === 'senior' || claimRole === 'gerencia' ? 'senior' : 'admin',
     grantedBySenior: true,
     createdAt: isoDate(user.metadata.creationTime),
   };
@@ -115,9 +120,10 @@ const buildAdminSession = (user: User): UserSession => {
  */
 export const resolveSession = async (user: User): Promise<UserSession> => {
   const token = await user.getIdTokenResult();
+  const claimRole = token.claims.role as string | undefined;
 
-  if (token.claims.role === 'admin') {
-    return buildAdminSession(user);
+  if (claimRole && (PAPEIS_DE_PAINEL as readonly string[]).includes(claimRole)) {
+    return buildAdminSession(user, claimRole);
   }
 
   const db = getFirebaseDb();
@@ -222,22 +228,23 @@ export const loginWithGoogle = async (): Promise<UserSession> => {
 };
 
 /**
- * Login do painel administrativo: exige o Custom Claim `role: admin`.
+ * Login do painel administrativo: exige um Custom Claim de `role` em PAPEIS_DE_PAINEL.
  * Uma conta comum que acerte a senha é deslogada imediatamente.
  */
 export const loginAsAdmin = async (email: string, password: string): Promise<UserSession> => {
   const auth = getFirebaseAuth();
   const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
   const token = await credential.user.getIdTokenResult();
+  const claimRole = token.claims.role as string | undefined;
 
-  if (token.claims.role !== 'admin') {
+  if (!claimRole || !(PAPEIS_DE_PAINEL as readonly string[]).includes(claimRole)) {
     await signOut(auth);
     throw new Error(
-      'Esta conta não tem permissão de administrador. Peça a um administrador para executar "npm run set-admin <UID>".'
+      'Esta conta não tem permissão de administrador. Peça a um administrador para executar "npm run set-admin".'
     );
   }
 
-  return buildAdminSession(credential.user);
+  return buildAdminSession(credential.user, claimRole);
 };
 
 export const registerB2CClient = async (input: B2CRegistrationInput): Promise<UserSession> => {
