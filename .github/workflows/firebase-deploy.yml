@@ -1,0 +1,92 @@
+name: Deploy para o Firebase
+
+# Publica o site (Hosting), as regras do Firestore/Storage e as Cloud Functions
+# a cada push na main. Também pode ser disparado manualmente pela aba Actions.
+#
+# Secrets obrigatórios (Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT    JSON completo de uma service account do projeto
+#                                (Console GCP → IAM → Contas de serviço → Chaves).
+#                                Papéis mínimos: Firebase Hosting Admin,
+#                                Cloud Datastore Owner (Firestore), Firebase Rules Admin,
+#                                Storage Admin, Cloud Functions Admin, Service Account User.
+#   VITE_FIREBASE_API_KEY
+#   VITE_FIREBASE_AUTH_DOMAIN
+#   VITE_FIREBASE_PROJECT_ID
+#   VITE_FIREBASE_STORAGE_BUCKET
+#   VITE_FIREBASE_MESSAGING_SENDER_ID
+#   VITE_FIREBASE_APP_ID
+# Secret opcional:
+#   VITE_FIREBASE_FUNCTIONS_REGION   (padrão: southamerica-east1)
+#
+# Todos os valores VITE_FIREBASE_* vêm do Console do Firebase → Configurações
+# do projeto → Seus apps → Web. São chaves públicas por design (protegidas pelas
+# Security Rules, não por sigilo) — mas ficam como secret aqui só para não gravar
+# nada fixo no repositório.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: firebase-deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências do site
+        run: npm ci
+
+      - name: Gerar .env de build com as chaves do Firebase
+        run: |
+          cat > .env <<EOF
+          VITE_FIREBASE_API_KEY=${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN=${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID=${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET=${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID=${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_FIREBASE_FUNCTIONS_REGION=${{ secrets.VITE_FIREBASE_FUNCTIONS_REGION || 'southamerica-east1' }}
+          EOF
+
+      - name: Build do site (Vite)
+        run: npm run build
+
+      - name: Instalar dependências das Cloud Functions
+        run: npm ci --prefix functions
+
+      - name: Autenticar no Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Instalar Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy — Hosting, Firestore e Storage
+        run: >
+          firebase deploy --non-interactive
+          --project "${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
+          --only hosting,firestore,storage
+
+      - name: Deploy — Cloud Functions
+        # Requer plano Blaze no projeto. Não derruba o deploy do site caso o
+        # projeto ainda esteja no plano Spark — o hosting acima já foi publicado.
+        continue-on-error: true
+        run: >
+          firebase deploy --non-interactive
+          --project "${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
+          --only functions
