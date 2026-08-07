@@ -1,0 +1,60 @@
+name: Deploy Paris Dakar (Hosting + Functions + Firestore)
+
+# Antes deste workflow, o CI publicava só o Hosting (site estático). Cloud
+# Function, regras de segurança do Firestore e índices compostos nunca eram
+# enviados por aqui — ficavam dependendo de deploy manual, e podiam divergir
+# do que está no repositório sem nenhum aviso. Com o catálogo já carregando
+# mais de mil produtos reais no Firestore, esse desalinhamento é o tipo de
+# coisa que trava consulta em produção sem log nenhum explicando por quê.
+# Este workflow publica os quatro alvos juntos, sempre.
+
+on:
+  push:
+    branches:
+      - claude/elegant-design-site-optimization-oobxrb
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck (cliente + servidor)
+        run: npm run typecheck
+
+      - name: Escrever credenciais de serviço
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS }}' > "${RUNNER_TEMP}/gcp-key.json"
+
+      - name: 'Deploy: Hosting + Functions + Firestore (regras e índices)'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
+          # DESLIGADO DE PROPÓSITO (revertido em 61aeb70 -> este commit).
+          # O Firestore de produção guarda os produtos com outro schema
+          # (campos "codigo", "descricao", "ativo", "categoriaSlug" — não o
+          # formato que dbClient.ts escreve/lê). Ligar aqui sem antes fazer o
+          # backend ler o schema real deixaria a vitrine com o catálogo vazio
+          # ou quebrado mesmo com o deploy "verde". Ver MIGRACAO-BANCO.md.
+          VITE_USE_API_CATALOG: 'false'
+          VITE_API_BASE_URL: ''
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: paris-dakar-rodas-pneus.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: paris-dakar-rodas-pneus
+        run: >
+          npx firebase-tools deploy
+          --only hosting,functions,firestore:rules,firestore:indexes
+          --project paris-dakar-rodas-pneus
+          --non-interactive
+
+      - name: Remover credenciais do runner
+        if: always()
+        run: rm -f "${RUNNER_TEMP}/gcp-key.json"

@@ -38,10 +38,8 @@
     overflow-wrap: break-word;
   }
 
-  /* Mídia e canvas nunca extrapolam o container.
-     O <canvas> do Three.js recebe width/height inline em px pelo
-     renderer — sem isto ele estica a página em telas estreitas. */
-  /* Obs.: <table> fica fora desta regra de propósito — as tabelas do
+  /* Mídia nunca extrapola o container.
+     Obs.: <table> fica fora desta regra de propósito — as tabelas do
      painel Admin vivem dentro de wrappers `overflow-x-auto` e precisam
      poder exceder a largura para rolar dentro da própria caixa. */
   img, video, svg, canvas, iframe {
@@ -768,13 +766,16 @@
   }
 }
 
-/* Canvas do Simulador 3D (Three.js).
-   O renderer escreve width/height inline em px; `max-width` (herdado do
-   reset acima) limita a largura, e `touch-action: pan-y` deixa o
-   usuário rolar a página verticalmente por cima do canvas enquanto o
-   arraste horizontal continua girando a roda. */
-canvas {
-  touch-action: pan-y;
+@layer utilities {
+  .pd-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .pd-anim-rise {
+    animation: pdRise 0.4s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+  }
 }
 
 @layer utilities {

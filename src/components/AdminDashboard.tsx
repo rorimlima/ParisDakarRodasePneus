@@ -113,7 +113,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'products' | 'settings' | 'clients' | 'admins' | 'inquiries' | 'sellers'>('products');
 
   // Local state initialized from storageService
-  const [products, setProducts] = useState<Product[]>(storageService.getProducts());
+  const [products, setProducts] = useState<Product[]>([]);
+  const [catalogBusy, setCatalogBusy] = useState(false);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(storageService.getSiteSettings());
   const [cpfClients, setCpfClients] = useState<CpfClient[]>(storageService.getCpfUsers());
   const [cnpjClients, setCnpjClients] = useState<B2BUser[]>(storageService.getCnpjUsers());
@@ -274,6 +275,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         showToast(`Erro ao alterar status no banco: ${err.message}`);
       }
     }
+  };
+
+  // Carrega o catálogo da origem vigente (API ou local) ao abrir o painel.
+  useEffect(() => {
+    let cancelled = false;
+    setCatalogBusy(true);
+
+    catalogRepository
+      .list()
+      .then((list) => {
+        if (!cancelled) setProducts(list);
+      })
+      .catch((error) => {
+        if (!cancelled) showToast(`Falha ao carregar o catálogo: ${(error as Error).message}`);
+      })
+      .finally(() => {
+        if (!cancelled) setCatalogBusy(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE) ---
+  const handleToggleProductActive = async (id: string) => {
+    const prod = products.find((p) => p.id === id);
+    if (!prod) return;
+
+    const newStatus = prod.isActive === false;
+    await persistCatalog(
+      () => catalogRepository.save({ ...prod, isActive: newStatus }),
+      newStatus
+        ? `Produto "${prod.name}" ativado e exposto no site.`
+        : `Produto "${prod.name}" desativado (oculto do site público).`
+    );
   };
 
   // --- SPREADSHEET IMPORT HANDLERS (EXCEL / CSV) ---

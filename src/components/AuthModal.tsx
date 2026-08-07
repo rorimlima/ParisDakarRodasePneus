@@ -520,6 +520,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const handleLogout = () => {
+    // Sessão de admin vive no Firebase; limpar só o localStorage não desloga.
+    void authService.signOut();
     storageService.clearUserSession();
     onLoginSuccess({ type: null });
     setSuccessMsg('Sessão encerrada com sucesso.');
@@ -1073,6 +1075,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     E-mail do Administrador
                   </label>
                   <input
+                    id="admin-email"
                     type="email"
                     autoComplete="email"
                     value={adminEmail}
@@ -1088,6 +1091,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     Senha de Segurança
                   </label>
                   <input
+                    id="admin-password"
                     type="password"
                     autoComplete="current-password"
                     value={adminPassword}
