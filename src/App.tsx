@@ -76,7 +76,8 @@ export default function App() {
     return localProducts;
   }, [produtosExibicao, localProducts]);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => storageService.getSiteSettings());
-  const [currentSession, setCurrentSession] = useState<UserSession>(() => storageService.getUserSession());
+  // A sessão é a que o Firebase Auth reportar — nunca o que estiver no localStorage.
+  const [currentSession, setCurrentSession] = useState<UserSession>({ type: null });
   const [sellers, setSellers] = useState<Seller[]>(() => storageService.getSellers());
 
   useEffect(() => {
