@@ -12,7 +12,7 @@
     "clean": "rm -rf dist server.js",
     "lint": "npm run typecheck",
     "typecheck": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.json --noEmit",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-paris-dakar \"node src/tests/firestore.rules.test.mjs\"",
+    "test:rules": "npx firebase-tools emulators:exec --only firestore --project demo-paris-dakar \"node src/tests/firestore.rules.test.mjs\"",
     "emulator": "firebase emulators:start --only firestore --project demo-paris-dakar",
     "importar": "tsx scripts/import-planilha.ts",
     "check:db": "tsx src/scripts/checkDatabase.ts",
