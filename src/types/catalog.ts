@@ -140,6 +140,9 @@ export interface ProdutoCatalogo {
   modelosAtendidos: string[];
   imagens: string[];
   badge?: string;
+  /** aparece na aba "Promoção" do site */
+  promocao?: boolean;
+  /** entra no carrossel da aba "Destaque" */
   destaque?: boolean;
   /** percentual de completude da ficha técnica (0-100) */
   fichaCompleta?: number;

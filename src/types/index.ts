@@ -58,6 +58,9 @@ export interface Product {
   fichaTecnicaCompleta?: any;
 }
 
+/** Categorias reais de produto + as duas abas virtuais de vitrine do site. */
+export type CatalogTab = ProductCategory | 'todos' | 'promocao' | 'destaque';
+
 
 export interface VehicleSearchFilter {
   marca: string;
@@ -67,7 +70,7 @@ export interface VehicleSearchFilter {
 }
 
 export interface SizeSearchFilter {
-  category: ProductCategory | 'todos';
+  category: CatalogTab;
   aro: string;
   furacao: string;
   medidaPneu: string;

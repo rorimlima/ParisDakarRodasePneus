@@ -30,6 +30,7 @@ import {
   DollarSign,
   Layers,
   Sparkles,
+  Tag,
   Lock,
   Briefcase,
   Headphones,
@@ -86,6 +87,8 @@ function productParaProdutoCatalogo(p: Product): ProdutoCatalogo {
     marcasAtendidas: p.compatibleVehicles || [],
     modelosAtendidos: [],
     imagens: p.image ? [p.image, ...(p.secondaryImages || [])] : [],
+    promocao: p.promocao === true,
+    destaque: p.destaque === true,
     fichaCompleta: 100,
     criadoEm: new Date().toISOString(),
     atualizadoEm: new Date().toISOString()
@@ -421,6 +424,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       onProductsUpdated(nextProducts);
       setIsAddProductModalOpen(false);
       setNewProdImages([]);
+      setNewProdPromocao(false);
+      setNewProdDestaque(false);
       showToast('Novo produto salvo no Firestore e exposto no site!');
     } catch (err: any) {
       showToast(`Erro ao salvar no Firestore: ${err.message}`);
@@ -1729,6 +1734,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+              {/* Botões de exibição em vitrine: Promoção e Destaque */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setNewProdPromocao(!newProdPromocao)}
+                  aria-pressed={newProdPromocao}
+                  className={`px-4 py-2.5 rounded font-black text-xs uppercase flex items-center justify-center gap-2 transition border ${
+                    newProdPromocao
+                      ? 'bg-[#8B0000] text-white border-red-900 shadow-md'
+                      : 'pd-surface-2 pd-text-2 pd-border'
+                  }`}
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>{newProdPromocao ? 'Na aba Promoção' : 'Marcar como Promoção'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setNewProdDestaque(!newProdDestaque)}
+                  aria-pressed={newProdDestaque}
+                  className={`px-4 py-2.5 rounded font-black text-xs uppercase flex items-center justify-center gap-2 transition border ${
+                    newProdDestaque
+                      ? 'bg-amber-600 text-white border-amber-700 shadow-md'
+                      : 'pd-surface-2 pd-text-2 pd-border'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{newProdDestaque ? 'No carrossel de Destaque' : 'Marcar como Destaque'}</span>
+                </button>
+              </div>
+
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase pd-text-2 block mb-1">Preço B2C (R$)</label>
@@ -2034,6 +2070,37 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 >
                   {editingProduct.isActive !== false ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   <span>{editingProduct.isActive !== false ? 'ATIVO NO SITE' : 'DESATIVADO'}</span>
+                </button>
+              </div>
+
+              {/* TOGGLES PROMOÇÃO E DESTAQUE NO EDIT MODAL */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct({ ...editingProduct, promocao: !editingProduct.promocao })}
+                  aria-pressed={!!editingProduct.promocao}
+                  className={`px-4 py-2.5 rounded font-black text-xs uppercase flex items-center justify-center gap-2 transition border ${
+                    editingProduct.promocao
+                      ? 'bg-[#8B0000] text-white border-red-900 shadow-md'
+                      : 'pd-surface-2 pd-text-2 pd-border'
+                  }`}
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>{editingProduct.promocao ? 'Na aba Promoção' : 'Marcar como Promoção'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct({ ...editingProduct, destaque: !editingProduct.destaque })}
+                  aria-pressed={!!editingProduct.destaque}
+                  className={`px-4 py-2.5 rounded font-black text-xs uppercase flex items-center justify-center gap-2 transition border ${
+                    editingProduct.destaque
+                      ? 'bg-amber-600 text-white border-amber-700 shadow-md'
+                      : 'pd-surface-2 pd-text-2 pd-border'
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{editingProduct.destaque ? 'No carrossel de Destaque' : 'Marcar como Destaque'}</span>
                 </button>
               </div>
 

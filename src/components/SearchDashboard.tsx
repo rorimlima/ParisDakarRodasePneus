@@ -178,13 +178,38 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
           <button
             key={cat.id}
             type="button"
-            onClick={() => onSelectCategory(cat.id as ProductCategory | 'todos')}
+            onClick={() => onSelectCategory(cat.id as CatalogTab)}
             aria-pressed={activeCategory === cat.id}
             className={`pd-chip ${activeCategory === cat.id ? 'pd-chip-active' : ''}`}
           >
             {cat.label}
           </button>
         ))}
+
+        <span className="w-px h-4 pd-border border-l mx-1" aria-hidden="true" />
+
+        {VITRINE_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeCategory === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => onSelectCategory(tab.id as CatalogTab)}
+              aria-pressed={isActive}
+              className={`pd-chip flex items-center gap-1.5 ${
+                isActive
+                  ? tab.id === 'promocao'
+                    ? '!bg-[#8B0000] !text-white !border-red-900'
+                    : '!bg-amber-600 !text-white !border-amber-700'
+                  : ''
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" aria-hidden="true" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
