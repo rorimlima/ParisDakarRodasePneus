@@ -379,20 +379,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 pd-overlay-bg pd-anim-rise overflow-y-auto">
-      <div className="relative w-full max-w-xl pd-surface rounded-2xl border pd-border shadow-2xl my-4 sm:my-8 overflow-hidden pd-text">
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 pd-overlay-bg pd-anim-rise overflow-y-auto">
+      <div className="relative w-full max-w-xl pd-surface rounded-2xl border pd-border shadow-2xl my-auto overflow-hidden pd-text">
         
         {/* Header Title */}
         <div className="p-4 sm:p-6 pd-bg-alt border-b pd-border flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-[#8B0000] rounded flex items-center justify-center font-black italic text-xs text-white">
+            <div className="w-9 h-9 bg-[#8B0000] rounded-xl flex items-center justify-center font-black italic text-xs text-white">
               PD
             </div>
             <div>
-              <h2 className="text-base font-black uppercase italic tracking-wider pd-text">
+              <h2 className="text-base sm:text-lg font-black uppercase italic tracking-wider pd-text">
                 Central de Acesso Paris Dakar
               </h2>
-              <p className="text-[11px] pd-text-2">
+              <p className="text-xs pd-text-2">
                 Selecione seu perfil de cliente ou acesse o painel administrativo.
               </p>
             </div>
@@ -408,7 +408,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* User Active Banner if logged in */}
         {currentSession.type && (
-          <div className="bg-emerald-950/60 border-b border-emerald-800/60 p-4 flex items-center justify-between text-xs pd-success-text">
+          <div className="bg-emerald-950/60 border-b border-emerald-800/60 p-4 flex items-center justify-between text-sm pd-success-text">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 pd-success-text shrink-0" />
               <span>
@@ -418,7 +418,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </div>
             <button
               onClick={handleLogout}
-              className="px-3 py-1 bg-red-950 pd-brand-text hover:bg-red-900 rounded font-bold uppercase text-[10px] transition"
+              className="px-3 py-1 bg-red-950 pd-brand-text hover:bg-red-900 rounded font-bold uppercase text-xs transition"
             >
               Sair
             </button>
@@ -433,7 +433,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {/* Tab 1: CPF */}
             <button
               onClick={() => handleTabSwitch('b2c')}
-              className={`py-3 px-2 text-center text-xs font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
+              className={`py-3 px-2 text-center text-sm font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
                 activeTab === 'b2c'
                   ? 'border-[#8B0000] pd-text pd-surface'
                   : 'border-transparent pd-text-3'
@@ -446,7 +446,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             {/* Tab 2: CNPJ */}
             <button
               onClick={() => handleTabSwitch('b2b')}
-              className={`py-3 px-2 text-center text-xs font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
+              className={`py-3 px-2 text-center text-sm font-bold uppercase tracking-wider transition border-b-2 flex flex-col sm:flex-row items-center justify-center gap-1.5 ${
                 activeTab === 'b2b'
                   ? 'border-[#8B0000] pd-text pd-surface'
                   : 'border-transparent pd-text-3'
@@ -459,18 +459,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         )}
 
         {/* Body Form Content */}
-        <div className="p-4 sm:p-6 space-y-5">
+        <div className="p-5 sm:p-8 space-y-6">
           
           {/* Feedback Messages */}
           {errorMsg && (
-            <div className="p-3 bg-red-950/80 border border-red-800 text-red-200 rounded text-xs flex items-center gap-2">
+            <div className="p-3.5 bg-red-950/80 border border-red-800 text-red-200 rounded-xl text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0 pd-brand-text" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="p-3 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded text-xs flex items-center gap-2">
+            <div className="p-3.5 bg-emerald-950/80 border border-emerald-800 text-emerald-200 rounded-xl text-sm flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 shrink-0 pd-success-text" />
               <span>{successMsg}</span>
             </div>
@@ -480,36 +480,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {activeTab === 'b2c' && (
             <div>
               {/* Toggle Login vs Register */}
-              <div className="flex pd-page p-1 rounded border pd-border mb-5">
+              <div className="flex pd-page p-1 rounded-xl border pd-border mb-6">
                 <button
                   type="button"
                   onClick={() => setMode('login')}
-                  className={`flex-1 py-2 rounded text-xs font-bold uppercase transition flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold uppercase transition flex items-center justify-center gap-1.5 ${
                     mode === 'login' ? 'pd-surface-2 pd-text' : 'pd-text-3'
                   }`}
                 >
-                  <LogIn className="w-3.5 h-3.5" />
+                  <LogIn className="w-4 h-4" />
                   Entrar
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('register')}
-                  className={`flex-1 py-2 rounded text-xs font-bold uppercase transition flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold uppercase transition flex items-center justify-center gap-1.5 ${
                     mode === 'register' ? 'pd-surface-2 pd-text' : 'pd-text-3'
                   }`}
                 >
-                  <UserPlus className="w-3.5 h-3.5" />
+                  <UserPlus className="w-4 h-4" />
                   Criar Conta CPF
                 </button>
               </div>
 
               {mode === 'login' ? (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {/* Botão Entrar com Google */}
                   <button
                     type="button"
                     onClick={handleGoogleLogin}
-                    className="w-full py-3 px-4 rounded-xl pd-surface-2 border pd-border pd-text hover:bg-white/10 font-bold text-xs flex items-center justify-center gap-3 transition shadow-sm"
+                    className="w-full py-3.5 px-4 rounded-xl pd-surface-2 border pd-border pd-text hover:bg-white/10 font-bold text-sm flex items-center justify-center gap-3 transition shadow-sm"
                   >
                     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                       <path
@@ -532,16 +532,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <span>Entrar com o Google</span>
                   </button>
 
-                  <div className="relative my-4 flex items-center justify-center">
+                  <div className="relative my-5 flex items-center justify-center">
                     <div className="border-t pd-border w-full" />
-                    <span className="pd-surface px-2 text-[10px] pd-text-3 font-bold uppercase absolute">
+                    <span className="pd-surface px-3 text-xs pd-text-3 font-bold uppercase absolute">
                       ou entre com CPF / E-mail
                     </span>
                   </div>
 
                   <form onSubmit={handleCpfLogin} className="space-y-4">
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                         CPF ou E-mail do Cliente
                       </label>
                       <input
@@ -549,12 +549,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={cpfLoginInput}
                         onChange={(e) => setCpfLoginInput(e.target.value)}
                         placeholder="000.000.000-00 ou seu@email.com"
-                        className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:outline-none focus:border-[#8B0000]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                         Senha
                       </label>
                       <input
@@ -562,22 +562,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={cpfPassword}
                         onChange={(e) => setCpfPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:outline-none focus:border-[#8B0000]"
                       />
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
+                      className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3.5 rounded-xl text-sm font-black uppercase tracking-wider transition shadow-lg"
                     >
                       Acessar Minha Conta (CPF)
                     </button>
                   </form>
                 </div>
               ) : (
-                <form onSubmit={handleCpfRegister} className="space-y-3">
+                <form onSubmit={handleCpfRegister} className="space-y-4">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       Nome Completo *
                     </label>
                     <input
@@ -585,13 +585,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cpfFullName}
                       onChange={(e) => setCpfFullName(e.target.value)}
                       placeholder="Ex: Carlos Eduardo Silva"
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                         CPF (11 dígitos) *
                       </label>
                       <input
@@ -599,12 +599,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={cpfValue}
                         onChange={(e) => setCpfValue(formatCPF(e.target.value))}
                         placeholder="000.000.000-00"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                         Celular / WhatsApp *
                       </label>
                       <input
@@ -612,13 +612,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={cpfPhone}
                         onChange={(e) => setCpfPhone(e.target.value)}
                         placeholder="(11) 99999-0000"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       E-mail *
                     </label>
                     <input
@@ -626,12 +626,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cpfEmail}
                       onChange={(e) => setCpfEmail(e.target.value)}
                       placeholder="carlos@email.com"
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       Endereço Completo *
                     </label>
                     <input
@@ -639,12 +639,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cpfAddress}
                       onChange={(e) => setCpfAddress(e.target.value)}
                       placeholder="Rua, Número, Bairro, Cidade - UF"
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       Senha de Acesso *
                     </label>
                     <input
@@ -652,13 +652,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cpfRegPassword}
                       onChange={(e) => setCpfRegPassword(e.target.value)}
                       placeholder="Criar senha de acesso..."
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg mt-2"
+                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3.5 rounded-xl text-sm font-black uppercase tracking-wider transition shadow-lg mt-2"
                   >
                     Criar Minha Conta na Paris Dakar
                   </button>
@@ -671,25 +671,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           {activeTab === 'b2b' && (
             <div>
               {/* Toggle Login vs Register */}
-              <div className="flex pd-page p-1 rounded border pd-border mb-5">
+              <div className="flex pd-page p-1 rounded-xl border pd-border mb-6">
                 <button
                   type="button"
                   onClick={() => setMode('login')}
-                  className={`flex-1 py-2 rounded text-xs font-bold uppercase transition flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold uppercase transition flex items-center justify-center gap-1.5 ${
                     mode === 'login' ? 'pd-surface-2 pd-text' : 'pd-text-3'
                   }`}
                 >
-                  <LogIn className="w-3.5 h-3.5" />
+                  <LogIn className="w-4 h-4" />
                   Entrar B2B
                 </button>
                 <button
                   type="button"
                   onClick={() => setMode('register')}
-                  className={`flex-1 py-2 rounded text-xs font-bold uppercase transition flex items-center justify-center gap-1.5 ${
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-bold uppercase transition flex items-center justify-center gap-1.5 ${
                     mode === 'register' ? 'pd-surface-2 pd-text' : 'pd-text-3'
                   }`}
                 >
-                  <Building2 className="w-3.5 h-3.5" />
+                  <Building2 className="w-4 h-4" />
                   Cadastro Lojista CNPJ
                 </button>
               </div>
@@ -697,7 +697,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               {mode === 'login' ? (
                 <form onSubmit={handleCnpjLogin} className="space-y-4">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       CNPJ (Numérico ou Alfanumérico) ou E-mail Corporativo
                     </label>
                     <input
@@ -705,12 +705,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cnpjLoginInput}
                       onChange={(e) => setCnpjLoginInput(e.target.value)}
                       placeholder="12.345.678/0001-90 ou 12.ABC.345/0001-89"
-                      className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:outline-none focus:border-[#8B0000]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       Senha Corporativa B2B
                     </label>
                     <input
@@ -718,21 +718,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cnpjPassword}
                       onChange={(e) => setCnpjPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:outline-none focus:border-[#8B0000]"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg"
+                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3.5 rounded-xl text-sm font-black uppercase tracking-wider transition shadow-lg"
                   >
                     Acessar Tabela do Lojista (CNPJ)
                   </button>
                 </form>
               ) : (
-                <form onSubmit={handleCnpjRegister} className="space-y-3">
+                <form onSubmit={handleCnpjRegister} className="space-y-4">
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       Razão Social *
                     </label>
                     <input
@@ -740,13 +740,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={companyName}
                       onChange={(e) => setCompanyName(e.target.value)}
                       placeholder="Ex: Dakar Auto Center e Oficinas LTDA"
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                         Nome Fantasia
                       </label>
                       <input
@@ -754,12 +754,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={tradeName}
                         onChange={(e) => setTradeName(e.target.value)}
                         placeholder="Ex: Dakar Off-Road SP"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-gold-text block mb-1 flex items-center justify-between">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-gold-text block mb-1.5 flex items-center justify-between">
                         <span>CNPJ (Numérico / Alfanumérico) *</span>
                       </label>
                       <input
@@ -767,10 +767,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={cnpjValue}
                         onChange={(e) => setCnpjValue(formatCNPJ(e.target.value))}
                         placeholder="12.345.678/0001-90 ou 12.ABC.345/0001-89"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                       />
                       {cnpjValue && isAlphanumericCNPJ(cnpjValue) && (
-                        <span className="text-[9px] pd-gold-text block mt-0.5 font-bold">
+                        <span className="text-xs pd-gold-text block mt-1 font-bold">
                           ✓ Formato Alfanumérico Receita Federal Detectado
                         </span>
                       )}
@@ -778,29 +778,29 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </div>
 
                   {/* EXIGÊNCIA DE REGIME TRIBUTÁRIO */}
-                  <div className="p-3 pd-surface-2 rounded border border-amber-500/30">
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-gold-text block mb-1.5 flex items-center gap-1.5">
+                  <div className="p-3.5 pd-surface-2 rounded-xl border border-amber-500/30">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-gold-text block mb-1.5 flex items-center gap-1.5">
                       <Briefcase className="w-3.5 h-3.5" />
                       Regime Tributário (Exigência Obrigatória) *
                     </label>
                     <select
                       value={taxRegime}
                       onChange={(e) => setTaxRegime(e.target.value as TaxRegime)}
-                      className="w-full px-3 py-2 rounded pd-page border pd-border text-xs pd-text focus:border-[#8B0000] outline-none"
+                      className="w-full px-3 py-2.5 rounded-lg pd-page border pd-border text-sm pd-text focus:border-[#8B0000] outline-none"
                     >
                       <option value="Simples Nacional">Simples Nacional</option>
                       <option value="Lucro Presumido">Lucro Presumido</option>
                       <option value="Lucro Real">Lucro Real</option>
                       <option value="MEI (Microempreendedor Individual)">MEI (Microempreendedor Individual)</option>
                     </select>
-                    <span className="text-[9px] pd-text-2 block mt-1">
+                    <span className="text-xs pd-text-2 block mt-1.5">
                       Necessário para cálculo automático de tributação (ST / DIFAL) em faturamento B2B.
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                         Inscrição Estadual (IE)
                       </label>
                       <input
@@ -808,12 +808,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={stateRegistration}
                         onChange={(e) => setStateRegistration(e.target.value)}
                         placeholder="Ex: 112.334.556.778 ou Isento"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                      <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                         Telefone / WhatsApp *
                       </label>
                       <input
@@ -821,13 +821,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={cnpjPhone}
                         onChange={(e) => setCnpjPhone(e.target.value)}
                         placeholder="(11) 98888-7777"
-                        className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                        className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       E-mail Corporativo *
                     </label>
                     <input
@@ -835,12 +835,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cnpjEmail}
                       onChange={(e) => setCnpjEmail(e.target.value)}
                       placeholder="compras@dakaroffroad.com.br"
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       Endereço Completo do Auto Center / Oficina
                     </label>
                     <input
@@ -848,12 +848,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cnpjAddress}
                       onChange={(e) => setCnpjAddress(e.target.value)}
                       placeholder="Rua, Número, Bairro, Cidade - Estado"
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                    <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                       Senha de Acesso B2B *
                     </label>
                     <input
@@ -861,13 +861,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       value={cnpjRegPassword}
                       onChange={(e) => setCnpjRegPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full px-3 py-2 rounded pd-surface-2 border pd-border text-xs pd-text focus:border-[#8B0000]"
+                      className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:border-[#8B0000]"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg mt-2"
+                    className="w-full bg-[#8B0000] hover:bg-red-800 text-white py-3.5 rounded-xl text-sm font-black uppercase tracking-wider transition shadow-lg mt-2"
                   >
                     Enviar Cadastro Lojista B2B
                   </button>
@@ -878,8 +878,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           {/* TAB 3: LOGIN ADMINISTRATIVO (ADMIN) */}
           {activeTab === 'admin' && (
-            <div className="space-y-4">
-              <div className="p-4 bg-red-950/40 border border-red-800/60 rounded text-xs space-y-1">
+            <div className="space-y-5">
+              <div className="p-4 bg-red-950/40 border border-red-800/60 rounded-xl text-sm space-y-1">
                 <div className="flex items-center gap-2 pd-brand-text font-bold uppercase tracking-wider">
                   <ShieldCheck className="w-4 h-4 pd-brand-text" />
                   <span>Acesso Restrito — Master Supremo</span>
@@ -907,7 +907,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 style={adminShake ? { animation: 'shake 0.5s ease-in-out' } : {}}
               >
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                  <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                     E-mail do Administrador
                   </label>
                   <input
@@ -916,12 +916,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onChange={(e) => setAdminEmail(e.target.value)}
                     placeholder="admin@parisdakar.com.br"
                     disabled={!!(adminLockedUntil && Date.now() < adminLockedUntil)}
-                    className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000] disabled:opacity-50"
+                    className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:outline-none focus:border-[#8B0000] disabled:opacity-50"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest pd-text-2 block mb-1">
+                  <label className="text-xs font-bold uppercase tracking-wider pd-text-2 block mb-1.5">
                     Senha de Segurança
                   </label>
                   <input
@@ -930,14 +930,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     onChange={(e) => setAdminPassword(e.target.value)}
                     placeholder="••••••••"
                     disabled={!!(adminLockedUntil && Date.now() < adminLockedUntil)}
-                    className="w-full px-3.5 py-2.5 rounded pd-surface-2 border pd-border text-xs pd-text focus:outline-none focus:border-[#8B0000] disabled:opacity-50"
+                    className="w-full px-4 py-2.5 rounded-xl pd-surface-2 border pd-border text-sm pd-text focus:outline-none focus:border-[#8B0000] disabled:opacity-50"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={adminLoading || !!(adminLockedUntil && Date.now() < adminLockedUntil)}
-                  className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white py-3 rounded text-xs font-black uppercase tracking-widest transition shadow-lg flex items-center justify-center gap-2"
+                  className="w-full bg-[#8B0000] hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed text-white py-3.5 rounded-xl text-sm font-black uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2"
                 >
                   <KeyRound className="w-4 h-4" />
                   {adminLoading ? 'Verificando credenciais...' : 'Entrar como Administrador'}
