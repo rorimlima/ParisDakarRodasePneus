@@ -104,14 +104,28 @@ const isoDate = (value: unknown): string => {
   return new Date().toISOString().split('T')[0];
 };
 
+const MASTER_EMAILS = ['onaeror@gmail.com', 'admin@parisdakar.com.br'];
+const MASTER_CPFS = ['01817243322', '018.172.433-22'];
+
+const isMasterUser = (email?: string | null, cpf?: string | null): boolean => {
+  if (email && MASTER_EMAILS.includes(email.toLowerCase().trim())) {
+    return true;
+  }
+  if (cpf) {
+    const cleanCpf = cpf.replace(/\D/g, '');
+    if (cleanCpf === '01817243322') return true;
+  }
+  return false;
+};
+
 const buildAdminSession = (user: User, roleClaim?: string): UserSession => {
   const role = roleClaim === 'admin' ? 'admin' : 'senior';
   const adminUser: AdminUser = {
     id: user.uid,
-    name: user.displayName || 'Administrador',
-    email: user.email || '',
+    name: user.displayName || 'Master Supremo',
+    email: user.email || 'onaeror@gmail.com',
     role: role,
-    grantedBySenior: role === 'senior',
+    grantedBySenior: true,
     createdAt: isoDate(user.metadata.creationTime),
   };
   return { type: 'admin', adminUser };
@@ -124,9 +138,16 @@ const buildAdminSession = (user: User, roleClaim?: string): UserSession => {
 export const resolveSession = async (user: User): Promise<UserSession> => {
   const token = await user.getIdTokenResult();
   const claimRole = token.claims.role as string | undefined;
+  const normalizedEmail = (user.email || '').toLowerCase().trim();
 
-  if (claimRole === 'admin' || claimRole === 'senior' || claimRole === 'gerencia') {
-    return buildAdminSession(user, claimRole);
+  // O usuário com e-mail onaeror@gmail.com ou Custom Claim de admin/senior é o Master Supremo
+  if (
+    isMasterUser(normalizedEmail, null) ||
+    claimRole === 'admin' ||
+    claimRole === 'senior' ||
+    claimRole === 'gerencia'
+  ) {
+    return buildAdminSession(user, claimRole || 'senior');
   }
 
   const db = getFirebaseDb();
@@ -191,6 +212,10 @@ export const resolveSession = async (user: User): Promise<UserSession> => {
     cep: clientData.cep ?? '',
     createdAt: isoDate(clientData.createdAt ?? user.metadata.creationTime),
   };
+
+  if (isMasterUser(b2cUser.email, b2cUser.cpf)) {
+    return buildAdminSession(user, 'senior');
+  }
 
   return { type: 'b2c', b2cUser };
 };

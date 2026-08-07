@@ -171,9 +171,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   // 1. CPF (B2C) Login
   const handleCpfLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanInput = cpfLoginInput.trim();
+    const cleanDigits = cleanInput.replace(/\D/g, '');
+    const emailToUse =
+      cleanInput.includes('@')
+        ? cleanInput
+        : cleanDigits === '01817243322'
+          ? 'onaeror@gmail.com'
+          : cleanInput;
+
     await runAuthAction(
-      () => loginWithEmail(cpfLoginInput, cpfPassword),
-      'Login realizado com sucesso!'
+      () => loginWithEmail(emailToUse, cpfPassword),
+      'Login realizado com sucesso! Carregando Painel Master...'
     );
   };
 

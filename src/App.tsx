@@ -116,6 +116,12 @@ export default function App() {
 
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
 
+  useEffect(() => {
+    if (currentSession.type === 'admin') {
+      setViewMode('admin');
+    }
+  }, [currentSession.type]);
+
   const b2bUser: B2BUser =
     currentSession.type === 'b2b' && currentSession.b2bUser ? currentSession.b2bUser : EMPTY_B2B_USER;
 
