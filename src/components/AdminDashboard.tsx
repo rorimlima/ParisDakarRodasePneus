@@ -299,19 +299,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
   }, []);
 
-  // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE) ---
-  const handleToggleProductActive = async (id: string) => {
-    const prod = products.find((p) => p.id === id);
-    if (!prod) return;
-
-    const newStatus = prod.isActive === false;
-    await persistCatalog(
-      () => catalogRepository.save({ ...prod, isActive: newStatus }),
-      newStatus
-        ? `Produto "${prod.name}" ativado e exposto no site.`
-        : `Produto "${prod.name}" desativado (oculto do site público).`
-    );
-  };
 
   // --- SPREADSHEET IMPORT HANDLERS (EXCEL / CSV) ---
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
