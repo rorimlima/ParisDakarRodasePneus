@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { obterAuth } from '../firebase/config';
 import {
   X,
@@ -83,6 +83,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
 
+  // Loading states for client registration and login
+  const [cpfLoading, setCpfLoading] = useState(false);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+
   // Feedback Messages
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -97,13 +101,49 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // 1. CPF (B2C) Login
-  const handleCpfLogin = (e: React.FormEvent) => {
+  const handleCpfLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
     if (!cpfLoginInput || !cpfPassword) {
       setErrorMsg('Preencha seu CPF/E-mail e Senha.');
       return;
+    }
+
+    const auth = obterAuth();
+    if (auth && cpfLoginInput.includes('@')) {
+      setCpfLoading(true);
+      try {
+        const credential = await signInWithEmailAndPassword(auth, cpfLoginInput.trim().toLowerCase(), cpfPassword);
+        const firestoreUser = await storageService.fetchCpfUserFromFirestore(credential.user.uid);
+        const activeUser = firestoreUser || {
+          id: credential.user.uid,
+          fullName: credential.user.displayName || credential.user.email?.split('@')[0] || 'Cliente',
+          cpf: '000.000.000-00',
+          email: credential.user.email || cpfLoginInput.trim().toLowerCase(),
+          phone: credential.user.phoneNumber || '(11) 99999-0000',
+          address: 'São Paulo - SP',
+          cep: '01000-000',
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+
+        const session: UserSession = { type: 'b2c', b2cUser: activeUser };
+        storageService.saveUserSession(session);
+        onLoginSuccess(session);
+        onClose();
+        return;
+      } catch (err: any) {
+        console.error('[Firebase Login Error]', err);
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+          setErrorMsg('Senha incorreta.');
+          return;
+        } else if (err.code === 'auth/user-not-found') {
+          setErrorMsg('E-mail não cadastrado.');
+          return;
+        }
+      } finally {
+        setCpfLoading(false);
+      }
     }
 
     const cpfUsers = storageService.getCpfUsers();
@@ -134,7 +174,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  // Google Auth Handler
   const handleGoogleLogin = async () => {
     try {
       setErrorMsg('');
@@ -158,38 +197,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
 
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const user = result.user;
 
-      const cpfUsers = storageService.getCpfUsers();
-      let existing = cpfUsers.find((u) => u.email.toLowerCase() === (user.email || '').toLowerCase());
+        const existing = await storageService.syncCpfUserWithFirestore(user);
 
-      if (!existing) {
-        existing = storageService.registerCpfUser({
-          fullName: user.displayName || 'Usuário Google',
-          cpf: '000.000.000-00',
-          email: user.email || '',
-          phone: user.phoneNumber || '(11) 99999-9999',
-          address: 'Cadastrado via Google Auth',
-          cep: '00000-000'
-        });
+        const session: UserSession = { type: 'b2c', b2cUser: existing };
+        storageService.saveUserSession(session);
+        setSuccessMsg(`Bem-vindo, ${existing.fullName}!`);
+        setTimeout(() => {
+          onLoginSuccess(session);
+          onClose();
+        }, 600);
+      } catch (popupErr: any) {
+        console.warn('[Popup failed, falling back to redirect]', popupErr);
+        setErrorMsg('Método de pop-up bloqueado. Redirecionando para login seguro do Google...');
+        const { signInWithRedirect } = await import('firebase/auth');
+        await signInWithRedirect(auth, provider);
       }
-
-      const session: UserSession = { type: 'b2c', b2cUser: existing };
-      storageService.saveUserSession(session);
-      setSuccessMsg(`Bem-vindo, ${existing.fullName}!`);
-      setTimeout(() => {
-        onLoginSuccess(session);
-        onClose();
-      }, 600);
     } catch (err: any) {
       console.error('[Google Auth Error]', err);
-      setErrorMsg(err.message || 'Erro ao realizar login com o Google.');
+      const detail = err.customData?._error?.message || err.customData?._error || err.code || '';
+      const message = err.message || 'Erro ao realizar login com o Google.';
+      setErrorMsg(`${message}${detail ? ` (${detail})` : ''}`);
     }
   };
 
   // 2. CPF (B2C) Register
-  const handleCpfRegister = (e: React.FormEvent) => {
+  const handleCpfRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -201,6 +238,44 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     if (!validateCPF(cpfValue)) {
       setErrorMsg('CPF inválido. Certifique-se de digitar os 11 dígitos.');
       return;
+    }
+
+    const auth = obterAuth();
+    if (auth) {
+      setCpfLoading(true);
+      try {
+        const credential = await createUserWithEmailAndPassword(auth, cpfEmail.trim().toLowerCase(), cpfRegPassword);
+        const newUser = await storageService.saveCpfUserToFirestore(credential.user.uid, {
+          fullName: cpfFullName,
+          cpf: formatCPF(cpfValue),
+          email: cpfEmail.trim().toLowerCase(),
+          phone: cpfPhone,
+          address: cpfAddress,
+          cep: cpfCep,
+          birthDate: cpfBirthDate
+        });
+
+        const session: UserSession = { type: 'b2c', b2cUser: newUser };
+        storageService.saveUserSession(session);
+        setSuccessMsg('Conta criada com sucesso! Seja bem-vindo à Paris Dakar.');
+        setTimeout(() => {
+          onLoginSuccess(session);
+          onClose();
+        }, 800);
+        return;
+      } catch (err: any) {
+        console.error('[Firebase Register Error]', err);
+        if (err.code === 'auth/email-already-in-use') {
+          setErrorMsg('Este e-mail já está em uso.');
+        } else if (err.code === 'auth/weak-password') {
+          setErrorMsg('A senha precisa ter pelo menos 6 caracteres.');
+        } else {
+          setErrorMsg(`Erro ao criar conta: ${err.message}`);
+        }
+        return;
+      } finally {
+        setCpfLoading(false);
+      }
     }
 
     const newUser = storageService.registerCpfUser({
@@ -223,13 +298,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // 3. CNPJ (B2B) Login
-  const handleCnpjLogin = (e: React.FormEvent) => {
+  const handleCnpjLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
     if (!cnpjLoginInput || !cnpjPassword) {
       setErrorMsg('Informe o CNPJ ou E-mail corporativo e a Senha.');
       return;
+    }
+
+    const auth = obterAuth();
+    if (auth && cnpjLoginInput.includes('@')) {
+      setCnpjLoading(true);
+      try {
+        const credential = await signInWithEmailAndPassword(auth, cnpjLoginInput.trim().toLowerCase(), cnpjPassword);
+        const firestoreUser = await storageService.fetchCnpjUserFromFirestore(credential.user.uid);
+        const activeUser = firestoreUser || {
+          id: credential.user.uid,
+          isLoggedIn: true,
+          companyName: 'Auto Center Parceiro LTDA',
+          tradeName: 'Dakar Partner 4x4',
+          cnpj: '00.000.000/0001-00',
+          taxRegime: 'Simples Nacional' as TaxRegime,
+          phone: '(11) 98888-0000',
+          email: credential.user.email || cnpjLoginInput.trim().toLowerCase(),
+          discountPercentage: 20
+        };
+
+        const session: UserSession = { type: 'b2b', b2bUser: activeUser };
+        storageService.saveUserSession(session);
+        onLoginSuccess(session);
+        onClose();
+        return;
+      } catch (err: any) {
+        console.error('[Firebase CNPJ Login Error]', err);
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+          setErrorMsg('Senha incorreta.');
+          return;
+        } else if (err.code === 'auth/user-not-found') {
+          setErrorMsg('E-mail não cadastrado.');
+          return;
+        }
+      } finally {
+        setCnpjLoading(false);
+      }
     }
 
     const cnpjUsers = storageService.getCnpjUsers();
@@ -264,7 +376,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   // 4. CNPJ (B2B) Register
-  const handleCnpjRegister = (e: React.FormEvent) => {
+  const handleCnpjRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -276,6 +388,46 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     if (!validateCNPJ(cnpjValue)) {
       setErrorMsg('CNPJ inválido. Aceitamos CNPJ Numérico (14 dígitos) e Alfanumérico.');
       return;
+    }
+
+    const auth = obterAuth();
+    if (auth) {
+      setCnpjLoading(true);
+      try {
+        const credential = await createUserWithEmailAndPassword(auth, cnpjEmail.trim().toLowerCase(), cnpjRegPassword);
+        const newUser = await storageService.saveCnpjUserToFirestore(credential.user.uid, {
+          companyName,
+          tradeName: tradeName || companyName,
+          cnpj: formatCNPJ(cnpjValue),
+          taxRegime,
+          stateRegistration: stateRegistration || 'Isento',
+          phone: cnpjPhone,
+          email: cnpjEmail.trim().toLowerCase(),
+          address: cnpjAddress,
+          discountPercentage: 20
+        });
+
+        const session: UserSession = { type: 'b2b', b2bUser: newUser };
+        storageService.saveUserSession(session);
+        setSuccessMsg('Cadastro Lojista / B2B aprovado com sucesso! Tabela de atacado liberada.');
+        setTimeout(() => {
+          onLoginSuccess(session);
+          onClose();
+        }, 1000);
+        return;
+      } catch (err: any) {
+        console.error('[Firebase CNPJ Register Error]', err);
+        if (err.code === 'auth/email-already-in-use') {
+          setErrorMsg('Este e-mail já está em uso.');
+        } else if (err.code === 'auth/weak-password') {
+          setErrorMsg('A senha precisa ter pelo menos 6 caracteres.');
+        } else {
+          setErrorMsg(`Erro ao criar conta B2B: ${err.message}`);
+        }
+        return;
+      } finally {
+        setCnpjLoading(false);
+      }
     }
 
     const newUser = storageService.registerCnpjUser({

@@ -214,6 +214,64 @@ class StorageService {
     return newUser;
   }
 
+  async syncCpfUserWithFirestore(firebaseUser: { uid: string; displayName?: string | null; email?: string | null; phoneNumber?: string | null }): Promise<CpfClient> {
+    try {
+      const db = obterDb();
+      if (!db) {
+        return this.syncCpfUserLocal(firebaseUser);
+      }
+
+      const docId = firebaseUser.email?.toLowerCase() || firebaseUser.uid;
+      const userDocRef = doc(db, COLECOES.clientesCpf, docId);
+      const snap = await getDoc(userDocRef);
+
+      if (snap.exists()) {
+        const existing = snap.data() as CpfClient;
+        this.saveCpfUserLocal(existing);
+        return existing;
+      } else {
+        const newUser: CpfClient = {
+          id: firebaseUser.uid,
+          fullName: firebaseUser.displayName || 'Usuário Google',
+          cpf: '000.000.000-00',
+          email: firebaseUser.email || '',
+          phone: firebaseUser.phoneNumber || '(11) 99999-9999',
+          address: 'Cadastrado via Google Auth',
+          cep: '00000-000',
+          createdAt: new Date().toISOString().split('T')[0]
+        };
+        await setDoc(userDocRef, newUser);
+        this.saveCpfUserLocal(newUser);
+        return newUser;
+      }
+    } catch (e) {
+      console.error('[storageService] erro ao sincronizar usuário B2C com Firestore:', e);
+      return this.syncCpfUserLocal(firebaseUser);
+    }
+  }
+
+  private syncCpfUserLocal(firebaseUser: any): CpfClient {
+    const cpfUsers = this.getCpfUsers();
+    let existing = cpfUsers.find((u) => u.email.toLowerCase() === (firebaseUser.email || '').toLowerCase());
+    if (!existing) {
+      existing = this.registerCpfUser({
+        fullName: firebaseUser.displayName || 'Usuário Google',
+        cpf: '000.000.000-00',
+        email: firebaseUser.email || '',
+        phone: firebaseUser.phoneNumber || '(11) 99999-9999',
+        address: 'Cadastrado via Google Auth',
+        cep: '00000-000'
+      });
+    }
+    return existing;
+  }
+
+  private saveCpfUserLocal(user: CpfClient) {
+    const users = this.getCpfUsers().filter((u) => u.id !== user.id && u.email !== user.email);
+    users.unshift(user);
+    localStorage.setItem(STORAGE_KEYS.CPF_USERS, JSON.stringify(users));
+  }
+
   // CNPJ Users (B2B)
   getCnpjUsers(): B2BUser[] {
     const data = localStorage.getItem(STORAGE_KEYS.CNPJ_USERS);
@@ -449,6 +507,83 @@ class StorageService {
       seller.isActive = !seller.isActive;
     }
     return this.saveSellers(sellers);
+  }
+
+  async saveCpfUserToFirestore(uid: string, user: Omit<CpfClient, 'id' | 'createdAt'>): Promise<CpfClient> {
+    const newUser: CpfClient = {
+      ...user,
+      id: uid,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    try {
+      const db = obterDb();
+      if (db) {
+        const docId = user.email?.toLowerCase() || uid;
+        await setDoc(doc(db, COLECOES.clientesCpf, docId), newUser);
+      }
+    } catch (e) {
+      console.warn('[storageService] erro ao salvar CPF no Firestore:', e);
+    }
+    this.saveCpfUserLocal(newUser);
+    return newUser;
+  }
+
+  async fetchCpfUserFromFirestore(uid: string, email?: string): Promise<CpfClient | null> {
+    try {
+      const db = obterDb();
+      if (db) {
+        const docId = email?.toLowerCase() || uid;
+        const snap = await getDoc(doc(db, COLECOES.clientesCpf, docId));
+        if (snap.exists()) {
+          const user = snap.data() as CpfClient;
+          this.saveCpfUserLocal(user);
+          return user;
+        }
+      }
+    } catch (e) {
+      console.warn('[storageService] erro ao buscar CPF no Firestore:', e);
+    }
+    return null;
+  }
+
+  async saveCnpjUserToFirestore(uid: string, user: Omit<B2BUser, 'id' | 'createdAt' | 'isLoggedIn'>): Promise<B2BUser> {
+    const newUser: B2BUser = {
+      ...user,
+      id: uid,
+      isLoggedIn: true,
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    try {
+      const db = obterDb();
+      if (db) {
+        await setDoc(doc(db, COLECOES.clientesCnpj, uid), newUser);
+      }
+    } catch (e) {
+      console.warn('[storageService] erro ao salvar CNPJ no Firestore:', e);
+    }
+    const users = this.getCnpjUsers().filter((u) => u.id !== uid && u.email !== user.email);
+    users.unshift(newUser);
+    localStorage.setItem(STORAGE_KEYS.CNPJ_USERS, JSON.stringify(users));
+    return newUser;
+  }
+
+  async fetchCnpjUserFromFirestore(uid: string): Promise<B2BUser | null> {
+    try {
+      const db = obterDb();
+      if (db) {
+        const snap = await getDoc(doc(db, COLECOES.clientesCnpj, uid));
+        if (snap.exists()) {
+          const user = snap.data() as B2BUser;
+          const users = this.getCnpjUsers().filter((u) => u.id !== uid && u.email !== user.email);
+          users.unshift(user);
+          localStorage.setItem(STORAGE_KEYS.CNPJ_USERS, JSON.stringify(users));
+          return user;
+        }
+      }
+    } catch (e) {
+      console.warn('[storageService] erro ao buscar CNPJ no Firestore:', e);
+    }
+    return null;
   }
 }
 

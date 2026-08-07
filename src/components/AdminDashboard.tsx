@@ -138,6 +138,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [newProdIsActive, setNewProdIsActive] = useState(true);
+  const [newProdIsPromocao, setNewProdIsPromocao] = useState(false);
+  const [newProdIsDestaque, setNewProdIsDestaque] = useState(false);
 
   // New Product Form State
   const [newProdName, setNewProdName] = useState('');
@@ -403,6 +405,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       inStock: newProdInStock,
       stockQuantity: Number(newProdStock),
       isActive: newProdIsActive,
+      isPromocao: newProdIsPromocao,
+      isDestaque: newProdIsDestaque,
       rating: 5.0,
       reviewsCount: 1
     };
@@ -1708,7 +1712,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 />
               </div>
 
+              {/* FLAGS: PROMOÇÃO e DESTAQUE — novo produto */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 pd-surface-2 rounded border pd-border flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold pd-text block">Promoção</span>
+                    <span className="text-[10px] pd-text-2 block">Exibe na aba "Promoção"</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNewProdIsPromocao((v) => !v)}
+                    className={`px-3 py-1.5 rounded font-black text-xs uppercase flex items-center gap-1.5 transition ${
+                      newProdIsPromocao ? 'bg-orange-950 text-orange-400 border border-orange-700' : 'pd-surface border pd-border pd-text-2'
+                    }`}
+                  >
+                    <span>{newProdIsPromocao ? '🔥 PROMOÇÃO' : 'SEM PROMOÇÃO'}</span>
+                  </button>
+                </div>
+                <div className="p-3 pd-surface-2 rounded border pd-border flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-bold pd-text block">Destaque</span>
+                    <span className="text-[10px] pd-text-2 block">Carrossel na página principal</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setNewProdIsDestaque((v) => !v)}
+                    className={`px-3 py-1.5 rounded font-black text-xs uppercase flex items-center gap-1.5 transition ${
+                      newProdIsDestaque ? 'bg-yellow-950 text-yellow-400 border border-yellow-700' : 'pd-surface border pd-border pd-text-2'
+                    }`}
+                  >
+                    <span>{newProdIsDestaque ? '★ DESTAQUE' : 'SEM DESTAQUE'}</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-3 pt-2">
+
                 <button
                   type="button"
                   onClick={() => setIsAddProductModalOpen(false)}
@@ -1810,6 +1849,40 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     })
                   }
                 />
+              </div>
+
+              {/* TOGGLE PROMOÇÃO no edit modal */}
+              <div className="p-3 pd-surface-2 rounded border pd-border flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold pd-text block">Promoção</span>
+                  <span className="text-[10px] pd-text-2 block">Exibe na aba "Promoção" com badge especial</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct({ ...editingProduct, isPromocao: !editingProduct.isPromocao })}
+                  className={`px-4 py-2 rounded font-black text-xs uppercase flex items-center gap-2 transition ${
+                    editingProduct.isPromocao ? 'bg-orange-950 text-orange-400 border border-orange-700' : 'pd-surface-2 pd-text-2 border pd-border'
+                  }`}
+                >
+                  <span>{editingProduct.isPromocao ? '★ EM PROMOÇÃO' : 'SEM PROMOÇÃO'}</span>
+                </button>
+              </div>
+
+              {/* TOGGLE DESTAQUE no edit modal */}
+              <div className="p-3 pd-surface-2 rounded border pd-border flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold pd-text block">Destaque</span>
+                  <span className="text-[10px] pd-text-2 block">Exibe no carrossel de destaques na página principal (máx. 4)</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct({ ...editingProduct, isDestaque: !editingProduct.isDestaque })}
+                  className={`px-4 py-2 rounded font-black text-xs uppercase flex items-center gap-2 transition ${
+                    editingProduct.isDestaque ? 'bg-yellow-950 text-yellow-400 border border-yellow-700' : 'pd-surface-2 pd-text-2 border pd-border'
+                  }`}
+                >
+                  <span>{editingProduct.isDestaque ? '★ DESTAQUE' : 'SEM DESTAQUE'}</span>
+                </button>
               </div>
 
               {/* TOGGLE EXPOR NO SITE NO EDIT MODAL */}

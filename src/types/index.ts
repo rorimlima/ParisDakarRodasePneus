@@ -48,7 +48,9 @@ export interface Product {
   stockQuantity: number;
   rating: number;
   reviewsCount: number;
-  isActive?: boolean; // Se false, o produto fica oculto no site público (desativado)
+  isActive?: boolean;    // Se false, o produto fica oculto no site público
+  isPromocao?: boolean;  // Se true, aparece na aba "Promoção"
+  isDestaque?: boolean;  // Se true, aparece no carrossel "Destaques"
   unidadeSigla?: string;
   unidadeLabel?: string;
   categoriaNome?: string;

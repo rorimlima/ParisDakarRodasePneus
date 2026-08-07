@@ -9,6 +9,7 @@ import { Footer } from './components/Footer';
 import { useTheme } from './hooks/useTheme';
 import { useCatalogoPublico } from './hooks/useCatalogo';
 import { storageService } from './services/storageService';
+import { obterAuth } from './firebase/config';
 import {
   Product,
   ProductCategory,
@@ -57,7 +58,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   pneus: 'Pneus',
   'kits-lift': 'Kits de lift',
   combos: 'Combos',
-  acessorios: 'Acessórios'
+  acessorios: 'Acessórios',
+  promocao: '🔥 Promoção'
 };
 
 export default function App() {
@@ -87,6 +89,27 @@ export default function App() {
         setSellers(remoteSellers);
       }
     });
+
+    // Capturar resultado de redirecionamento do Google Auth (login)
+    const auth = obterAuth();
+    if (auth) {
+      import('firebase/auth').then(({ getRedirectResult }) => {
+        getRedirectResult(auth)
+          .then((result) => {
+            if (result && result.user) {
+              const user = result.user;
+              storageService.syncCpfUserWithFirestore(user).then((existing) => {
+                const session: UserSession = { type: 'b2c', b2cUser: existing };
+                storageService.saveUserSession(session);
+                setCurrentSession(session);
+              });
+            }
+          })
+          .catch((err) => {
+            console.error('[Google Redirect Auth Error]', err);
+          });
+      });
+    }
   }, []);
 
   const [viewMode, setViewMode] = useState<'store' | 'admin'>('store');
@@ -243,12 +266,18 @@ export default function App() {
       // Itens desativados no painel admin não aparecem na loja
       if (product.isActive === false) return false;
 
-      // Se a categoria ativa for 'todos' (página inicial), mostramos apenas pneus.
-      // Caso contrário, mostramos a categoria específica selecionada.
-      if (activeCategory === 'todos') {
-        if (product.category !== 'pneus') return false;
-      } else {
-        if (product.category !== activeCategory) return false;
+      // Se a categoria selecionada não for 'todos', aplicamos o filtro correspondente.
+      if (activeCategory !== 'todos') {
+        if (activeCategory === 'acessorios') {
+          // Acessórios serve como categoria agregadora para pecas, fixação, iluminacao, capota, engate, outros, etc.
+          const principais = ['rodas', 'pneus', 'kits-lift', 'combos'];
+          if (principais.includes(product.category)) return false;
+        } else if ((activeCategory as string) === 'promocao') {
+          // Aba Promoção: apenas produtos marcados como isPromocao
+          if (!product.isPromocao) return false;
+        } else {
+          if (product.category !== activeCategory) return false;
+        }
       }
 
       // Filtro: apenas pneus devem ter obrigatoriamente estoque > 4 para serem exibidos
@@ -261,7 +290,7 @@ export default function App() {
           product.sku,
           product.specs.aro,
           product.specs.medidaPneu,
-          ...product.compatibleVehicles
+          ...(product.compatibleVehicles || [])
         ]
           .filter(Boolean)
           .join(' ')
@@ -273,33 +302,65 @@ export default function App() {
       if (vehicleFilter?.marca) {
         const brand = vehicleFilter.marca.toLowerCase();
         const model = vehicleFilter.modelo?.toLowerCase();
-        const compatible = product.compatibleVehicles.some((v) => {
-          const lower = v.toLowerCase();
-          return lower.includes(brand) && (model ? lower.includes(model) : true);
-        });
-        if (!compatible) return false;
+        
+        const vehicles = product.compatibleVehicles || [];
+        // Se houver lista de veículos compatíveis cadastrada, verifica a compatibilidade.
+        if (vehicles.length > 0) {
+          const compatible = vehicles.some((v) => {
+            const lower = v.toLowerCase();
+            // Verifica a marca (suporta marca contida no texto ou texto contido na marca)
+            if (!lower.includes(brand) && !brand.includes(lower)) return false;
+            
+            if (!model) return true;
+            
+            // Verifica o modelo: correspondência direta
+            if (lower.includes(model)) return true;
+            
+            // Correspondência por palavra principal (ex: "Hilux SRX" -> "Hilux")
+            const modelWords = model.split(/\s+/).filter(w => w.length > 1);
+            if (modelWords.length > 0) {
+              const mainModelName = modelWords[0];
+              if (mainModelName === 'ram' && modelWords.length > 1) {
+                return lower.includes(modelWords[1]);
+              }
+              return lower.includes(mainModelName);
+            }
+            return false;
+          });
+          if (!compatible) return false;
+        }
       }
 
       if (sizeFilter) {
-        if (
-          sizeFilter.aro &&
-          product.specs.aro &&
-          !product.specs.aro.includes(sizeFilter.aro.replace('"', ''))
-        ) {
-          return false;
-        }
-        if (sizeFilter.furacao && product.specs.furacao && product.specs.furacao !== sizeFilter.furacao) {
-          return false;
-        }
-        if (sizeFilter.tipoPneu && product.specs.tipoPneu && product.specs.tipoPneu !== sizeFilter.tipoPneu) {
-          return false;
-        }
-        // Filtro por referência / SKU
-        if (sizeFilter.referencia) {
-          const ref = sizeFilter.referencia.toLowerCase();
-          if (!product.sku.toLowerCase().includes(ref) && !product.brand.toLowerCase().includes(ref)) {
+        if (sizeFilter.aro) {
+          const productAro = product.specs.aro;
+          if (!productAro || !productAro.includes(sizeFilter.aro.replace('"', ''))) {
             return false;
           }
+        }
+        if (sizeFilter.furacao) {
+          const productFuracao = product.specs.furacao;
+          if (!productFuracao || productFuracao !== sizeFilter.furacao) {
+            return false;
+          }
+        }
+        if (sizeFilter.tipoPneu) {
+          const productTipoPneu = product.specs.tipoPneu;
+          if (!productTipoPneu || productTipoPneu !== sizeFilter.tipoPneu) {
+            return false;
+          }
+        }
+        // Filtro por medida de pneu — ex: "175/70R14", "265/70 R17"
+        // Busca no nome, SKU e campo medidaPneu do produto (normalizado: sem espaços, caixa baixa)
+        if (sizeFilter.medidaPneu) {
+          const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+          const needle = normalize(sizeFilter.medidaPneu);
+          const haystack = [
+            product.name,
+            product.sku,
+            product.specs.medidaPneu || ''
+          ].map(normalize).join(' ');
+          if (!haystack.includes(needle)) return false;
         }
       }
 
@@ -316,6 +377,20 @@ export default function App() {
 
   const hasActiveFilters =
     Boolean(vehicleFilter) || Boolean(sizeFilter) || Boolean(searchQuery) || activeCategory !== 'todos';
+
+  // Produtos em destaque (máx. 4) para o carrossel da página principal
+  const destaqueProducts = useMemo(
+    () => products.filter((p) => p.isActive !== false && p.isDestaque).slice(0, 4),
+    [products]
+  );
+
+  // Estado do carrossel de destaques
+  const [destaqueIdx, setDestaqueIdx] = React.useState(0);
+  React.useEffect(() => {
+    if (destaqueProducts.length < 2) return;
+    const t = setInterval(() => setDestaqueIdx((i) => (i + 1) % destaqueProducts.length), 4000);
+    return () => clearInterval(t);
+  }, [destaqueProducts.length]);
 
   // Painel administrativo (rota interna)
   if (viewMode === 'admin' && currentSession.type === 'admin' && currentSession.adminUser) {
@@ -367,6 +442,137 @@ export default function App() {
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
         />
+
+        {/* ======================== CARROSSEL DESTAQUES ======================== */}
+        {destaqueProducts.length > 0 && (
+          <section aria-label="Produtos em destaque" className="pd-card overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b pd-border">
+              <div className="flex items-center gap-2">
+                <span className="text-yellow-400 text-lg" aria-hidden="true">★</span>
+                <h2 className="text-xs font-black uppercase tracking-[0.14em] pd-text">Destaques</h2>
+                <span className="text-[10px] font-bold pd-text-3 uppercase tracking-wider">— seleção especial</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {destaqueProducts.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Destaque ${i + 1}`}
+                    onClick={() => setDestaqueIdx(i)}
+                    className={`rounded-full transition-all ${
+                      i === destaqueIdx
+                        ? 'w-5 h-2 bg-[#8B0000]'
+                        : 'w-2 h-2 pd-surface-2 border pd-border hover:border-[#8B0000]'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Slide */}
+            <div className="relative">
+              {destaqueProducts.map((p, i) => {
+                const discount = p.originalPrice && p.originalPrice > p.price
+                  ? Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100)
+                  : null;
+                return (
+                  <div
+                    key={p.id}
+                    className={`transition-all duration-500 ${i === destaqueIdx ? 'block' : 'hidden'}`}
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0">
+                      {/* Imagem */}
+                      <div className="relative overflow-hidden bg-black/30 min-h-[220px] sm:min-h-[280px]">
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="w-full h-full object-cover object-center transition-transform duration-700 hover:scale-105"
+                          style={{ maxHeight: '320px' }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent pointer-events-none" />
+                        {/* Badges */}
+                        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                          <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded bg-yellow-500 text-black">
+                            ★ Destaque
+                          </span>
+                          {p.isPromocao && (
+                            <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded bg-[#8B0000] text-white">
+                              🔥 Promoção
+                            </span>
+                          )}
+                          {discount && (
+                            <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider rounded bg-orange-600 text-white">
+                              -{discount}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-6 flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold uppercase tracking-widest pd-brand-text">{p.brand}</p>
+                          <h3 className="text-lg font-black uppercase tracking-tight pd-text leading-tight">{p.name}</h3>
+                          <p className="text-xs pd-text-3 line-clamp-2 leading-relaxed">{p.description}</p>
+                          {p.specs.aro && (
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {p.specs.aro && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">Aro {p.specs.aro}</span>}
+                              {p.specs.medidaPneu && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">{p.specs.medidaPneu}</span>}
+                              {p.specs.furacao && <span className="text-[10px] px-2 py-0.5 rounded pd-surface-2 border pd-border pd-text-2 font-bold">{p.specs.furacao}</span>}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-3 pt-4">
+                          {p.originalPrice && p.originalPrice > p.price && (
+                            <p className="text-xs line-through pd-text-3">
+                              R$ {p.originalPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                          )}
+                          <p className="text-2xl font-black pd-brand-text">
+                            R$ {p.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedProduct(p)}
+                            className="btn btn-primary w-full sm:w-auto"
+                          >
+                            <PackageCheck className="w-4 h-4" />
+                            <span>Ver detalhes</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Prev / Next arrows */}
+              {destaqueProducts.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Anterior"
+                    onClick={() => setDestaqueIdx((i) => (i - 1 + destaqueProducts.length) % destaqueProducts.length)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full pd-surface border pd-border flex items-center justify-center hover:border-[#8B0000] hover:pd-brand-text transition text-sm font-bold pd-text-2 shadow"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Próximo"
+                    onClick={() => setDestaqueIdx((i) => (i + 1) % destaqueProducts.length)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full pd-surface border pd-border flex items-center justify-center hover:border-[#8B0000] hover:pd-brand-text transition text-sm font-bold pd-text-2 shadow"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
+        )}
+
 
         {hasActiveFilters && (
           <div className="pd-card p-4 flex flex-wrap items-center justify-between gap-3">
