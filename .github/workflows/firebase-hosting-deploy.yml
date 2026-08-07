@@ -54,14 +54,22 @@ jobs:
         run: npm run test:rules
 
       - name: Escrever credenciais de serviço
+        id: prepare_key
+        env:
+          SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS }}
+          SA_KEY_ALT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
-          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS }}" ]; then
-            echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS }}' > "${RUNNER_TEMP}/gcp-key.json"
+          KEY_CONTENT="${SA_KEY:-$SA_KEY_ALT}"
+          if [ -n "$KEY_CONTENT" ]; then
+            echo "$KEY_CONTENT" > "${RUNNER_TEMP}/gcp-key.json"
+            echo "has_key=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Aviso: Segredo FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS não encontrado."
+            echo "has_key=false" >> "$GITHUB_OUTPUT"
+            echo "::warning ::Nenhum segredo de Service Account encontrado em GitHub Secrets."
           fi
 
       - name: 'Deploy: Hosting + Firestore (regras e índices)'
+        if: steps.prepare_key.outputs.has_key == 'true'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
           VITE_USE_API_CATALOG: 'false'
@@ -76,6 +84,7 @@ jobs:
           --non-interactive
 
       - name: 'Deploy: Cloud Functions (Opcional)'
+        if: steps.prepare_key.outputs.has_key == 'true'
         continue-on-error: true
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
