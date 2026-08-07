@@ -55,7 +55,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   whatsappNumber: '5511999998888',
   phone: '(11) 3456-7890',
   address: 'Av. das Nações Unidas, 12901 - Morumbi, São Paulo - SP',
-  showStockStatus: true
+  showStockStatus: true,
+  disabledCategories: []
 };
 
 export const DEFAULT_SENIOR_ADMIN: AdminUser = {

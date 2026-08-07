@@ -1132,6 +1132,109 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+              {/* SEÇÃO DE GERENCIAMENTO DE CATEGORIAS */}
+              <div className="border-t pd-border pt-5 space-y-4">
+                <h3 className="text-[11px] font-black uppercase tracking-widest pd-brand-text flex items-center gap-2">
+                  <Layers className="w-3.5 h-3.5" />
+                  Gerenciar Categorias do Site
+                </h3>
+                <p className="text-[10px] pd-text-2 leading-relaxed">
+                  Desative categorias inteiras para ocultar <strong>todos</strong> os produtos daquela categoria da loja pública.
+                  Os produtos não serão excluídos — apenas ficam invisíveis para os visitantes.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {([
+                    { slug: 'rodas', label: 'Rodas Off-Road', icon: '🛞', desc: 'Rodas forjadas e calotas' },
+                    { slug: 'pneus', label: 'Pneus MT / AT / LT', icon: '🔧', desc: 'Pneus Mud, All-Terrain e Light Truck' },
+                    { slug: 'kits-lift', label: 'Kits de Lift', icon: '⬆️', desc: 'Kits de suspensão e elevação' },
+                    { slug: 'combos', label: 'Combos Prontos', icon: '📦', desc: 'Pacotes roda + pneu montados' },
+                    { slug: 'acessorios', label: 'Acessórios', icon: '🔩', desc: 'Peças, fixação, iluminação e outros' },
+                    { slug: 'promocao', label: '🔥 Promoção', icon: '🔥', desc: 'Produtos em promoção ativa' }
+                  ] as const).map((cat) => {
+                    const disabled = (settingsForm.disabledCategories || []).includes(cat.slug);
+                    const catProducts = cat.slug === 'promocao'
+                      ? products.filter((p) => p.isPromocao)
+                      : cat.slug === 'acessorios'
+                        ? products.filter((p) => !['rodas', 'pneus', 'kits-lift', 'combos'].includes(p.category))
+                        : products.filter((p) => p.category === cat.slug);
+                    const count = catProducts.length;
+
+                    return (
+                      <div
+                        key={cat.slug}
+                        className={`relative rounded-lg border p-3.5 transition-all ${
+                          disabled
+                            ? 'border-red-800/50 bg-red-950/20 opacity-70'
+                            : 'pd-border pd-surface-2'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base" aria-hidden="true">{cat.icon}</span>
+                            <div>
+                              <p className={`text-[11px] font-black uppercase tracking-wider ${disabled ? 'line-through pd-text-3' : 'pd-text'}`}>
+                                {cat.label}
+                              </p>
+                              <p className="text-[9px] pd-text-3">{cat.desc}</p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const current = settingsForm.disabledCategories || [];
+                              const updated = disabled
+                                ? current.filter((c) => c !== cat.slug)
+                                : [...current, cat.slug];
+                              setSettingsForm({ ...settingsForm, disabledCategories: updated });
+                            }}
+                            className="transition-colors shrink-0"
+                            title={disabled ? `Reativar ${cat.label}` : `Desativar ${cat.label}`}
+                          >
+                            {disabled ? (
+                              <ToggleLeft className="w-8 h-8 text-red-600" />
+                            ) : (
+                              <ToggleRight className="w-8 h-8 text-emerald-500" />
+                            )}
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold pd-text-2">
+                            {count} {count === 1 ? 'produto' : 'produtos'}
+                          </span>
+                          <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                            disabled
+                              ? 'bg-red-900/60 text-red-300'
+                              : 'bg-emerald-900/40 text-emerald-400'
+                          }`}>
+                            {disabled ? 'Desativada' : 'Ativa'}
+                          </span>
+                        </div>
+
+                        {disabled && (
+                          <div className="mt-2 text-[9px] text-red-400 font-bold flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>Todos os {count} produtos estão ocultos no site</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {(settingsForm.disabledCategories || []).length > 0 && (
+                  <div className="p-3 bg-amber-950/40 border border-amber-800/50 rounded text-[10px] text-amber-300 font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>
+                      {(settingsForm.disabledCategories || []).length} {(settingsForm.disabledCategories || []).length === 1 ? 'categoria desativada' : 'categorias desativadas'} — os visitantes não verão esses produtos na loja.
+                      Clique em "Salvar Alterações" para confirmar.
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
                 className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-3 rounded font-black text-xs uppercase tracking-widest transition shadow-lg flex items-center gap-2"

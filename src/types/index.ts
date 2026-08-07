@@ -139,6 +139,7 @@ export interface SiteSettings {
   logoUrl?: string;
   bannerText?: string;
   youtubeVideoUrl?: string;
+  disabledCategories?: string[];  // Slugs de categorias desativadas no site público
 }
 
 // Customer Inquiry / Quote Request

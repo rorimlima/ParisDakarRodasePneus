@@ -8,6 +8,7 @@ interface SearchDashboardProps {
   onApplySizeFilter: (filter: SizeSearchFilter | null) => void;
   activeCategory: ProductCategory | 'todos';
   onSelectCategory: (cat: ProductCategory | 'todos') => void;
+  disabledCategories?: string[];
 }
 
 const CATEGORIES = [
@@ -24,7 +25,8 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
   onApplyVehicleFilter,
   onApplySizeFilter,
   activeCategory,
-  onSelectCategory
+  onSelectCategory,
+  disabledCategories
 }) => {
   const [selectedAro, setSelectedAro] = useState<string>('');
   const [selectedFuracao, setSelectedFuracao] = useState<string>('');
@@ -172,7 +174,7 @@ export const SearchDashboard: React.FC<SearchDashboardProps> = ({
           Categorias
         </span>
 
-        {CATEGORIES.map((cat) => (
+        {CATEGORIES.filter((cat) => cat.id === 'todos' || !(disabledCategories || []).includes(cat.id)).map((cat) => (
           <button
             key={cat.id}
             type="button"

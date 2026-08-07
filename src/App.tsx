@@ -262,9 +262,15 @@ export default function App() {
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
+    const disabledCats = siteSettings.disabledCategories || [];
+
     const filtered = products.filter((product) => {
       // Itens desativados no painel admin não aparecem na loja
       if (product.isActive === false) return false;
+
+      // Categorias inteiras desativadas pelo admin
+      if (disabledCats.includes(product.category)) return false;
+      if (product.isPromocao && disabledCats.includes('promocao')) return false;
 
       // Se a categoria selecionada não for 'todos', aplicamos o filtro correspondente.
       if (activeCategory !== 'todos') {
@@ -373,22 +379,23 @@ export default function App() {
       const bPGA = b.badge?.toUpperCase().includes('PGA') ? 0 : 1;
       return aPGA - bPGA;
     });
-  }, [products, activeCategory, searchQuery, vehicleFilter, sizeFilter]);
+  }, [products, activeCategory, searchQuery, vehicleFilter, sizeFilter, siteSettings.disabledCategories]);
 
   const hasActiveFilters =
     Boolean(vehicleFilter) || Boolean(sizeFilter) || Boolean(searchQuery) || activeCategory !== 'todos';
 
   // Produtos em destaque (máx. 4) para o carrossel da página principal
-  const destaqueProducts = useMemo(
-    () => products.filter((p) => p.isActive !== false && p.isDestaque).slice(0, 4),
-    [products]
-  );
+  const destaqueProducts = useMemo(() => {
+    const dc = siteSettings.disabledCategories || [];
+    return products.filter((p) => p.isActive !== false && p.isDestaque && !dc.includes(p.category)).slice(0, 4);
+  }, [products, siteSettings.disabledCategories]);
 
   // Produtos em promoção para a seção "Promoções", exibida logo abaixo dos Destaques
-  const promocaoProducts = useMemo(
-    () => products.filter((p) => p.isActive !== false && p.isPromocao),
-    [products]
-  );
+  const promocaoProducts = useMemo(() => {
+    const dc = siteSettings.disabledCategories || [];
+    if (dc.includes('promocao')) return [];
+    return products.filter((p) => p.isActive !== false && p.isPromocao && !dc.includes(p.category));
+  }, [products, siteSettings.disabledCategories]);
 
   // Estado do carrossel de destaques
   const [destaqueIdx, setDestaqueIdx] = React.useState(0);
@@ -447,6 +454,7 @@ export default function App() {
           onApplySizeFilter={setSizeFilter}
           activeCategory={activeCategory}
           onSelectCategory={setActiveCategory}
+          disabledCategories={siteSettings.disabledCategories}
         />
 
         {/* ======================== CARROSSEL DESTAQUES ======================== */}
