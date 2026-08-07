@@ -365,7 +365,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           });
 
           const sku = normRow['sku'] || `PD-IMP-${Date.now()}-${idx}`;
-          const existingIdx = currentProducts.findIndex((p) => p.sku.toLowerCase() === sku.toLowerCase());
+          const existingIdx = currentProducts.findIndex((p) => (p?.sku || '').toLowerCase() === sku.toLowerCase());
 
           let productToSave: Product;
 
@@ -679,10 +679,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Filtered Products
   const filteredProducts = products.filter((p) => {
+    const searchLower = (productSearch || '').toLowerCase();
     const matchesSearch =
-      p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-      p.sku.toLowerCase().includes(productSearch.toLowerCase()) ||
-      p.brand.toLowerCase().includes(productSearch.toLowerCase());
+      (p.name || '').toLowerCase().includes(searchLower) ||
+      (p.sku || '').toLowerCase().includes(searchLower) ||
+      (p.brand || '').toLowerCase().includes(searchLower);
     const matchesCat = selectedCatFilter === 'todos' || p.category === selectedCatFilter;
     return matchesSearch && matchesCat;
   });

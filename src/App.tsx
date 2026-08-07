@@ -306,7 +306,7 @@ export default function App() {
           product.specs?.medidaPneu,
           ...(product.compatibleVehicles || [])
         ]
-          .filter(Boolean)
+          .filter((x): x is string => typeof x === 'string' && Boolean(x.trim()))
           .join(' ')
           .toLowerCase();
 
@@ -314,14 +314,13 @@ export default function App() {
       }
 
       if (vehicleFilter?.marca) {
-        const brand = vehicleFilter.marca.toLowerCase();
-        const model = vehicleFilter.modelo?.toLowerCase();
+        const brand = (vehicleFilter.marca || '').toLowerCase();
+        const model = (vehicleFilter.modelo || '').toLowerCase();
         
-        const vehicles = product.compatibleVehicles || [];
-        // Se houver lista de veículos compatíveis cadastrada, verifica a compatibilidade.
+        const vehicles = (product.compatibleVehicles || []).filter((v): v is string => typeof v === 'string');
         if (vehicles.length > 0) {
           const compatible = vehicles.some((v) => {
-            const lower = v.toLowerCase();
+            const lower = (v || '').toLowerCase();
             if (!lower.includes(brand) && !brand.includes(lower)) return false;
             if (!model) return true;
             if (lower.includes(model)) return true;
@@ -359,11 +358,11 @@ export default function App() {
           }
         }
         if (sizeFilter.medidaPneu) {
-          const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, '');
+          const normalize = (s: any) => typeof s === 'string' ? s.toLowerCase().replace(/\s+/g, '') : '';
           const needle = normalize(sizeFilter.medidaPneu);
           const haystack = [
-            product.name,
-            product.sku,
+            product.name || '',
+            product.sku || '',
             product.specs?.medidaPneu || ''
           ].map(normalize).join(' ');
           if (!haystack.includes(needle)) return false;

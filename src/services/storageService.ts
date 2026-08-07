@@ -253,7 +253,7 @@ class StorageService {
 
   private syncCpfUserLocal(firebaseUser: any): CpfClient {
     const cpfUsers = this.getCpfUsers();
-    let existing = cpfUsers.find((u) => u.email.toLowerCase() === (firebaseUser.email || '').toLowerCase());
+    let existing = cpfUsers.find((u) => (u?.email || '').toLowerCase() === (firebaseUser.email || '').toLowerCase());
     if (!existing) {
       existing = this.registerCpfUser({
         fullName: firebaseUser.displayName || 'Usuário Google',

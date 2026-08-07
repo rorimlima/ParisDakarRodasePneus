@@ -58,8 +58,8 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
     const query = vehicleQuery.trim();
     if (!query) return;
 
-    const isMatched = product.compatibleVehicles.some((v) =>
-      v.toLowerCase().includes(query.toLowerCase())
+    const isMatched = (product.compatibleVehicles || []).some((v) =>
+      typeof v === 'string' && v.toLowerCase().includes(query.toLowerCase())
     );
 
     setVehicleCheckResult(
