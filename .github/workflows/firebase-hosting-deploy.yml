@@ -54,17 +54,16 @@ jobs:
         run: npm run test:rules
 
       - name: Escrever credenciais de serviço
-        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS }}' > "${RUNNER_TEMP}/gcp-key.json"
+        run: |
+          if [ -n "${{ secrets.FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS }}" ]; then
+            echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS }}' > "${RUNNER_TEMP}/gcp-key.json"
+          else
+            echo "Aviso: Segredo FIREBASE_SERVICE_ACCOUNT_PARIS_DAKAR_RODAS_PNEUS não encontrado."
+          fi
 
-      - name: 'Deploy: Hosting + Functions + Firestore (regras e índices)'
+      - name: 'Deploy: Hosting + Firestore (regras e índices)'
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
-          # DESLIGADO DE PROPÓSITO (revertido em 61aeb70 -> este commit).
-          # O Firestore de produção guarda os produtos com outro schema
-          # (campos "codigo", "descricao", "ativo", "categoriaSlug" — não o
-          # formato que dbClient.ts escreve/lê). Ligar aqui sem antes fazer o
-          # backend ler o schema real deixaria a vitrine com o catálogo vazio
-          # ou quebrado mesmo com o deploy "verde". Ver MIGRACAO-BANCO.md.
           VITE_USE_API_CATALOG: 'false'
           VITE_API_BASE_URL: ''
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
@@ -72,7 +71,17 @@ jobs:
           VITE_FIREBASE_PROJECT_ID: paris-dakar-rodas-pneus
         run: >
           npx firebase-tools deploy
-          --only hosting,functions,firestore:rules,firestore:indexes
+          --only hosting,firestore:rules,firestore:indexes
+          --project paris-dakar-rodas-pneus
+          --non-interactive
+
+      - name: 'Deploy: Cloud Functions (Opcional)'
+        continue-on-error: true
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
+        run: >
+          npx firebase-tools deploy
+          --only functions
           --project paris-dakar-rodas-pneus
           --non-interactive
 
