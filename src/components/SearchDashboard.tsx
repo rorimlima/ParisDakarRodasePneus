@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { Ruler, SlidersHorizontal, RefreshCw, Filter, Layers } from 'lucide-react';
+import { Ruler, SlidersHorizontal, RefreshCw, Filter, Layers, Tag, Sparkles } from 'lucide-react';
 import { ARO_OPTIONS, FURACAO_OPTIONS } from '../data/mockProducts';
-import { ProductCategory, VehicleSearchFilter, SizeSearchFilter } from '../types';
+import { CatalogTab, VehicleSearchFilter, SizeSearchFilter } from '../types';
 
 interface SearchDashboardProps {
   onApplyVehicleFilter: (filter: VehicleSearchFilter | null) => void;
   onApplySizeFilter: (filter: SizeSearchFilter | null) => void;
-  activeCategory: ProductCategory | 'todos';
-  onSelectCategory: (cat: ProductCategory | 'todos') => void;
+  activeCategory: CatalogTab;
+  onSelectCategory: (cat: CatalogTab) => void;
   disabledCategories?: string[];
 }
 
@@ -17,8 +17,13 @@ const CATEGORIES = [
   { id: 'pneus', label: 'Pneus MT / AT / LT' },
   { id: 'kits-lift', label: 'Kits de lift' },
   { id: 'combos', label: 'Combos prontos' },
-  { id: 'acessorios', label: 'Acessórios' },
-  { id: 'promocao', label: '🔥 Promoção' }
+  { id: 'acessorios', label: 'Acessórios' }
+] as const;
+
+/** Abas virtuais de vitrine — não são categorias reais, filtram pelas flags do cadastro. */
+const VITRINE_TABS = [
+  { id: 'promocao', label: 'Promoção', icon: Tag },
+  { id: 'destaque', label: 'Destaques', icon: Sparkles }
 ] as const;
 
 export const SearchDashboard: React.FC<SearchDashboardProps> = ({

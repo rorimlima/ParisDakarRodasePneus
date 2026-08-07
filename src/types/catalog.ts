@@ -142,6 +142,8 @@ export interface ProdutoCatalogo {
   badge?: string;
   /** aparece na aba "Promoção" do site */
   promocao?: boolean;
+  /** rótulo livre da campanha, ex: "Dia dos Pais" */
+  promoTipo?: string;
   /** entra no carrossel da aba "Destaque" */
   destaque?: boolean;
   /** percentual de completude da ficha técnica (0-100) */

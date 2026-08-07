@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 import { firebaseApp } from './firebase.js';
 
 /**
@@ -8,7 +8,7 @@ import { firebaseApp } from './firebase.js';
  * emulador quando FIRESTORE_EMULATOR_HOST está definido (ex.: 127.0.0.1:8080),
  * então não existe caminho de código diferente entre local e produção.
  */
-export const firestore = admin.firestore(firebaseApp);
+export const firestore = getFirestore(firebaseApp);
 
 firestore.settings({ ignoreUndefinedProperties: true });
 

@@ -176,8 +176,9 @@ export function paraProdutoDeExibicao(
     categoriaNome: categoria?.nomeExibicao || produto.tipoProduto,
     fichaTecnicaCompleta: montarFichaCompleta(produto, categoria),
     isActive: produto.ativoManual !== false && produto.ativo,
-    promocao: produto.promocao === true,
-    destaque: produto.destaque === true
+    isPromocao: produto.promocao === true,
+    promoTipo: produto.promoTipo,
+    isDestaque: produto.destaque === true
   };
 }
 

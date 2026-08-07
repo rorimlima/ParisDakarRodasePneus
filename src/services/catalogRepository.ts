@@ -1,6 +1,6 @@
 import { Product } from '../types';
 import { catalogApi } from './apiClient';
-import { authService } from './authService';
+import { getIdToken } from './authService';
 import { storageService } from './storageService';
 
 /**
@@ -23,7 +23,7 @@ export class NotAuthenticatedError extends Error {
 }
 
 const requireToken = async (): Promise<string> => {
-  const token = await authService.getIdToken();
+  const token = await getIdToken();
   if (!token) throw new NotAuthenticatedError();
   return token;
 };
