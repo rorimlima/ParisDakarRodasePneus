@@ -91,6 +91,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </span>
         )}
 
+        {product.isPromocao && (
+          <span className="absolute top-3 right-3 px-2.5 py-1 rounded-sm text-[10px] font-black uppercase tracking-wider bg-orange-600 text-white shadow-md">
+            🔥 {product.promoTipo || 'Promoção'}
+          </span>
+        )}
+
         <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
           <span className="btn btn-sm btn-outline">
             <Eye className="w-3.5 h-3.5" />
