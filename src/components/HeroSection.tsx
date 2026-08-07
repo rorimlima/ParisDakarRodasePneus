@@ -129,7 +129,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [touchStart, setTouchStart] = useState<number | null>(null);
 
-  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+  const autoPlayRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const embedUrl = getYouTubeEmbedUrl(siteSettings?.youtubeVideoUrl);
 
   const currentSlide = SLIDES_3D[currentIndex];

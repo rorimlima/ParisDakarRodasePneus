@@ -31,9 +31,8 @@ const IMPORT_CATEGORY_MAP: Record<string, ProductCategory> = {
  */
 const skuToDocId = (sku: string): string => sku.trim().replace(/[/.#$[\]]/g, '_');
 
-  constructor() {
-    // Zero dados de demonstração: apenas itens reais do banco
-  }
+class FirestoreProductRepository {
+  private readonly collection = firestore.collection(COLLECTIONS.PRODUCTS);
 
   async findBySku(skuParam: string): Promise<ProductRecord | null> {
     const snapshot = await this.collection.doc(skuToDocId(String(skuParam))).get();

@@ -1,8 +1,10 @@
 import {
+  GoogleAuthProvider,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   updateProfile,
   type User,
@@ -191,6 +193,32 @@ export const onSessionChange = (
 export const loginWithEmail = async (email: string, password: string): Promise<UserSession> => {
   const credential = await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
   return resolveSession(credential.user);
+};
+
+/**
+ * Login social. O perfil B2C só é criado se ainda não existir — reentrar pelo
+ * Google nunca sobrescreve CPF, telefone e endereço já preenchidos pelo cliente.
+ */
+export const loginWithGoogle = async (): Promise<UserSession> => {
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDb();
+  const credential = await signInWithPopup(auth, new GoogleAuthProvider());
+  const { user } = credential;
+
+  const perfil = doc(db, CLIENTS_COLLECTION, user.uid);
+  if (!(await getDoc(perfil)).exists()) {
+    await setDoc(perfil, {
+      fullName: user.displayName || user.email?.split('@')[0] || 'Cliente',
+      cpf: '',
+      email: user.email || '',
+      phone: user.phoneNumber || '',
+      address: '',
+      cep: '',
+      createdAt: serverTimestamp(),
+    });
+  }
+
+  return resolveSession(user);
 };
 
 /**

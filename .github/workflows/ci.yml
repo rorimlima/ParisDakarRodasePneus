@@ -4,6 +4,8 @@ on:
   pull_request:
   push:
     branches-ignore:
+      # Em main quem verifica é o workflow de deploy, que roda os mesmos
+      # passos antes de publicar — rodar os dois seria trabalho duplicado.
       - main
 
 concurrency:
@@ -32,11 +34,11 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
-      - name: Checagem de tipos do frontend
-        run: npm run typecheck
+      - name: Instalar dependências das Cloud Functions
+        run: npm ci --prefix functions
 
-      - name: Build do backend (Cloud Function)
-        run: npm run build
+      - name: Checagem de tipos (cliente + servidor)
+        run: npm run typecheck
 
       - name: Build do site
         run: npm run build:client

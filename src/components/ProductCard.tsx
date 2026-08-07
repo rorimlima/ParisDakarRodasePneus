@@ -85,19 +85,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
-        {(product.badge || product.promocao) && (
-          <div className="absolute top-3 left-3 flex flex-col items-start gap-1.5">
-            {product.badge && (
-              <span className="pd-badge !bg-[var(--pd-brand)] !text-white !border-transparent shadow-md">
-                {product.badge}
-              </span>
-            )}
-            {product.promocao && (
-              <span className="pd-badge !bg-amber-600 !text-white !border-transparent shadow-md">
-                Promoção
-              </span>
-            )}
-          </div>
+        {product.badge && (
+          <span className="absolute top-3 left-3 pd-badge !bg-[var(--pd-brand)] !text-white !border-transparent shadow-md">
+            {product.badge}
+          </span>
         )}
 
         {product.isPromocao && (

@@ -2,34 +2,61 @@ rules_version = '2';
 
 // =============================================================================
 // Paris Dakar Rodas e Pneus — Firestore Security Rules
+//
+// Princípio: negar por padrão e liberar coleção por coleção. O papel de
+// administrador vem EXCLUSIVAMENTE do Custom Claim `role` no token, assinado
+// pelo Admin SDK — nunca de um campo gravado em documento, que o próprio
+// cliente conseguiria escrever.
+//
+// Os casos cobertos aqui são verificados por `npm run test:rules`.
 // =============================================================================
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // --- Identidade e papel -------------------------------------------------
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    function getUserRole() {
-      return isAuthenticated() && 'role' in request.auth.token ? request.auth.token.role : 'visitante';
+    function papel() {
+      return isAuthenticated() && 'role' in request.auth.token
+        ? request.auth.token.role
+        : 'visitante';
     }
 
     function isAdmin() {
-      return getUserRole() in ['admin', 'senior', 'gerencia'];
+      return papel() in ['admin', 'senior', 'gerencia'];
     }
 
     function isSenior() {
-      return getUserRole() in ['senior', 'gerencia'];
+      return papel() in ['senior', 'gerencia'];
     }
 
-    // Regras de Leitura e Escrita do Catálogo, Custos, Categorias, Configurações e Leads
+    function isDono(uid) {
+      return isAuthenticated() && request.auth.uid == uid;
+    }
+
+    /** Campos que o documento não pode ganhar por escrita vinda do navegador. */
+    function semEscalarPrivilegio() {
+      return !request.resource.data.keys().hasAny(['role', 'papel', 'claims', 'isAdmin']);
+    }
+
+    // --- Catálogo público ---------------------------------------------------
+
     match /products/{codigo} {
       allow read: if true;
-      allow write: if isAdmin();
+      // Preço negativo corrompe vitrine e relatório: barrado na origem.
+      allow create, update: if isAdmin()
+        && request.resource.data.price is number
+        && request.resource.data.price >= 0
+        && (!('stockQuantity' in request.resource.data)
+            || request.resource.data.stockQuantity >= 0);
+      allow delete: if isAdmin();
     }
 
+    // Custo de reposição e margem: só gerência/sênior enxerga.
     match /productCosts/{codigo} {
       allow read, write: if isSenior();
     }
@@ -39,8 +66,8 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /imports/{importId} {
-      allow read: if isSenior();
+    match /sellers/{id} {
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -49,30 +76,95 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    match /users/{uid} {
-      allow read, write: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+    match /siteSettings/{documento} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    match /clientsCpf/{email} {
-      allow read, write: if isAuthenticated() && (request.auth.token.email.lower() == email.lower() || request.auth.uid == email || isAdmin());
+    // --- Clientes B2C -------------------------------------------------------
+
+    match /clients/{uid} {
+      allow read: if isDono(uid) || isAdmin();
+      allow create, update: if (isDono(uid) && semEscalarPrivilegio()) || isAdmin();
+      allow delete: if isAdmin();
     }
 
-    match /clientsCnpj/{uid} {
-      allow read, write: if isAuthenticated() && (request.auth.uid == uid || isAdmin());
+    // --- Contas B2B ---------------------------------------------------------
+    //
+    // Aprovação e desconto valem dinheiro: o titular nunca os define. O
+    // autocadastro entra obrigatoriamente pendente e com desconto zero; só o
+    // administrador promove a conta depois.
+
+    match /b2bAccounts/{uid} {
+      allow read: if isDono(uid) || isAdmin();
+
+      allow create: if isAdmin()
+        || (isDono(uid)
+            && semEscalarPrivilegio()
+            && request.resource.data.status == 'pending'
+            && request.resource.data.discountPercentage == 0);
+
+      allow update: if isAdmin()
+        || (isDono(uid)
+            && semEscalarPrivilegio()
+            && request.resource.data.status == resource.data.status
+            && request.resource.data.discountPercentage == resource.data.discountPercentage);
+
+      allow delete: if isAdmin();
     }
+
+    // --- Painel administrativo ---------------------------------------------
+    //
+    // Conceder papel é operação de Admin SDK (`npm run set-admin <UID>`).
+    // Nenhuma escrita pelo navegador, nem vinda de quem já é admin: senão o
+    // comprometimento de uma sessão de admin viraria persistência permanente.
+
+    match /adminUsers/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // --- Pedidos ------------------------------------------------------------
+    //
+    // Valores são calculados no servidor. O cliente lê o que é dele e nada mais.
+
+    match /orders/{id} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // --- Orçamentos / cotações ---------------------------------------------
 
     match /inquiries/{id} {
-      allow create: if true; // Permite envio de cotações por visitantes
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin()
+        || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      // O autor é carimbado pelo token, não pelo payload — impede lead em nome de terceiro.
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Importações e auditoria -------------------------------------------
+
+    match /imports/{importId} {
+      allow read: if isSenior();
+      allow write: if isAdmin();
     }
 
     match /auditLog/{id} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      // Trilha de auditoria é escrita pelas Cloud Functions (Admin SDK, ignora rules).
+      allow write: if false;
     }
 
-    // Default Fallback
+    // Contadores de rate limit vivem só no servidor.
+    match /rateLimits/{id} {
+      allow read, write: if false;
+    }
+
+    // --- Negação por padrão -------------------------------------------------
     match /{documento=**} {
-      allow read, write: if isAdmin();
+      allow read, write: if false;
     }
   }
 }
