@@ -46,7 +46,10 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
     // 3. WebGL Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Em celulares limitamos o pixel ratio: telas 3x custam 9x mais fragmentos
+    // e derrubam o frame rate sem ganho visual perceptível.
+    const maxPixelRatio = window.innerWidth < 768 ? 1.75 : 2;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     rendererRef.current = renderer;
@@ -244,6 +247,14 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
     };
 
     const domElem = renderer.domElement;
+    domElem.style.width = '100%';
+    domElem.style.height = '100%';
+    domElem.style.display = 'block';
+    // `pan-y` deixa o arrasto horizontal girar a roda enquanto o arrasto
+    // vertical continua rolando a página — essencial no celular, onde o
+    // visualizador ocupa boa parte da tela.
+    domElem.style.touchAction = 'pan-y';
+
     domElem.addEventListener('pointerdown', onPointerDown);
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
@@ -266,7 +277,8 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
 
     animate();
 
-    // Resize observer
+    // Reage a qualquer mudança de tamanho do container: rotação do aparelho,
+    // redimensionamento da janela ou troca de breakpoint do layout.
     const resizeObserver = new ResizeObserver(() => {
       if (!container || !rendererRef.current) return;
       const w = Math.floor(container.clientWidth);
@@ -308,14 +320,14 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
   };
 
   return (
-    <section className="relative overflow-hidden bg-carbon text-white py-12 md:py-20 border-b border-zinc-800">
+    <section className="relative overflow-hidden bg-carbon text-[#111111] dark:text-white py-8 sm:py-12 md:py-16 lg:py-20 border-b border-black/10 dark:border-zinc-800">
       {/* Decorative Brand Background Glow */}
-      <div className="absolute top-1/4 -left-32 w-96 h-96 bg-red-900/20 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-red-950/25 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/4 -left-32 w-64 h-64 sm:w-96 sm:h-96 bg-red-900/10 dark:bg-red-900/20 blur-[80px] sm:blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-64 h-64 sm:w-96 sm:h-96 bg-red-950/10 dark:bg-red-950/25 blur-[80px] sm:blur-[100px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 xl:gap-12 items-center">
+
           {/* Left Column: Typography & Conversion Copy */}
           <div className="lg:col-span-5 space-y-6 text-left z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/40 text-red-400 text-[11px] font-medium tracking-wide">
@@ -354,34 +366,34 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 sm:pt-4">
               <button
                 onClick={() => onConsultWhatsApp('Olá! Gostaria de consultar um conjunto de rodas e pneus configurado no Simulador 3D.')}
-                className="btn-paris flex items-center justify-center gap-2 px-6 py-3.5 rounded-lg font-bold text-sm tracking-wide shadow-lg uppercase"
+                className="btn-paris flex items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-lg font-bold text-xs sm:text-sm tracking-wide shadow-lg uppercase"
               >
                 <span>Consultar no WhatsApp</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4 shrink-0" />
               </button>
 
               <button
                 onClick={onExploreCatalog}
-                className="px-6 py-3.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 text-white font-semibold text-sm border border-zinc-700 transition flex items-center justify-center gap-2"
+                className="px-5 sm:px-6 py-3.5 rounded-lg bg-white/80 hover:bg-white dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-[#111111] dark:text-white font-semibold text-xs sm:text-sm border border-black/10 dark:border-zinc-700 transition flex items-center justify-center gap-2 shadow-sm"
               >
-                <Layers className="w-4 h-4" />
+                <Layers className="w-4 h-4 shrink-0" />
                 Explorar Catálogo
               </button>
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-zinc-400 pt-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="flex items-start gap-2 text-[11px] sm:text-xs text-zinc-600 dark:text-zinc-400 pt-1">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-px" />
               <span>Suporte técnico de furação, offset e compatibilidade para pickups e SUVs 4x4.</span>
             </div>
           </div>
 
           {/* Right Column: 3D Visualizer Canvas & Controls */}
-          <div className="lg:col-span-7 relative">
-            <div className="relative rounded-2xl bg-zinc-950/80 border border-zinc-800 p-2 sm:p-4 shadow-2xl backdrop-blur-sm">
-              
+          <div className="lg:col-span-7 relative min-w-0">
+            <div className="relative rounded-2xl bg-zinc-950/80 border border-zinc-800 p-2 sm:p-3 md:p-4 shadow-2xl backdrop-blur-sm">
+
               {/* Header Bar inside 3D Box */}
               <div className="flex flex-wrap items-center justify-between gap-y-2 px-1 sm:px-3 py-2 border-b border-zinc-800/80 text-xs">
                 <div className="flex min-w-0 items-center gap-2 text-zinc-300 font-mono">
@@ -392,12 +404,13 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
                 <div className="flex shrink-0 items-center gap-2">
                   <button
                     onClick={() => setIsRotating(!isRotating)}
-                    className="p-1.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition"
+                    className="w-8 h-8 flex items-center justify-center rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition"
                     title={isRotating ? "Pausar Rotação" : "Girar 360º"}
+                    aria-label={isRotating ? "Pausar Rotação" : "Girar 360º"}
                   >
                     {isRotating ? <Pause className="w-3.5 h-3.5 text-amber-400" /> : <Play className="w-3.5 h-3.5 text-emerald-400" />}
                   </button>
-                  <span className="text-[10px] bg-red-950 text-red-300 px-2 py-0.5 rounded font-semibold border border-red-800/40">
+                  <span className="hidden xs:inline text-[10px] bg-red-950 text-red-300 px-2 py-0.5 rounded font-semibold border border-red-800/40 whitespace-nowrap">
                     Arraste para Girar
                   </span>
                 </div>
@@ -406,23 +419,23 @@ export const Hero3DVisualizer: React.FC<Hero3DVisualizerProps> = ({
               {/* Three.js Canvas Container */}
               <div
                 ref={mountRef}
-                className="w-full h-[320px] sm:h-[420px] cursor-grab active:cursor-grabbing relative flex items-center justify-center overflow-hidden"
+                className="w-full h-60 xs:h-68 sm:h-88 md:h-104 lg:h-96 xl:h-112 cursor-grab active:cursor-grabbing relative flex items-center justify-center overflow-hidden"
               />
 
               {/* Interactive Controls Overlay */}
-              <div className="mt-2 p-3 rounded-xl bg-zinc-900/90 border border-zinc-800/90 space-y-3">
-                
+              <div className="mt-2 p-2.5 sm:p-3 rounded-xl bg-zinc-900/90 border border-zinc-800/90 space-y-3">
+
                 {/* Finish Selector */}
                 <div>
-                  <label className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
+                  <label className="text-[10px] sm:text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block mb-1.5">
                     Acabamento da Roda: <span className="text-white font-bold">{selectedFinish}</span>
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {(['Preto Fosco', 'Bronze Off-Road', 'Grafite Acetinado', 'Cromo Satinado', 'Vermelho Dakar Accent'] as WheelFinish[]).map((finish) => (
                       <button
                         key={finish}
                         onClick={() => handleFinishChange(finish)}
-                        className={`text-xs px-2.5 py-1 rounded-md border transition-all ${
+                        className={`text-[11px] sm:text-xs px-2.5 py-1.5 rounded-md border transition-all ${
                           selectedFinish === finish
                             ? 'bg-red-900/60 border-red-500 text-white font-bold shadow-sm'
                             : 'bg-zinc-800/60 border-zinc-700/60 text-zinc-300 hover:bg-zinc-700'

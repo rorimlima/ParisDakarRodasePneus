@@ -641,8 +641,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       
       {/* Toast Notification */}
       {toastMsg && (
-        <div className="fixed top-5 right-5 z-50 bg-[#8B0000] text-white px-5 py-3 rounded-xl shadow-2xl font-bold text-xs flex items-center gap-2 animate-bounce">
-          <CheckCircle2 className="w-4 h-4" />
+        <div
+          className="fixed top-4 right-4 left-4 sm:left-auto sm:top-5 sm:right-5 z-50 bg-[#8B0000] text-white px-4 sm:px-5 py-3 rounded-xl shadow-2xl font-bold text-xs flex items-center gap-2 animate-bounce"
+          style={{ marginTop: 'var(--safe-top)' }}
+        >
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>{toastMsg}</span>
         </div>
       )}
@@ -666,7 +669,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full xs:w-auto">
           <button
             onClick={onExitAdmin}
             className="flex items-center gap-2 px-4 py-2 pd-surface pd-row-hover border pd-border pd-text-2 text-xs font-bold uppercase tracking-wider rounded transition"
@@ -689,8 +692,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       </header>
 
       {/* Main Admin Body */}
-      <div className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        
+      <div className="flex-1 max-w-7xl w-full mx-auto p-3 xs:p-4 sm:p-6 lg:p-8 space-y-6">
+
         {/* KPI Analytics Bar */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="pd-surface p-4 rounded-xl border pd-border space-y-1">
@@ -738,7 +741,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div className="flex flex-wrap gap-2 border-b pd-border pb-4">
           <button
             onClick={() => setActiveTab('products')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'products'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'pd-surface pd-text-2 border pd-border'
@@ -750,7 +753,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'settings'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'pd-surface pd-text-2 border pd-border'
@@ -762,7 +765,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('clients')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'clients'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'pd-surface pd-text-2 border pd-border'
@@ -774,7 +777,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('inquiries')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'inquiries'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'pd-surface pd-text-2 border pd-border'
@@ -786,7 +789,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('admins')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'admins'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'pd-surface pd-text-2 border pd-border'
@@ -798,7 +801,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           <button
             onClick={() => setActiveTab('sellers')}
-            className={`px-4 py-2.5 rounded text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
+            className={`shrink-0 whitespace-nowrap px-3.5 sm:px-4 py-2.5 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 ${
               activeTab === 'sellers'
                 ? 'bg-[#8B0000] text-white shadow-md'
                 : 'pd-surface pd-text-2 border pd-border'
@@ -841,7 +844,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </select>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+              <div className="flex flex-col xs:flex-row flex-wrap items-stretch xs:items-center gap-2.5 w-full lg:w-auto">
                 <button
                   type="button"
                   onClick={() => setIsImportModalOpen(true)}
@@ -1306,7 +1309,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="text-[10px] pd-text-2">Exigência de Regime Tributário e CNPJ Validados</span>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="pd-bg-alt pd-text-2 uppercase text-[10px] tracking-wider font-bold">
@@ -1355,7 +1358,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </h3>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="pd-bg-alt pd-text-2 uppercase text-[10px] tracking-wider font-bold">
@@ -1394,7 +1397,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </h3>
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="data-table-scroll">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="pd-bg-alt pd-text-2 uppercase text-[10px] tracking-wider font-bold">
@@ -1475,7 +1478,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span>Administradores Autorizados</span>
               </h3>
 
-              <div className="overflow-x-auto">
+              <div className="data-table-scroll">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="pd-bg-alt pd-text-2 uppercase text-[10px] tracking-wider font-bold">
@@ -1736,7 +1739,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-3 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase pd-text-2 block mb-1">Categoria</label>
                   <select
@@ -1988,7 +1991,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               }}
               className="space-y-4 text-xs"
             >
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase pd-text-2 block mb-1">Nome do Produto</label>
                   <input
@@ -2010,7 +2013,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 xs:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[10px] font-bold uppercase pd-gold-text block mb-1">Preço Venda Atacado B2B (R$)</label>
                   <input

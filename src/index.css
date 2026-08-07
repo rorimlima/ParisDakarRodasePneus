@@ -207,6 +207,68 @@
       transition-duration: 0.001ms !important;
     }
   }
+
+  html {
+    /* Impede o iOS de reescalar o texto ao girar o aparelho */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    /* Compensa o header fixo ao pular para #catalog-section */
+    scroll-padding-top: 6rem;
+  }
+
+  /* Nunca deixa uma imagem/mídia estourar a largura do container */
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
+
+  /* O canvas 3D tem suas dimensões definidas por JS, por isso fica de fora */
+  img,
+  video {
+    height: auto;
+  }
+
+  /* Quebra palavras longas (SKUs, URLs, e-mails) em telas estreitas */
+  h1, h2, h3, h4, p, span, a, td, th, li, label {
+    overflow-wrap: break-word;
+  }
+
+  /* iOS Safari aplica zoom automático em campos com fonte < 16px.
+     Em telas de toque forçamos 16px para manter o layout estável. */
+  @media (max-width: 767px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+  }
+
+  /* Alvos de toque confortáveis (mínimo recomendado ~44px) */
+  @media (pointer: coarse) {
+    button,
+    a[role="button"],
+    input[type="checkbox"],
+    input[type="radio"] {
+      touch-action: manipulation;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer components {
@@ -774,12 +836,91 @@ canvas {
   background: #B21B1B;
 }
 
+/* Barras mais finas em telas pequenas para não roubar área útil */
+@media (max-width: 767px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+}
+
+/* Esconde a barra de rolagem em faixas horizontais (abas, pílulas de categoria) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Rolagem horizontal com "encaixe" nos itens — usado nas faixas de abas mobile */
+.snap-strip {
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-strip > * {
+  scroll-snap-align: start;
+}
+
+/* --------------------------------------------------------------------------
+   MODAIS RESPONSIVOS
+   Centralizar com `items-center` + `overflow-y-auto` corta o topo do conteúdo
+   quando ele é mais alto que a viewport. O padrão abaixo rola corretamente em
+   qualquer altura de tela e usa 100dvh para não brigar com a barra de
+   endereço dos navegadores mobile.
+   -------------------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  padding-top: max(1rem, var(--safe-top));
+  padding-bottom: max(1rem, var(--safe-bottom));
+}
+
+@media (max-width: 639px) {
+  .modal-overlay {
+    padding: 0.75rem;
+    padding-top: max(0.75rem, var(--safe-top));
+    padding-bottom: max(0.75rem, var(--safe-bottom));
+  }
+}
+
+/* Centraliza verticalmente quando cabe, e rola a partir do topo quando não cabe */
+.modal-panel {
+  margin: auto;
+  width: 100%;
+}
+
+/* Painel com altura limitada e corpo rolável interno */
+.modal-panel-fixed {
+  margin: auto;
+  width: 100%;
+  max-height: calc(100dvh - 2rem);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 639px) {
+  .modal-panel-fixed {
+    max-height: calc(100dvh - 1.5rem);
+  }
+}
+
 /* Custom Spec Table styling - Elegant Dark Theme */
 .clean-table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
   font-size: 0.8125rem;
+  table-layout: fixed;
 }
 
 /* A tabela tem até 4 colunas (Aro | valor | Furação | valor) dentro de um
@@ -798,18 +939,57 @@ canvas {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.7rem;
+  color: #71717A;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+}
+
+.dark .clean-table th {
   color: #9CA3AF;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .clean-table td {
   padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  color: #111111;
+  overflow-wrap: anywhere;
+}
+
+.dark .clean-table td {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   color: #FFFFFF;
 }
 
 .clean-table tr:last-child td {
   border-bottom: none;
+}
+
+/* Em telas estreitas a tabela de specs compacta o espaçamento e a fonte */
+@media (max-width: 400px) {
+  .clean-table {
+    font-size: 0.75rem;
+  }
+
+  .clean-table th,
+  .clean-table td {
+    padding: 5px 6px;
+  }
+
+  .clean-table th {
+    font-size: 0.625rem;
+    letter-spacing: 0.03em;
+  }
+}
+
+/* Tabelas de dados do painel admin: rolam na horizontal sem espremer colunas */
+.data-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table-scroll > table {
+  min-width: 44rem;
 }
 
 /* Red metallic highlight gradient */
@@ -829,6 +1009,15 @@ canvas {
 
 .btn-paris:active {
   transform: translateY(0);
+}
+
+/* Aparelhos de toque não têm hover: evita o botão "grudar" no estado hover */
+@media (hover: none) {
+  .btn-paris:hover {
+    background: linear-gradient(135deg, #8B0000 0%, #500000 100%);
+    box-shadow: 0 4px 14px rgba(139, 0, 0, 0.35);
+    transform: none;
+  }
 }
 
 /* Pulse badge for Off-road ready stock */
@@ -887,4 +1076,14 @@ canvas {
     width: 4px;
     height: 4px;
   }
+}
+
+/* Fade-in usado pelos modais */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.18s ease-out;
 }

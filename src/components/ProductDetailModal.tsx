@@ -136,7 +136,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </div>
 
             {imagesList.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 {imagesList.map((img, idx) => (
                   <button
                     key={`${img}-${idx}`}

@@ -77,9 +77,9 @@ export const InstagramFeed: React.FC = () => {
             rel="noopener noreferrer"
             className="btn btn-outline shrink-0"
           >
-            <Instagram className="w-4 h-4" />
+            <Instagram className="w-4 h-4 shrink-0" />
             <span>Seguir no Instagram</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-3.5 h-3.5 shrink-0" />
           </a>
         </div>
 

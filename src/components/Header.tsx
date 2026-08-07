@@ -307,7 +307,7 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               className="btn btn-primary btn-block"
             >
-              <MessageCircle className="w-4 h-4" />
+              <MessageCircle className="w-4 h-4 shrink-0" />
               <span>Falar no WhatsApp</span>
             </button>
           </div>

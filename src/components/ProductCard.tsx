@@ -177,7 +177,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   </tr>
                 )}
                 {(product.specs.offset || product.specs.tala) && (
-                  <tr>
+                  <tr className="hidden sm:table-row">
                     {product.specs.tala && (
                       <>
                         <th scope="row">Tala</th>
@@ -211,6 +211,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Resumo compacto de specs — só nos cards estreitos (2 colunas no celular) */}
+          {(product.specs.aro || product.specs.medidaPneu) && (
+            <div className="flex xs:hidden flex-wrap gap-1 pt-1">
+              {product.specs.aro && (
+                <span className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-[#1a1a1a] text-[#111111] dark:text-white px-1.5 py-0.5 rounded">
+                  Aro {product.specs.aro}
+                </span>
+              )}
+              {product.specs.medidaPneu && (
+                <span className="text-[9px] font-mono font-bold bg-slate-100 dark:bg-[#1a1a1a] text-[#B21B1B] px-1.5 py-0.5 rounded truncate max-w-full">
+                  {product.specs.medidaPneu}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Preço e ação */}

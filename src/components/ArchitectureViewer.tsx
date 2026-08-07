@@ -144,37 +144,37 @@ CREATE TABLE b2b_profiles (
         <div className="flex flex-wrap gap-2 pt-4 shrink-0">
           <button
             onClick={() => setActiveTab('tree')}
-            className={`flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition border ${
+            className={`shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition border whitespace-nowrap ${
               activeTab === 'tree'
                 ? 'bg-[#8B0000] text-white border-[#8B0000]'
                 : 'pd-surface-2 pd-text-2 pd-border'
             }`}
           >
-            <FolderTree className="w-4 h-4" />
+            <FolderTree className="w-4 h-4 shrink-0" />
             <span>Estrutura /frontend (App Router)</span>
           </button>
 
           <button
             onClick={() => setActiveTab('tailwind')}
-            className={`flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition border ${
+            className={`shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition border whitespace-nowrap ${
               activeTab === 'tailwind'
                 ? 'bg-[#8B0000] text-white border-[#8B0000]'
                 : 'pd-surface-2 pd-text-2 pd-border'
             }`}
           >
-            <Code2 className="w-4 h-4" />
+            <Code2 className="w-4 h-4 shrink-0" />
             <span>tailwind.config.js</span>
           </button>
 
           <button
             onClick={() => setActiveTab('backend')}
-            className={`flex items-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition border ${
+            className={`shrink-0 flex items-center gap-2 px-3 sm:px-4 py-2 rounded text-[11px] sm:text-xs font-bold uppercase tracking-wider transition border whitespace-nowrap ${
               activeTab === 'backend'
                 ? 'bg-[#8B0000] text-white border-[#8B0000]'
                 : 'pd-surface-2 pd-text-2 pd-border'
             }`}
           >
-            <Server className="w-4 h-4" />
+            <Server className="w-4 h-4 shrink-0" />
             <span>Supabase / Firebase Schema</span>
           </button>
         </div>
@@ -197,8 +197,8 @@ CREATE TABLE b2b_profiles (
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>Copiar Código</span>
+                <Copy className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden xs:inline">Copiar Código</span>
               </>
             )}
           </button>
