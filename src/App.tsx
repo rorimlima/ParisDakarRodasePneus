@@ -456,15 +456,62 @@ export default function App() {
           disabledCategories={siteSettings.disabledCategories}
         />
 
-        {/* ======================== CARROSSEL DESTAQUES ======================== */}
-        {destaqueProducts.length > 0 && (
+        {/* ======================== 1. PROMOÇÕES ESPECIAIS (TOPO) ======================== */}
+        {promocaoProducts.length > 0 && !hasActiveFilters && (
+          <section aria-label="Promoções Especiais" className="space-y-4">
+            <div className="flex items-center justify-between border-b pd-border pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl" aria-hidden="true">🔥</span>
+                <div>
+                  <h2 className="text-xs font-black uppercase tracking-[0.14em] pd-text flex items-center gap-2">
+                    <span>Promoções Especiais</span>
+                    <span className="bg-[#8B0000] text-white text-[9px] font-bold px-2 py-0.5 rounded">
+                      {promocaoProducts.length} {promocaoProducts.length === 1 ? 'oferta' : 'ofertas'}
+                    </span>
+                  </h2>
+                  <p className="text-[10px] pd-text-3 font-medium">Preços imperdíveis de pronta entrega com cotação direta</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveCategory('promocao')}
+                className="text-[11px] font-bold pd-brand-text hover:underline flex items-center gap-1"
+              >
+                <span>Ver todas as ofertas</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {promocaoProducts.slice(0, 4).map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  b2bUser={b2bUser}
+                  onOpenDetails={setSelectedProduct}
+                  onConsultWhatsApp={(msg) => handleConsultWhatsApp(msg, product)}
+                  onOpenB2BModal={() => handleOpenAuthModal('b2b')}
+                  isB2CLoggedIn={currentSession.type === 'b2c'}
+                  isFavorited={favorites.some((f) => f.id === product.id)}
+                  onAddToFavorites={() => handleAddToFavorites(product)}
+                  onRemoveFromFavorites={() => handleRemoveFavorite(product.id)}
+                  onAddToCart={() => { handleAddToCart(product); setIsCartOpen(true); }}
+                />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ======================== 2. CARROSSEL DESTAQUES ======================== */}
+        {destaqueProducts.length > 0 && !hasActiveFilters && (
           <section aria-label="Produtos em destaque" className="pd-card overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b pd-border">
               <div className="flex items-center gap-2">
                 <span className="text-yellow-400 text-lg" aria-hidden="true">★</span>
-                <h2 className="text-xs font-black uppercase tracking-[0.14em] pd-text">Destaques</h2>
-                <span className="text-[10px] font-bold pd-text-3 uppercase tracking-wider">— seleção especial</span>
+                <h2 className="text-xs font-black uppercase tracking-[0.14em] pd-text">Destaques da Loja</h2>
+                <span className="text-[10px] font-bold pd-text-3 uppercase tracking-wider">— seleção especial 4x4</span>
               </div>
               <div className="flex items-center gap-1.5">
                 {destaqueProducts.map((_, i) => (
@@ -502,6 +549,7 @@ export default function App() {
                           alt={p.name}
                           className="w-full h-full object-cover object-center transition-transform duration-700 hover:scale-105"
                           style={{ maxHeight: '320px' }}
+                          loading="lazy"
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent pointer-events-none" />
                         {/* Badges */}
@@ -586,37 +634,6 @@ export default function App() {
           </section>
         )}
 
-        {/* ======================== PROMOÇÕES ======================== */}
-        {promocaoProducts.length > 0 && (
-          <section aria-label="Promoções" className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-lg" aria-hidden="true">🔥</span>
-              <h2 className="text-xs font-black uppercase tracking-[0.14em] pd-text">Promoções</h2>
-              <span className="text-[10px] font-bold pd-text-3 uppercase tracking-wider">
-                — {promocaoProducts.length === 1 ? 'oferta por tempo limitado' : 'ofertas por tempo limitado'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {promocaoProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  b2bUser={b2bUser}
-                  onOpenDetails={setSelectedProduct}
-                  onConsultWhatsApp={(msg) => handleConsultWhatsApp(msg, product)}
-                  onOpenB2BModal={() => handleOpenAuthModal('b2b')}
-                  isB2CLoggedIn={currentSession.type === 'b2c'}
-                  isFavorited={favorites.some((f) => f.id === product.id)}
-                  onAddToFavorites={() => handleAddToFavorites(product)}
-                  onRemoveFromFavorites={() => handleRemoveFavorite(product.id)}
-                  onAddToCart={() => { handleAddToCart(product); setIsCartOpen(true); }}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
         {hasActiveFilters && (
           <div className="pd-card p-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 flex-wrap text-xs">
@@ -655,13 +672,14 @@ export default function App() {
                   ? 'Promoção'
                   : activeCategory === 'destaque'
                     ? 'Destaques da loja'
-                    : 'Catálogo — pronta entrega'}
+                    : hasActiveFilters
+                      ? 'Resultado da busca'
+                      : 'Catálogo de Produtos'}
               </span>
             </h2>
             <p className="text-xs pd-text-3 mt-1.5">
               <strong className="pd-brand-text">{filteredProducts.length}</strong>{' '}
-              {filteredProducts.length === 1 ? 'item disponível' : 'itens disponíveis'} com cotação via
-              WhatsApp.
+              {filteredProducts.length === 1 ? 'item disponível' : 'itens disponíveis'} com cotação direta via WhatsApp.
             </p>
           </div>
 
@@ -684,44 +702,71 @@ export default function App() {
           )}
         </div>
 
-        {activeCategory === 'destaque' ? (
-          filteredProducts.length > 0 ? (
-            <DestaqueCarousel
-              produtos={filteredProducts.slice(0, 4)}
-              b2bUser={b2bUser}
-              onOpenDetails={setSelectedProduct}
-              onConsultWhatsApp={handleConsultWhatsApp}
-              onOpenB2BModal={() => handleOpenAuthModal('b2b')}
-              isB2CLoggedIn={currentSession.type === 'b2c'}
-              favorites={favorites}
-              onAddToFavorites={handleAddToFavorites}
-              onRemoveFromFavorites={handleRemoveFavorite}
-              onAddToCart={(product) => { handleAddToCart(product); setIsCartOpen(true); }}
-            />
-          ) : (
-            <div className="pd-card text-center py-16 px-6 space-y-4">
-              <div
-                className="w-14 h-14 rounded-full pd-surface-2 pd-brand-text flex items-center justify-center mx-auto border pd-border"
-                aria-hidden="true"
-              >
-                <Filter className="w-6 h-6" />
-              </div>
-              <h3 className="text-base font-bold pd-text">Nenhum produto em destaque no momento</h3>
-              <p className="text-xs pd-text-3 max-w-md mx-auto leading-relaxed">
-                Nossa equipe está preparando os próximos destaques. Fale com um especialista enquanto isso.
-              </p>
-              <button
-                type="button"
-                onClick={() =>
-                  handleConsultWhatsApp('Olá! Vi que vocês têm produtos em destaque. Podem me indicar as opções?')
-                }
-                className="btn btn-primary btn-lg"
-              >
-                <PhoneCall className="w-4 h-4" />
-                <span>Consultar especialista</span>
-              </button>
-            </div>
-          )
+        {/* ======================== 3. DEMAIS CATEGORIAS ORGANIZADAS (OU GRID FILTRADO) ======================== */}
+        {!hasActiveFilters ? (
+          <div className="space-y-12">
+            {([
+              { slug: 'rodas', label: 'Rodas Off-Road', icon: '🛞', desc: 'Rodas forjadas, beadlock e heavy-duty' },
+              { slug: 'pneus', label: 'Pneus MT / AT / LT', icon: '🔧', desc: 'Pneus Mud-Terrain, All-Terrain e Light Truck' },
+              { slug: 'kits-lift', label: 'Kits de Lift de Suspensão', icon: '⬆️', desc: 'Elevação 4x4, amortecedores e molas' },
+              { slug: 'combos', label: 'Combos Montados (Roda + Pneu)', icon: '📦', desc: 'Kits completos prontos para instalar' },
+              { slug: 'acessorios', label: 'Acessórios & Performance 4x4', icon: '🔩', desc: 'Peças, iluminação, capotas e porcas' }
+            ] as const)
+              .filter((cat) => !(siteSettings.disabledCategories || []).includes(cat.slug))
+              .map((cat) => {
+                const catProducts = cat.slug === 'acessorios'
+                  ? products.filter((p) => p.isActive !== false && !['rodas', 'pneus', 'kits-lift', 'combos'].includes(p.category))
+                  : products.filter((p) => p.isActive !== false && p.category === cat.slug);
+
+                if (catProducts.length === 0) return null;
+
+                return (
+                  <section key={cat.slug} aria-label={cat.label} className="space-y-4">
+                    <div className="flex items-center justify-between border-b pd-border pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-xl" aria-hidden="true">{cat.icon}</span>
+                        <div>
+                          <h3 className="text-sm font-black uppercase tracking-wider pd-text flex items-center gap-2">
+                            <span>{cat.label}</span>
+                            <span className="bg-slate-800 text-slate-200 text-[10px] font-bold px-2 py-0.5 rounded">
+                              {catProducts.length}
+                            </span>
+                          </h3>
+                          <p className="text-[10px] pd-text-3">{cat.desc}</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveCategory(cat.slug as any)}
+                        className="text-[11px] font-bold pd-brand-text hover:underline flex items-center gap-1 shrink-0"
+                      >
+                        <span>Ver todos</span>
+                        <span>→</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                      {catProducts.slice(0, 8).map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          b2bUser={b2bUser}
+                          onOpenDetails={setSelectedProduct}
+                          onConsultWhatsApp={(msg) => handleConsultWhatsApp(msg, product)}
+                          onOpenB2BModal={() => handleOpenAuthModal('b2b')}
+                          isB2CLoggedIn={currentSession.type === 'b2c'}
+                          isFavorited={favorites.some((f) => f.id === product.id)}
+                          onAddToFavorites={() => handleAddToFavorites(product)}
+                          onRemoveFromFavorites={() => handleRemoveFavorite(product.id)}
+                          onAddToCart={() => { handleAddToCart(product); setIsCartOpen(true); }}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+          </div>
         ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filteredProducts.map((product) => (
