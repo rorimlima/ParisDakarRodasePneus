@@ -12,11 +12,9 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
-    "jsx": "react-jsx",
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true,
     "types": ["vite/client"]
   },
   "include": ["src/**/*"],
