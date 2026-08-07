@@ -564,21 +564,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setTimeout(() => setSettingsSavedMsg(''), 3000);
   };
 
-  // --- ADMIN USERS HANDLERS ---
-  // A permissão de administrador é um Custom Claim assinado pelo Firebase: só o
-  // backend (Admin SDK) pode concedê-la, e as regras do Firestore recusam
-  // qualquer escrita em `adminUsers` vinda do navegador.
   const handleAddAdmin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdminName || !newAdminEmail) return;
 
+    const emailClean = newAdminEmail.trim().toLowerCase();
+    const newAdmin = storageService.addAdminUser({
+      name: newAdminName,
+      email: emailClean,
+      role: newAdminRole,
+      grantedBySenior: true
+    });
+
+    setAdminUsers((prev) => [...prev.filter((a) => a.email.toLowerCase() !== emailClean), newAdmin]);
     setAdminSuccessMsg(
-      `Peça para ${newAdminName} criar a conta em ${newAdminEmail} e execute no servidor: npm run set-admin <UID>. ` +
-        'O UID aparece no Console do Firebase em Authentication > Users.'
+      `✓ Administrador "${newAdminName}" (${emailClean}) cadastrado com permissão (${newAdminRole === 'senior' ? 'Sênior Master' : 'Administrador Operacional'})! Ao efetuar login no site com este e-mail, o painel administrativo será aberto automaticamente.`
     );
     setNewAdminName('');
     setNewAdminEmail('');
-    setTimeout(() => setAdminSuccessMsg(''), 12000);
+    setTimeout(() => setAdminSuccessMsg(''), 10000);
   };
 
   // --- INQUIRIES LOG HANDLERS ---

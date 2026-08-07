@@ -19,6 +19,7 @@ import {
   isFirebaseConfigured,
 } from '../config/firebaseClient';
 import type { AdminUser, B2BUser, CpfClient, TaxRegime, UserSession } from '../types';
+import { storageService } from './storageService';
 
 /**
  * Camada de autenticação sobre o Firebase Auth.
@@ -140,7 +141,7 @@ export const resolveSession = async (user: User): Promise<UserSession> => {
   const claimRole = token.claims.role as string | undefined;
   const normalizedEmail = (user.email || '').toLowerCase().trim();
 
-  // O usuário com e-mail onaeror@gmail.com ou Custom Claim de admin/senior é o Master Supremo
+  // 1. O usuário com e-mail onaeror@gmail.com, CPF 01817243322 ou Custom Claim é Master Supremo
   if (
     isMasterUser(normalizedEmail, null) ||
     claimRole === 'admin' ||
@@ -148,6 +149,15 @@ export const resolveSession = async (user: User): Promise<UserSession> => {
     claimRole === 'gerencia'
   ) {
     return buildAdminSession(user, claimRole || 'senior');
+  }
+
+  // 2. Verificar se o e-mail do usuário está cadastrado na lista de administradores autorizados
+  const registeredAdmins = storageService.getAdminUsers();
+  const matchedAdmin = registeredAdmins.find(
+    (a) => a.email.toLowerCase().trim() === normalizedEmail
+  );
+  if (matchedAdmin) {
+    return buildAdminSession(user, matchedAdmin.role);
   }
 
   const db = getFirebaseDb();
