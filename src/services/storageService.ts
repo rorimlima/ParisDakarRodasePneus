@@ -6,10 +6,9 @@ import {
   AdminUser,
   UserSession,
   InquiryLog,
-  Seller
+  Promotion
 } from '../types';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { obterDb, COLECOES } from '../firebase/config';
+import { MOCK_PRODUCTS } from '../data/mockProducts';
 
 const STORAGE_KEYS = {
   PRODUCTS: 'pd_products',
@@ -19,34 +18,8 @@ const STORAGE_KEYS = {
   ADMIN_USERS: 'pd_admin_users',
   USER_SESSION: 'pd_user_session',
   INQUIRIES: 'pd_inquiries',
-  SELLERS: 'pd_sellers'
+  PROMOTIONS: 'pd_promotions'
 };
-
-// Sem avatarUrl: nenhum vendedor real ainda cadastrou uma foto própria. Os
-// componentes que exibem vendedor (WhatsAppSellerModal, AdminDashboard) já
-// caem para um avatar de iniciais quando avatarUrl está vazio — nunca uma
-// foto de banco de imagens fingindo ser um funcionário real.
-export const DEFAULT_SELLERS: Seller[] = [
-  {
-    id: 'seller-001',
-    name: 'Rodrigo Lima',
-    phone: '(11) 99999-8888',
-    email: 'rodrigo.vendas@parisdakar.com.br',
-    specialty: 'Consultor Técnico 4x4 & Rodas Heavy-Duty',
-    isActive: true,
-    createdAt: '2026-01-15'
-  },
-  {
-    id: 'seller-002',
-    name: 'Eduardo Dakar',
-    phone: '(11) 98888-7777',
-    email: 'eduardo.dakar@parisdakar.com.br',
-    specialty: 'Especialista em Pneus Off-Road & Lift Kits',
-    isActive: true,
-    createdAt: '2026-02-01'
-  }
-];
-
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   heroTitle: 'Especialistas em Caminhonetes 4x4',
@@ -61,12 +34,11 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
 export const DEFAULT_SENIOR_ADMIN: AdminUser = {
   id: 'admin-senior-001',
   name: 'Master Supremo',
-  email: 'admin@parisdakar.com.br',
+  email: 'onaeror@gmail.com',
   role: 'senior',
   grantedBySenior: true,
   createdAt: '2026-01-01'
 };
-
 
 export const DEFAULT_SAMPLE_B2B: B2BUser = {
   id: 'b2b-001',
@@ -94,6 +66,33 @@ export const DEFAULT_SAMPLE_CPF: CpfClient = {
   createdAt: '2026-03-01'
 };
 
+export const DEFAULT_PROMOTIONS: Promotion[] = [
+  {
+    id: 'promo-001',
+    promoType: 'Dia dos Pais',
+    title: 'Presente de Herói Off-Road: até 25% OFF',
+    description: 'Equipe a caminhonete do seu pai com rodas forjadas e pneus off-road em condição especial de Dia dos Pais.',
+    discountLabel: '25% OFF',
+    image: 'https://images.unsplash.com/photo-1611821064430-0d40291d0f0d?auto=format&fit=crop&w=1200&q=80',
+    productIds: ['pd-rod-001', 'pd-pne-002'],
+    startDate: '2026-08-01',
+    endDate: '2026-08-10',
+    active: true,
+    createdAt: '2026-08-01'
+  },
+  {
+    id: 'promo-002',
+    promoType: 'Lançamento',
+    title: 'Kits de Lift com Frete Grátis para todo Brasil',
+    description: 'Na compra de Kits de Lift Suspensão, frete grátis para todo o território nacional neste mês.',
+    discountLabel: 'FRETE GRÁTIS',
+    image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1200&q=80',
+    productIds: ['pd-lif-005'],
+    active: true,
+    createdAt: '2026-08-01'
+  }
+];
+
 // Storage Service Class
 class StorageService {
   
@@ -101,22 +100,27 @@ class StorageService {
   getProducts(): Product[] {
     const data = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
     if (!data) {
-      return [];
+      this.saveProducts(MOCK_PRODUCTS);
+      return MOCK_PRODUCTS;
     }
     try {
       const parsed: Product[] = JSON.parse(data);
-      const realProducts = parsed.filter(
-        (p) =>
-          !p.id.startsWith('pd-rod-') &&
-          !p.id.startsWith('pd-pneu-') &&
-          !p.id.startsWith('pd-lift-') &&
-          !p.id.startsWith('pd-combo-') &&
-          !p.id.startsWith('pd-acess-') &&
-          !p.id.startsWith('prod-0')
-      );
-      return realProducts;
+      // Clean up stale mock data with beadlock references
+      const cleaned = parsed.map((p) => {
+        if (p.name.includes('Beadlock')) {
+          p.name = p.name.replace(/Beadlock Spec/gi, 'Heavy-Duty').replace(/Beadlock/gi, 'Heavy-Duty');
+        }
+        if (p.subcategory?.includes('Beadlock')) {
+          p.subcategory = 'Forjada Caminhonete 4x4';
+        }
+        if (p.badge?.includes('BEADLOCK')) {
+          p.badge = 'FORGED 4X4 HEAVY-DUTY';
+        }
+        return p;
+      });
+      return cleaned;
     } catch {
-      return [];
+      return MOCK_PRODUCTS;
     }
   }
 
@@ -142,6 +146,42 @@ class StorageService {
     return products;
   }
 
+  // Promotions (Destaques Sazonais / Temáticos)
+  getPromotions(): Promotion[] {
+    const data = localStorage.getItem(STORAGE_KEYS.PROMOTIONS);
+    if (!data) {
+      this.savePromotions(DEFAULT_PROMOTIONS);
+      return DEFAULT_PROMOTIONS;
+    }
+    try {
+      return JSON.parse(data);
+    } catch {
+      return DEFAULT_PROMOTIONS;
+    }
+  }
+
+  savePromotions(promotions: Promotion[]) {
+    localStorage.setItem(STORAGE_KEYS.PROMOTIONS, JSON.stringify(promotions));
+  }
+
+  savePromotion(promotion: Promotion): Promotion[] {
+    const promotions = this.getPromotions();
+    const index = promotions.findIndex((p) => p.id === promotion.id);
+    if (index >= 0) {
+      promotions[index] = promotion;
+    } else {
+      promotions.unshift(promotion);
+    }
+    this.savePromotions(promotions);
+    return promotions;
+  }
+
+  deletePromotion(id: string): Promotion[] {
+    const promotions = this.getPromotions().filter((p) => p.id !== id);
+    this.savePromotions(promotions);
+    return promotions;
+  }
+
   // Site Settings
   getSiteSettings(): SiteSettings {
     const data = localStorage.getItem(STORAGE_KEYS.SITE_SETTINGS);
@@ -156,35 +196,8 @@ class StorageService {
     }
   }
 
-  async fetchSiteSettings(): Promise<SiteSettings | null> {
-    try {
-      const db = obterDb();
-      if (!db) return null;
-      const snap = await getDoc(doc(db, COLECOES.configuracoes, 'site'));
-      if (snap.exists()) {
-        const data = snap.data() as SiteSettings;
-        localStorage.setItem(STORAGE_KEYS.SITE_SETTINGS, JSON.stringify(data));
-        return data;
-      }
-    } catch (e) {
-      console.warn('[storageService] erro ao carregar configuracoes do Firestore:', e);
-    }
-    return null;
-  }
-
   saveSiteSettings(settings: SiteSettings) {
     localStorage.setItem(STORAGE_KEYS.SITE_SETTINGS, JSON.stringify(settings));
-    try {
-      const db = obterDb();
-      if (db) {
-        setDoc(doc(db, COLECOES.configuracoes, 'site'), {
-          ...settings,
-          atualizadoEm: new Date().toISOString()
-        }).catch((err) => console.warn('[storageService] erro ao salvar configuracoes no Firestore:', err));
-      }
-    } catch (e) {
-      console.warn('[storageService] firebase indisponivel para configuracoes:', e);
-    }
   }
 
   // CPF Users (B2C)
@@ -212,64 +225,6 @@ class StorageService {
     users.unshift(newUser);
     localStorage.setItem(STORAGE_KEYS.CPF_USERS, JSON.stringify(users));
     return newUser;
-  }
-
-  async syncCpfUserWithFirestore(firebaseUser: { uid: string; displayName?: string | null; email?: string | null; phoneNumber?: string | null }): Promise<CpfClient> {
-    try {
-      const db = obterDb();
-      if (!db) {
-        return this.syncCpfUserLocal(firebaseUser);
-      }
-
-      const docId = firebaseUser.email?.toLowerCase() || firebaseUser.uid;
-      const userDocRef = doc(db, COLECOES.clientesCpf, docId);
-      const snap = await getDoc(userDocRef);
-
-      if (snap.exists()) {
-        const existing = snap.data() as CpfClient;
-        this.saveCpfUserLocal(existing);
-        return existing;
-      } else {
-        const newUser: CpfClient = {
-          id: firebaseUser.uid,
-          fullName: firebaseUser.displayName || 'Usuário Google',
-          cpf: '000.000.000-00',
-          email: firebaseUser.email || '',
-          phone: firebaseUser.phoneNumber || '(11) 99999-9999',
-          address: 'Cadastrado via Google Auth',
-          cep: '00000-000',
-          createdAt: new Date().toISOString().split('T')[0]
-        };
-        await setDoc(userDocRef, newUser);
-        this.saveCpfUserLocal(newUser);
-        return newUser;
-      }
-    } catch (e) {
-      console.error('[storageService] erro ao sincronizar usuário B2C com Firestore:', e);
-      return this.syncCpfUserLocal(firebaseUser);
-    }
-  }
-
-  private syncCpfUserLocal(firebaseUser: any): CpfClient {
-    const cpfUsers = this.getCpfUsers();
-    let existing = cpfUsers.find((u) => u.email.toLowerCase() === (firebaseUser.email || '').toLowerCase());
-    if (!existing) {
-      existing = this.registerCpfUser({
-        fullName: firebaseUser.displayName || 'Usuário Google',
-        cpf: '000.000.000-00',
-        email: firebaseUser.email || '',
-        phone: firebaseUser.phoneNumber || '(11) 99999-9999',
-        address: 'Cadastrado via Google Auth',
-        cep: '00000-000'
-      });
-    }
-    return existing;
-  }
-
-  private saveCpfUserLocal(user: CpfClient) {
-    const users = this.getCpfUsers().filter((u) => u.id !== user.id && u.email !== user.email);
-    users.unshift(user);
-    localStorage.setItem(STORAGE_KEYS.CPF_USERS, JSON.stringify(users));
   }
 
   // CNPJ Users (B2B)
@@ -398,17 +353,6 @@ class StorageService {
     };
     inquiries.unshift(newLog);
     localStorage.setItem(STORAGE_KEYS.INQUIRIES, JSON.stringify(inquiries));
-    try {
-      const db = obterDb();
-      if (db) {
-        setDoc(doc(db, COLECOES.cotacoes, newLog.id), {
-          ...newLog,
-          criadoEm: new Date().toISOString()
-        }).catch((err) => console.warn('[storageService] erro ao salvar cotacao no Firestore:', err));
-      }
-    } catch (e) {
-      console.warn('[storageService] firebase indisponivel para cotacao:', e);
-    }
     return newLog;
   }
 
@@ -421,171 +365,6 @@ class StorageService {
     }
     return inquiries;
   }
-
-  // Sellers Management
-  getSellers(): Seller[] {
-    const data = localStorage.getItem(STORAGE_KEYS.SELLERS);
-    if (!data) {
-      localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(DEFAULT_SELLERS));
-      return DEFAULT_SELLERS;
-    }
-    try {
-      return JSON.parse(data);
-    } catch {
-      return DEFAULT_SELLERS;
-    }
-  }
-
-  async fetchSellers(): Promise<Seller[] | null> {
-    try {
-      const db = obterDb();
-      if (!db) return null;
-      const snap = await getDoc(doc(db, COLECOES.configuracoes, 'sellers'));
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data && Array.isArray(data.sellers)) {
-          const sellersList = data.sellers as Seller[];
-          localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(sellersList));
-          return sellersList;
-        }
-      } else {
-        const sellersList = this.getSellers();
-        this.saveSellers(sellersList);
-        return sellersList;
-      }
-    } catch (e) {
-      console.warn('[storageService] erro ao carregar vendedores do Firestore:', e);
-    }
-    return null;
-  }
-
-  saveSellers(sellers: Seller[]): Seller[] {
-    localStorage.setItem(STORAGE_KEYS.SELLERS, JSON.stringify(sellers));
-    try {
-      const db = obterDb();
-      if (db) {
-        setDoc(doc(db, COLECOES.configuracoes, 'sellers'), {
-          sellers,
-          atualizadoEm: new Date().toISOString()
-        }).catch((err) => console.warn('[storageService] erro ao salvar vendedores no Firestore:', err));
-      }
-    } catch (e) {
-      console.warn('[storageService] firebase indisponivel para vendedores:', e);
-    }
-    return sellers;
-  }
-
-  addSeller(sellerData: Omit<Seller, 'id' | 'createdAt'>): Seller[] {
-    const sellers = this.getSellers();
-    const newSeller: Seller = {
-      ...sellerData,
-      id: `seller-${Date.now()}`,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    sellers.unshift(newSeller);
-    return this.saveSellers(sellers);
-  }
-
-  updateSeller(updatedSeller: Seller): Seller[] {
-    const sellers = this.getSellers();
-    const index = sellers.findIndex((s) => s.id === updatedSeller.id);
-    if (index >= 0) {
-      sellers[index] = updatedSeller;
-    }
-    return this.saveSellers(sellers);
-  }
-
-  deleteSeller(id: string): Seller[] {
-    const sellers = this.getSellers().filter((s) => s.id !== id);
-    return this.saveSellers(sellers);
-  }
-
-  toggleSellerStatus(id: string): Seller[] {
-    const sellers = this.getSellers();
-    const seller = sellers.find((s) => s.id === id);
-    if (seller) {
-      seller.isActive = !seller.isActive;
-    }
-    return this.saveSellers(sellers);
-  }
-
-  async saveCpfUserToFirestore(uid: string, user: Omit<CpfClient, 'id' | 'createdAt'>): Promise<CpfClient> {
-    const newUser: CpfClient = {
-      ...user,
-      id: uid,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    try {
-      const db = obterDb();
-      if (db) {
-        const docId = user.email?.toLowerCase() || uid;
-        await setDoc(doc(db, COLECOES.clientesCpf, docId), newUser);
-      }
-    } catch (e) {
-      console.warn('[storageService] erro ao salvar CPF no Firestore:', e);
-    }
-    this.saveCpfUserLocal(newUser);
-    return newUser;
-  }
-
-  async fetchCpfUserFromFirestore(uid: string, email?: string): Promise<CpfClient | null> {
-    try {
-      const db = obterDb();
-      if (db) {
-        const docId = email?.toLowerCase() || uid;
-        const snap = await getDoc(doc(db, COLECOES.clientesCpf, docId));
-        if (snap.exists()) {
-          const user = snap.data() as CpfClient;
-          this.saveCpfUserLocal(user);
-          return user;
-        }
-      }
-    } catch (e) {
-      console.warn('[storageService] erro ao buscar CPF no Firestore:', e);
-    }
-    return null;
-  }
-
-  async saveCnpjUserToFirestore(uid: string, user: Omit<B2BUser, 'id' | 'createdAt' | 'isLoggedIn'>): Promise<B2BUser> {
-    const newUser: B2BUser = {
-      ...user,
-      id: uid,
-      isLoggedIn: true,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    try {
-      const db = obterDb();
-      if (db) {
-        await setDoc(doc(db, COLECOES.clientesCnpj, uid), newUser);
-      }
-    } catch (e) {
-      console.warn('[storageService] erro ao salvar CNPJ no Firestore:', e);
-    }
-    const users = this.getCnpjUsers().filter((u) => u.id !== uid && u.email !== user.email);
-    users.unshift(newUser);
-    localStorage.setItem(STORAGE_KEYS.CNPJ_USERS, JSON.stringify(users));
-    return newUser;
-  }
-
-  async fetchCnpjUserFromFirestore(uid: string): Promise<B2BUser | null> {
-    try {
-      const db = obterDb();
-      if (db) {
-        const snap = await getDoc(doc(db, COLECOES.clientesCnpj, uid));
-        if (snap.exists()) {
-          const user = snap.data() as B2BUser;
-          const users = this.getCnpjUsers().filter((u) => u.id !== uid && u.email !== user.email);
-          users.unshift(user);
-          localStorage.setItem(STORAGE_KEYS.CNPJ_USERS, JSON.stringify(users));
-          return user;
-        }
-      }
-    } catch (e) {
-      console.warn('[storageService] erro ao buscar CNPJ no Firestore:', e);
-    }
-    return null;
-  }
 }
 
 export const storageService = new StorageService();
-

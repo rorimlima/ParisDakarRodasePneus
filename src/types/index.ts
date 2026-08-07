@@ -39,6 +39,7 @@ export interface Product {
   isWholesaleOnly?: boolean; // Requer login B2B para ver preço
   b2bPrice?: number;
   badge?: string; // e.g., "FORGED 4X4", "NOVIDADE 2026", "TOP SALES"
+  isFeatured?: boolean; // Exibido no carrossel de Destaques da home
   image: string;
   secondaryImages?: string[];
   description: string;
@@ -48,15 +49,7 @@ export interface Product {
   stockQuantity: number;
   rating: number;
   reviewsCount: number;
-  isActive?: boolean;    // Se false, o produto fica oculto no site público
-  isPromocao?: boolean;  // Se true, aparece na aba "Promoção"
-  isDestaque?: boolean;  // Se true, aparece no carrossel "Destaques"
-  unidadeSigla?: string;
-  unidadeLabel?: string;
-  categoriaNome?: string;
-  fichaTecnicaCompleta?: any;
 }
-
 
 export interface VehicleSearchFilter {
   marca: string;
@@ -71,7 +64,6 @@ export interface SizeSearchFilter {
   furacao: string;
   medidaPneu: string;
   tipoPneu: string;
-  referencia?: string;
 }
 
 // B2B CNPJ Client
@@ -99,7 +91,6 @@ export interface CpfClient {
   phone: string;
   address: string;
   cep: string;
-  birthDate?: string;
   createdAt: string;
 }
 
@@ -134,10 +125,21 @@ export interface SiteSettings {
   phone: string;
   address: string;
   showStockStatus: boolean;
-  heroImageUrl?: string;
-  logoUrl?: string;
-  bannerText?: string;
-  youtubeVideoUrl?: string;
+}
+
+// Seasonal / Themed Promotion (managed from Admin Panel)
+export interface Promotion {
+  id: string;
+  promoType: string; // Tipo digitado livremente pelo admin. Ex: "Dia dos Pais", "Black Friday"
+  title: string; // Chamada principal da promoção
+  description?: string;
+  discountLabel?: string; // Ex: "20% OFF", "Até R$ 500 de desconto"
+  image: string;
+  productIds: string[]; // Produtos vinculados a esta promoção
+  startDate?: string;
+  endDate?: string;
+  active: boolean;
+  createdAt: string;
 }
 
 // Customer Inquiry / Quote Request
@@ -152,23 +154,4 @@ export interface InquiryLog {
   date: string;
   status: 'Novo' | 'Em Atendimento' | 'Concluído';
   notes?: string;
-  assignedSeller?: string;
 }
-
-// Seller / Sales Consultant
-export interface Seller {
-  id: string;
-  name: string;
-  phone: string;
-  email?: string;
-  specialty?: string;
-  avatarUrl?: string;
-  isActive: boolean;
-  createdAt: string;
-}
-
-export interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
