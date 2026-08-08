@@ -73,6 +73,7 @@ import { listaParaExibicao } from '../utils/produtoAdapter';
 import { ProductPhotoManager } from './ProductPhotoManager';
 import { ProdutoCatalogo } from '../types/catalog';
 import { formatCNPJ, formatCPF } from '../utils/validation';
+import { importarPlanilha } from '../services/planilhaImportService';
 
 function productParaProdutoCatalogo(p: Product): ProdutoCatalogo {
   const catSlug = (p.category || 'rodas').toLowerCase();
@@ -139,6 +140,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>(storageService.getAdminUsers());
   const [inquiries, setInquiries] = useState<InquiryLog[]>(storageService.getInquiries());
   const [sellers, setSellers] = useState<Seller[]>(storageService.getSellers());
+  const [galleryProduct, setGalleryProduct] = useState<Product | null>(null);
 
   // --- TOGGLE ACTIVE STATUS (EXPOSIÇÃO NO SITE EM TEMPO REAL) ---
   const handleToggleProductActive = async (id: string) => {
@@ -320,142 +322,49 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
   }, []);
 
-  // --- SPREADSHEET IMPORT HANDLERS (EXCEL / CSV) ---
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // --- SPREADSHEET IMPORT HANDLERS (EXCEL / CSV 23 CAMPOS) ---
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        // A biblioteca de planilhas (~400 kB) só é baixada na hora de importar.
-        const XLSX = await import('xlsx');
+    setCatalogBusy(true);
+    try {
+      const resultado = await importarPlanilha(file, {
+        executadoPor: adminUser.email || 'Administrador',
+        opcoes: { sobrescreverDescricao: true, desativarAusentes: false }
+      });
 
-        const data = new Uint8Array(event.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rawRows: Record<string, any>[] = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      const updatedProducts = await listProducts();
+      setProducts(updatedProducts);
+      onProductsUpdated(updatedProducts);
+      setIsImportModalOpen(false);
 
-        if (!rawRows || rawRows.length === 0) {
-          showToast('A planilha enviada está vazia.');
-          return;
-        }
-
-        let createdCount = 0;
-        let updatedCount = 0;
-        let currentProducts = [...products];
-
-        for (let idx = 0; idx < rawRows.length; idx++) {
-          const row = rawRows[idx];
-          const normRow: Record<string, any> = {};
-          Object.keys(row).forEach((key) => {
-            const cleanKey = key.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
-            if (cleanKey.includes('sku') || cleanKey.includes('cod')) normRow['sku'] = String(row[key]).trim();
-            else if (cleanKey.includes('nome') || cleanKey.includes('produto') || cleanKey.includes('desc')) normRow['name'] = String(row[key]).trim();
-            else if (cleanKey.includes('categoria') || cleanKey.includes('tipo')) normRow['category'] = String(row[key]).trim().toLowerCase();
-            else if (cleanKey.includes('marca') || cleanKey.includes('fabricante')) normRow['brand'] = String(row[key]).trim();
-            else if (cleanKey.includes('preco_b2c') || cleanKey === 'preco' || cleanKey === 'valor') normRow['price'] = Number(row[key]) || 0;
-            else if (cleanKey.includes('b2b') || cleanKey.includes('atacado')) normRow['b2bPrice'] = Number(row[key]) || 0;
-            else if (cleanKey.includes('estoque') || cleanKey.includes('qtd')) normRow['stockQuantity'] = Number(row[key]) || 0;
-            else if (cleanKey.includes('aro')) normRow['aro'] = String(row[key]).trim();
-            else if (cleanKey.includes('furacao')) normRow['furacao'] = String(row[key]).trim();
-            else if (cleanKey.includes('offset')) normRow['offset'] = String(row[key]).trim();
-            else if (cleanKey.includes('tala')) normRow['tala'] = String(row[key]).trim();
-            else if (cleanKey.includes('pneu')) normRow['medidaPneu'] = String(row[key]).trim();
-          });
-
-          const sku = normRow['sku'] || `PD-IMP-${Date.now()}-${idx}`;
-          const existingIdx = currentProducts.findIndex((p) => (p?.sku || '').toLowerCase() === sku.toLowerCase());
-
-          let productToSave: Product;
-
-          if (existingIdx >= 0) {
-            const existing = currentProducts[existingIdx];
-            const existingSpecs = existing.specs || {};
-            productToSave = {
-              ...existing,
-              name: normRow['name'] || existing.name,
-              brand: normRow['brand'] || existing.brand,
-              category: normRow['category'] || existing.category,
-              price: normRow['price'] > 0 ? normRow['price'] : existing.price,
-              b2bPrice: normRow['b2bPrice'] > 0 ? normRow['b2bPrice'] : existing.b2bPrice,
-              stockQuantity: normRow['stockQuantity'] >= 0 ? normRow['stockQuantity'] : existing.stockQuantity,
-              inStock: (normRow['stockQuantity'] ?? existing.stockQuantity) > 0,
-              isActive: true,
-              specs: {
-                ...existingSpecs,
-                aro: normRow['aro'] || existingSpecs.aro,
-                furacao: normRow['furacao'] || existingSpecs.furacao,
-                offset: normRow['offset'] || existingSpecs.offset,
-                tala: normRow['tala'] || existingSpecs.tala,
-                medidaPneu: normRow['medidaPneu'] || existingSpecs.medidaPneu
-              }
-            };
-            currentProducts[existingIdx] = productToSave;
-            updatedCount++;
-          } else {
-            const validCats = ['rodas', 'pneus', 'kits-lift', 'acessorios', 'combos'];
-            const cat = (validCats.includes(normRow['category']) ? normRow['category'] : 'rodas') as ProductCategory;
-
-            productToSave = {
-              id: `pd-imp-${Date.now()}-${idx}`,
-              sku,
-              name: normRow['name'] || `Produto Importado ${sku}`,
-              brand: normRow['brand'] || 'Paris Dakar Custom',
-              category: cat,
-              subcategory: 'Importado via Planilha',
-              price: normRow['price'] || 2000,
-              b2bPrice: normRow['b2bPrice'] || 1600,
-              stockQuantity: normRow['stockQuantity'] || 10,
-              inStock: (normRow['stockQuantity'] || 10) > 0,
-              isActive: true,
-              badge: 'PLANILHA 2026',
-              image: '',
-              description: 'Produto cadastrado via importação de planilha.',
-              specs: {
-                aro: normRow['aro'] || '17"',
-                furacao: normRow['furacao'] || '6x139.7',
-                offset: normRow['offset'] || 'ET -12',
-                tala: normRow['tala'] || '9.0"',
-                medidaPneu: normRow['medidaPneu'] || '285/70R17'
-              },
-              compatibleVehicles: ['Toyota Hilux', 'Ford Ranger', 'Mitsubishi L200'],
-              rating: 5.0,
-              reviewsCount: 1
-            };
-            currentProducts.unshift(productToSave);
-            createdCount++;
-          }
-
-          try {
-            await catalogService.salvarProduto(productParaProdutoCatalogo(productToSave));
-          } catch (dbErr) {
-            console.warn('[Import] Erro ao gravar item no Firestore:', dbErr);
-          }
-        }
-
-        await saveProductsRemote(currentProducts);
-        setProducts(currentProducts);
-        onProductsUpdated(currentProducts);
-        setIsImportModalOpen(false);
-        showToast(`Planilha importada com sucesso no Firestore! ${createdCount} novos, ${updatedCount} atualizados.`);
-      } catch (err: any) {
-        alert('Erro ao processar arquivo da planilha: ' + err.message);
-      }
-    };
-    reader.readAsArrayBuffer(file);
+      showToast(
+        `✓ Importação ERP concluída! ${resultado.criados} criados, ${resultado.atualizados} atualizados, ${resultado.inalterados} inalterados sem duplicações!`
+      );
+    } catch (err: any) {
+      alert('Erro ao importar planilha do ERP: ' + (err?.message || err));
+    } finally {
+      setCatalogBusy(false);
+      e.target.value = '';
+    }
   };
 
   const handleDownloadTemplate = () => {
-    const csvHeader = "SKU;Nome;Marca;Categoria;Preco_B2C;Preco_B2B;Estoque;Aro;Furacao;Offset;Tala;Medida_Pneu\n";
-    const sampleRow1 = "PD-DAKAR-1790-6139;Roda Forged Dakar Heavy-Duty 17x9;Paris Dakar;rodas;2850;2280;12;17\";6x139.7;ET -12;9.0\";\n";
-    const sampleRow2 = "PD-MAX-35125-17;Pneu Dakar Mud-Terrain Extreme 35x12.5R17;Paris Dakar;pneus;1950;1560;20;17\";;;;35x12.5R17\n";
-    
-    const blob = new Blob([csvHeader + sampleRow1 + sampleRow2], { type: 'text/csv;charset=utf-8;' });
+    const csvHeader =
+      'Empresa_Nome;Estoque_Descricao;TipoProduto_Descricao;Produto_Codigo;Produto_Descricao;ProdutoMarca_Referencia;Produto_DescricaoDetalhada;LocalizacaoProduto_Identificador;Unidade_Sigla;GrupoProduto_Codigo;GrupoLucratividade_Letra;ProdutoEstoque_ClasABCLetraPopularidade;ProdutoEstoque_ClasABCLetraVenda;ProdutoEstoque_ClasABCLetraEstoque;ProdutoEstoque_QtdeDisponivel;ValorPublicoSugerido;ValorPublicoSugeridoTotal;ValorGarantia;ValorGarantiaTotal;ValorReposicao;ValorReposicaoTotal;ValorVenda;ValorVendaTotal\n';
+    const sampleRow1 =
+      'Paris Dakar LTDA;Estoque Principal;Rodas Forjadas;PD-DAKAR-1790;Roda Forged Dakar Heavy-Duty 17x9;Paris Dakar;Roda forjada em liga leve de alta resistencia;A-01-02;UN;ROD-01;A;A;A;A;12;2850;34200;100;1200;1800;21600;2850;34200\n';
+    const sampleRow2 =
+      'Paris Dakar LTDA;Estoque Principal;Pneus Off-Road;PD-MAX-35125;Pneu Dakar Mud-Terrain 35x12.5R17;Paris Dakar;Pneu mud-terrain de alta durabilidade;B-04-01;UN;PNE-01;A;A;A;A;20;1950;39000;80;1600;1200;24000;1950;39000\n';
+
+    const blob = new Blob(['\ufeff' + csvHeader + sampleRow1 + sampleRow2], {
+      type: 'text/csv;charset=utf-8;'
+    });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
+    const link = document.createElement('a');
     link.href = url;
-    link.download = "modelo_importacao_planilha_paris_dakar.csv";
+    link.download = 'modelo_importacao_planilha_erp_paris_dakar.csv';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -959,10 +868,31 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     {filteredProducts.map((p) => (
                       <tr key={p.id} className={`transition ${p.isActive === false ? 'opacity-50 bg-red-950/10' : 'pd-row-hover'}`}>
                         <td className="p-3 flex items-center gap-3">
-                          <img src={p.image} alt={p.name} className="w-12 h-12 object-cover rounded pd-surface-2 shrink-0 border pd-border" />
+                          <button
+                            type="button"
+                            onClick={() => setGalleryProduct(p)}
+                            className="relative group shrink-0"
+                            title="Gerenciar galeria de fotos do produto"
+                          >
+                            <img
+                              src={p.image || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%23666" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5-11 11"/></svg>'}
+                              alt={p.name}
+                              className="w-12 h-12 object-cover rounded pd-surface-2 border pd-border group-hover:border-[#8B0000] transition"
+                            />
+                            <span className="absolute -bottom-1 -right-1 bg-black/90 text-amber-400 text-[8px] font-black uppercase px-1 py-0.2 rounded border border-amber-500/50 shadow">
+                              📷 {p.secondaryImages ? p.secondaryImages.length + (p.image ? 1 : 0) : (p.image ? 1 : 0)}
+                            </span>
+                          </button>
                           <div>
                             <span className="font-bold pd-text uppercase italic block">{p.name}</span>
                             <span className="text-[10px] pd-brand-text font-bold block uppercase">{p.brand}</span>
+                            <button
+                              type="button"
+                              onClick={() => setGalleryProduct(p)}
+                              className="text-[9px] text-amber-400 hover:underline font-bold mt-0.5 inline-flex items-center gap-1"
+                            >
+                              <span>⚡ Abrir Galeria ({p.secondaryImages ? p.secondaryImages.length + (p.image ? 1 : 0) : (p.image ? 1 : 0)} fotos)</span>
+                            </button>
                           </div>
                         </td>
 
@@ -2318,7 +2248,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div className="flex items-center justify-between">
                 <span className="font-bold pd-success-text uppercase tracking-wider flex items-center gap-1.5">
                   <Upload className="w-4 h-4" />
-                  Instruções da Planilha
+                  Instruções da Planilha ERP (23 Campos Suportados)
                 </span>
                 <button
                   type="button"
@@ -2329,8 +2259,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Baixar Planilha Modelo (.CSV)
                 </button>
               </div>
-              <p className="pd-text-2 text-[11px]">
-                A planilha deve conter os cabeçalhos: <code className="pd-gold-text font-mono">SKU, Nome, Marca, Categoria, Preco_B2C, Preco_B2B, Estoque, Aro, Furacao, Offset, Tala, Medida_Pneu</code>.
+              <p className="pd-text-2 text-[11px] leading-relaxed">
+                Suporta mapeamento inteligente de 23 colunas do ERP (RPR053 / Alterdata / Totvs / Linx):
+                <code className="pd-gold-text font-mono text-[10px] block mt-1 bg-black/40 p-2 rounded border border-white/5 overflow-x-auto whitespace-pre-wrap">
+                  Empresa_Nome, Estoque_Descricao, TipoProduto_Descricao, Produto_Codigo, Produto_Descricao, ProdutoMarca_Referencia, Produto_DescricaoDetalhada, LocalizacaoProduto_Identificador, Unidade_Sigla, GrupoProduto_Codigo, GrupoLucratividade_Letra, ProdutoEstoque_ClasABCLetraPopularidade, ProdutoEstoque_ClasABCLetraVenda, ProdutoEstoque_ClasABCLetraEstoque, ProdutoEstoque_QtdeDisponivel, ValorPublicoSugerido, ValorPublicoSugeridoTotal, ValorGarantia, ValorGarantiaTotal, ValorReposicao, ValorReposicaoTotal, ValorVenda, ValorVendaTotal
+                </code>
               </p>
             </div>
 
@@ -2339,10 +2272,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <FileSpreadsheet className="w-10 h-10 pd-success-text mx-auto animate-pulse" />
               <div>
                 <label className="text-xs font-bold pd-text block mb-1">
-                  Selecione seu arquivo .xlsx, .xls ou .csv
+                  Selecione seu arquivo .xlsx, .xls ou .csv do ERP
                 </label>
                 <span className="text-[10px] pd-text-2 block">
-                  O sistema identificará produtos existentes pelo SKU e atualizará o estoque automaticamente.
+                  O sistema identificará produtos pelo Produto_Codigo (SKU) e atualizará o banco de dados sem duplicatas.
                 </span>
               </div>
 
@@ -2361,6 +2294,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 className="px-4 py-2 rounded pd-surface-2 pd-text-2 font-bold text-xs"
               >
                 Fechar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* QUICK PRODUCT PHOTO GALLERY MODAL */}
+      {galleryProduct && (
+        <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-3 sm:p-4 pd-overlay-bg overflow-y-auto overscroll-contain">
+          <div className="relative w-full max-w-2xl pd-surface rounded-2xl border pd-border shadow-2xl my-4 sm:my-8 overflow-hidden pd-text p-4 sm:p-6 space-y-4">
+            
+            <div className="flex items-center justify-between border-b pd-border pb-3">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 pd-brand-text" />
+                <div>
+                  <h3 className="text-base font-black uppercase italic tracking-wider pd-text">
+                    Galeria de Fotos do Produto
+                  </h3>
+                  <p className="text-[11px] pd-text-2">
+                    {galleryProduct.name} — SKU: <span className="font-mono pd-gold-text font-bold">{galleryProduct.sku}</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setGalleryProduct(null)}
+                className="p-2 rounded-full pd-surface-2 pd-text-2 hover:pd-text"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <ProductPhotoManager
+              codigoProduto={galleryProduct.sku || galleryProduct.id}
+              images={galleryProduct.image ? [galleryProduct.image, ...(galleryProduct.secondaryImages || [])] : []}
+              onChange={(newImages) => {
+                const updated: Product = {
+                  ...galleryProduct,
+                  image: newImages[0] || '',
+                  secondaryImages: newImages.slice(1)
+                };
+                setGalleryProduct(updated);
+                handleUpdateProduct(updated);
+              }}
+            />
+
+            <div className="flex justify-end border-t pd-border pt-3">
+              <button
+                type="button"
+                onClick={() => setGalleryProduct(null)}
+                className="bg-[#8B0000] hover:bg-red-800 text-white px-6 py-2 rounded font-black uppercase text-xs tracking-widest shadow"
+              >
+                Concluir Galeria
               </button>
             </div>
 

@@ -111,13 +111,21 @@ const MAPEAMENTO_SINONIMOS: Record<string, string[]> = {
   unidade: ['Unidade_Sigla', 'UNIDADE_SIGLA', 'Unidade', 'Sigla', 'UN'],
   quantidade: ['ProdutoEstoque_QtdeDisponivel', 'PRODUTOESTOQUE_QTDEDISPONIVEL', 'QtdeDisponivel', 'Qtde_Disponivel', 'Quantidade', 'Estoque', 'Qtde'],
   valorReposicao: ['ValorReposicao', 'VALORREPOSICAO', 'Valor_Reposicao', 'Custo', 'ValorCusto', 'PrecoCusto'],
+  valorReposicaoTotal: ['ValorReposicaoTotal', 'VALORREPOSICAOTOTAL', 'Valor_Reposicao_Total', 'CustoTotal', 'ValorCustoTotal'],
   valorVenda: ['ValorVenda', 'VALORVENDA', 'Valor_Venda', 'PrecoVenda', 'Preco', 'Preço'],
+  valorVendaTotal: ['ValorVendaTotal', 'VALORVENDATOTAL', 'Valor_Venda_Total', 'PrecoVendaTotal', 'VendaTotal'],
   referencia: ['ProdutoMarca_Referencia', 'Referencia', 'Referência', 'Ref'],
   descricaoDetalhada: ['Produto_DescricaoDetalhada', 'DescricaoDetalhada', 'DescriçãoDetalhada', 'Detalhes'],
-  localizacao: ['LocalizacaoProduto_Identificad', 'LocalizacaoProduto_Identificacao', 'Localizacao', 'Localização'],
+  localizacao: ['LocalizacaoProduto_Identificador', 'LocalizacaoProduto_Identificad', 'Localizacao', 'Localização'],
   grupoProduto: ['GrupoProduto_Codigo', 'GrupoProduto'],
+  grupoLucratividade: ['GrupoLucratividade_Letra', 'GrupoLucratividade', 'GrupoLucratividadeLetra'],
+  clasABCPopularidade: ['ProdutoEstoque_ClasABCLetraPopularidade', 'ClasABCLetraPopularidade', 'ABCPopularidade'],
+  clasABCVenda: ['ProdutoEstoque_ClasABCLetraVenda', 'ClasABCLetraVenda', 'ABCVenda'],
+  clasABCEstoque: ['ProdutoEstoque_ClasABCLetraEstoque', 'ClasABCLetraEstoque', 'ABCEstoque'],
   valorPublicoSugerido: ['ValorPublicoSugerido', 'ValorSugerido', 'PrecoSugerido'],
+  valorPublicoSugeridoTotal: ['ValorPublicoSugeridoTotal', 'ValorSugeridoTotal'],
   valorGarantia: ['ValorGarantia', 'Garantia'],
+  valorGarantiaTotal: ['ValorGarantiaTotal', 'GarantiaTotal'],
   empresa: ['Empresa_Nome', 'Empresa'],
   estoque: ['Estoque_Descricao', 'Estoque']
 };
@@ -198,13 +206,21 @@ export async function lerPlanilhaDeBuffer(
   const colUnidade = resolverColuna(colunas, 'unidade');
   const colQuantidade = resolverColuna(colunas, 'quantidade');
   const colValorReposicao = resolverColuna(colunas, 'valorReposicao');
+  const colValorReposicaoTotal = resolverColuna(colunas, 'valorReposicaoTotal');
   const colValorVenda = resolverColuna(colunas, 'valorVenda');
+  const colValorVendaTotal = resolverColuna(colunas, 'valorVendaTotal');
   const colReferencia = resolverColuna(colunas, 'referencia');
   const colDescricaoDetalhada = resolverColuna(colunas, 'descricaoDetalhada');
   const colLocalizacao = resolverColuna(colunas, 'localizacao');
   const colGrupoProduto = resolverColuna(colunas, 'grupoProduto');
+  const colGrupoLucratividade = resolverColuna(colunas, 'grupoLucratividade');
+  const colClasABCPopularidade = resolverColuna(colunas, 'clasABCPopularidade');
+  const colClasABCVenda = resolverColuna(colunas, 'clasABCVenda');
+  const colClasABCEstoque = resolverColuna(colunas, 'clasABCEstoque');
   const colValorPublicoSugerido = resolverColuna(colunas, 'valorPublicoSugerido');
+  const colValorPublicoSugeridoTotal = resolverColuna(colunas, 'valorPublicoSugeridoTotal');
   const colValorGarantia = resolverColuna(colunas, 'valorGarantia');
+  const colValorGarantiaTotal = resolverColuna(colunas, 'valorGarantiaTotal');
   const colEmpresa = resolverColuna(colunas, 'empresa');
   const colEstoque = resolverColuna(colunas, 'estoque');
 
@@ -256,7 +272,9 @@ export async function lerPlanilhaDeBuffer(
     codigosVistos.set(codigo, numeroLinha);
 
     const valorVendaNum = colValorVenda ? Math.max(0, paraNumero(registro[colValorVenda])) : 0;
+    const valorVendaTotalNum = colValorVendaTotal ? Math.max(0, paraNumero(registro[colValorVendaTotal])) : 0;
     const valorReposicaoNum = colValorReposicao ? Math.max(0, paraNumero(registro[colValorReposicao])) : 0;
+    const valorReposicaoTotalNum = colValorReposicaoTotal ? Math.max(0, paraNumero(registro[colValorReposicaoTotal])) : 0;
 
     linhas.push({
       codigo,
@@ -267,11 +285,19 @@ export async function lerPlanilhaDeBuffer(
       unidade: sanitizarTexto(colUnidade ? registro[colUnidade] : '', 6).toUpperCase() || 'UN',
       quantidade: colQuantidade ? Math.max(0, paraNumero(registro[colQuantidade])) : 0,
       valorReposicao: valorReposicaoNum,
+      valorReposicaoTotal: valorReposicaoTotalNum,
       valorVenda: valorVendaNum,
+      valorVendaTotal: valorVendaTotalNum,
       valorPublicoSugerido: colValorPublicoSugerido ? Math.max(0, paraNumero(registro[colValorPublicoSugerido])) : 0,
+      valorPublicoSugeridoTotal: colValorPublicoSugeridoTotal ? Math.max(0, paraNumero(registro[colValorPublicoSugeridoTotal])) : 0,
       valorGarantia: colValorGarantia ? Math.max(0, paraNumero(registro[colValorGarantia])) : 0,
+      valorGarantiaTotal: colValorGarantiaTotal ? Math.max(0, paraNumero(registro[colValorGarantiaTotal])) : 0,
       localizacao: sanitizarTexto(colLocalizacao ? registro[colLocalizacao] : '', 60),
       grupoProdutoCodigo: sanitizarTexto(colGrupoProduto ? registro[colGrupoProduto] : '', 20),
+      grupoLucratividadeLetra: sanitizarTexto(colGrupoLucratividade ? registro[colGrupoLucratividade] : '', 10),
+      clasABCPopularidade: sanitizarTexto(colClasABCPopularidade ? registro[colClasABCPopularidade] : '', 10),
+      clasABCVenda: sanitizarTexto(colClasABCVenda ? registro[colClasABCVenda] : '', 10),
+      clasABCEstoque: sanitizarTexto(colClasABCEstoque ? registro[colClasABCEstoque] : '', 10),
       estoqueDescricao: sanitizarTexto(colEstoque ? registro[colEstoque] : '', 80),
       empresa: sanitizarTexto(colEmpresa ? registro[colEmpresa] : '', 80),
       linha: numeroLinha
@@ -325,10 +351,19 @@ function mesclarDadosDoErp(
     categoriaSlug: slugify(linha.tipoProduto),
     grupo,
     grupoProdutoCodigo: linha.grupoProdutoCodigo,
+    grupoLucratividadeLetra: linha.grupoLucratividadeLetra,
+    clasABCPopularidade: linha.clasABCPopularidade,
+    clasABCVenda: linha.clasABCVenda,
+    clasABCEstoque: linha.clasABCEstoque,
     unidade: linha.unidade,
     unidadeLabel: rotularUnidade(linha.unidade, linha.quantidade),
     quantidade: linha.quantidade,
     valorVenda: linha.valorVenda,
+    valorVendaTotal: linha.valorVendaTotal,
+    valorPublicoSugerido: linha.valorPublicoSugerido,
+    valorPublicoSugeridoTotal: linha.valorPublicoSugeridoTotal,
+    valorGarantia: linha.valorGarantia,
+    valorGarantiaTotal: linha.valorGarantiaTotal,
     localizacao: linha.localizacao,
     estoqueDescricao: linha.estoqueDescricao,
     empresa: linha.empresa
@@ -337,7 +372,7 @@ function mesclarDadosDoErp(
   };
 }
 
-/** Detecta se algo relevante mudou, para não gravar 1.150 documentos idênticos toda semana. */
+/** Detecta se algo relevante mudou, para não gravar documentos idênticos desnecessariamente. */
 function houveMudanca(anterior: ProdutoCatalogo, novo: ProdutoCatalogo): boolean {
   const camposComparados: (keyof ProdutoCatalogo)[] = [
     'descricao',
@@ -348,7 +383,10 @@ function houveMudanca(anterior: ProdutoCatalogo, novo: ProdutoCatalogo): boolean
     'unidade',
     'quantidade',
     'valorVenda',
+    'valorVendaTotal',
     'localizacao',
+    'empresa',
+    'estoqueDescricao',
     'ativo',
     'ativoManual'
   ];
@@ -475,8 +513,11 @@ export async function importarPlanilha(
     const custo: ProdutoCusto = {
       codigo: preparado.codigo,
       valorReposicao: linha.valorReposicao,
+      valorReposicaoTotal: linha.valorReposicaoTotal,
       valorPublicoSugerido: linha.valorPublicoSugerido,
+      valorPublicoSugeridoTotal: linha.valorPublicoSugeridoTotal,
       valorGarantia: linha.valorGarantia,
+      valorGarantiaTotal: linha.valorGarantiaTotal,
       atualizadoEm: iniciadoEm,
       ultimaImportacaoId: id
     };

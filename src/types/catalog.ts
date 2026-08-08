@@ -149,6 +149,17 @@ export interface ProdutoCatalogo {
   /** percentual de completude da ficha técnica (0-100) */
   fichaCompleta?: number;
 
+  // --- campos ERP expandidos ---
+  grupoLucratividadeLetra?: string;
+  clasABCPopularidade?: string;
+  clasABCVenda?: string;
+  clasABCEstoque?: string;
+  valorPublicoSugerido?: number;
+  valorPublicoSugeridoTotal?: number;
+  valorGarantia?: number;
+  valorGarantiaTotal?: number;
+  valorVendaTotal?: number;
+
   // --- auditoria ---
   criadoEm: string;
   atualizadoEm: string;
@@ -162,8 +173,11 @@ export interface ProdutoCusto {
   codigo: string;
   /** ValorReposicao */
   valorReposicao: number;
+  valorReposicaoTotal?: number;
   valorPublicoSugerido?: number;
+  valorPublicoSugeridoTotal?: number;
   valorGarantia?: number;
+  valorGarantiaTotal?: number;
   atualizadoEm: string;
   ultimaImportacaoId?: string;
 }
@@ -172,7 +186,7 @@ export interface ProdutoCusto {
 // Importação da planilha
 // ---------------------------------------------------------------------------
 
-/** Colunas exigidas no arquivo do ERP (RPR053 — Lista de Preço). */
+/** Colunas do relatório do ERP (RPR053 — Lista de Preço). */
 export const COLUNAS_PLANILHA = {
   empresa: 'Empresa_Nome',
   estoque: 'Estoque_Descricao',
@@ -181,25 +195,28 @@ export const COLUNAS_PLANILHA = {
   descricao: 'Produto_Descricao',
   referencia: 'ProdutoMarca_Referencia',
   descricaoDetalhada: 'Produto_DescricaoDetalhada',
-  localizacao: 'LocalizacaoProduto_Identificad',
+  localizacao: 'LocalizacaoProduto_Identificador',
   unidade: 'Unidade_Sigla',
   grupoProduto: 'GrupoProduto_Codigo',
+  grupoLucratividade: 'GrupoLucratividade_Letra',
+  clasABCPopularidade: 'ProdutoEstoque_ClasABCLetraPopularidade',
+  clasABCVenda: 'ProdutoEstoque_ClasABCLetraVenda',
+  clasABCEstoque: 'ProdutoEstoque_ClasABCLetraEstoque',
   quantidade: 'ProdutoEstoque_QtdeDisponivel',
   valorPublicoSugerido: 'ValorPublicoSugerido',
+  valorPublicoSugeridoTotal: 'ValorPublicoSugeridoTotal',
   valorGarantia: 'ValorGarantia',
+  valorGarantiaTotal: 'ValorGarantiaTotal',
   valorReposicao: 'ValorReposicao',
-  valorVenda: 'ValorVenda'
+  valorReposicaoTotal: 'ValorReposicaoTotal',
+  valorVenda: 'ValorVenda',
+  valorVendaTotal: 'ValorVendaTotal'
 } as const;
 
 /** Colunas sem as quais a importação é abortada. */
 export const COLUNAS_OBRIGATORIAS: string[] = [
   COLUNAS_PLANILHA.codigo,
-  COLUNAS_PLANILHA.descricao,
-  COLUNAS_PLANILHA.tipoProduto,
-  COLUNAS_PLANILHA.unidade,
-  COLUNAS_PLANILHA.quantidade,
-  COLUNAS_PLANILHA.valorReposicao,
-  COLUNAS_PLANILHA.valorVenda
+  COLUNAS_PLANILHA.descricao
 ];
 
 export interface LinhaPlanilha {
@@ -211,11 +228,19 @@ export interface LinhaPlanilha {
   unidade: string;
   quantidade: number;
   valorReposicao: number;
+  valorReposicaoTotal: number;
   valorVenda: number;
+  valorVendaTotal: number;
   valorPublicoSugerido: number;
+  valorPublicoSugeridoTotal: number;
   valorGarantia: number;
+  valorGarantiaTotal: number;
   localizacao: string;
   grupoProdutoCodigo: string;
+  grupoLucratividadeLetra: string;
+  clasABCPopularidade: string;
+  clasABCVenda: string;
+  clasABCEstoque: string;
   estoqueDescricao: string;
   empresa: string;
   /** número da linha no arquivo, para relatório de erro */

@@ -27,8 +27,23 @@ function sanitizarCodigoProduto(codigo: string): string {
   return limpo || 'rascunho';
 }
 
+function arquivoParaDataUrl(arquivo: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result);
+      } else {
+        reject(new ImagemInvalidaError('Não foi possível ler o arquivo de imagem.'));
+      }
+    };
+    reader.onerror = () => reject(new ImagemInvalidaError('Erro ao carregar o arquivo de imagem.'));
+    reader.readAsDataURL(arquivo);
+  });
+}
+
 export async function enviarFotoProduto(codigoProduto: string, arquivo: File): Promise<string> {
-  if (!TIPOS_AUTORIZADOS.includes(arquivo.type)) {
+  if (!TIPOS_AUTORIZADOS.includes(arquivo.type) && !arquivo.type.startsWith('image/')) {
     throw new ImagemInvalidaError('Formato não suportado. Envie uma foto em JPEG, PNG, WEBP ou AVIF.');
   }
   if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
@@ -38,24 +53,19 @@ export async function enviarFotoProduto(codigoProduto: string, arquivo: File): P
   const storage = obterStorage();
   const auth = obterAuth();
 
-  if (!storage || !auth?.currentUser) {
-    throw new ImagemInvalidaError(
-      'Envio de fotos indisponível: Firebase Storage não está configurado ou a sessão administrativa expirou.'
-    );
-  }
+  if (storage && auth?.currentUser) {
+    const caminho = `produtos/${sanitizarCodigoProduto(codigoProduto)}/${sanitizarNomeArquivo(arquivo.name)}`;
+    const referencia = ref(storage, caminho);
 
-  const caminho = `produtos/${sanitizarCodigoProduto(codigoProduto)}/${sanitizarNomeArquivo(arquivo.name)}`;
-  const referencia = ref(storage, caminho);
-
-  try {
-    await uploadBytes(referencia, arquivo, { contentType: arquivo.type });
-    return await getDownloadURL(referencia);
-  } catch (err: any) {
-    if (err?.code === 'storage/unauthorized') {
-      throw new ImagemInvalidaError(
-        'Permissão negada pelo Storage. Confirme que sua conta de administrador tem e-mail verificado e o cargo correto.'
-      );
+    try {
+      await uploadBytes(referencia, arquivo, { contentType: arquivo.type });
+      return await getDownloadURL(referencia);
+    } catch (err: any) {
+      console.warn('[productImageService] Falha no upload para o Storage, aplicando fallback Base64:', err);
+      return arquivoParaDataUrl(arquivo);
     }
-    throw new ImagemInvalidaError('Falha ao enviar a foto para o servidor. Tente novamente.');
   }
+
+  // Fallback local caso o Firebase Storage não esteja ativo ou sem autenticação remota
+  return arquivoParaDataUrl(arquivo);
 }

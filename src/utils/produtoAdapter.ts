@@ -28,6 +28,9 @@ export interface LinhaFichaTecnica {
 export function urlDeImagemSegura(url: unknown): string {
   const bruto = typeof url === 'string' ? url.trim() : '';
   if (bruto) {
+    if (bruto.startsWith('data:image/')) {
+      return bruto;
+    }
     try {
       const parsed = new URL(bruto);
       if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return parsed.toString();

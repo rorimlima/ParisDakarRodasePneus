@@ -117,8 +117,17 @@ export interface DadosErpProduto {
   unidade: string;
   quantidade: number;
   valorVenda: number;
+  valorVendaTotal?: number;
+  valorPublicoSugerido?: number;
+  valorPublicoSugeridoTotal?: number;
+  valorGarantia?: number;
+  valorGarantiaTotal?: number;
   localizacao?: string;
   grupoProdutoCodigo?: string;
+  grupoLucratividadeLetra?: string;
+  clasABCPopularidade?: string;
+  clasABCVenda?: string;
+  clasABCEstoque?: string;
   estoqueDescricao?: string;
   empresa?: string;
 }
@@ -138,6 +147,10 @@ export function criarProdutoDeErp(dados: DadosErpProduto): ProdutoCatalogo {
     categoriaSlug: slugify(dados.tipoProduto),
     grupo,
     grupoProdutoCodigo: sanitizarTexto(dados.grupoProdutoCodigo, 20),
+    grupoLucratividadeLetra: sanitizarTexto(dados.grupoLucratividadeLetra, 10),
+    clasABCPopularidade: sanitizarTexto(dados.clasABCPopularidade, 10),
+    clasABCVenda: sanitizarTexto(dados.clasABCVenda, 10),
+    clasABCEstoque: sanitizarTexto(dados.clasABCEstoque, 10),
     unidade: sanitizarTexto(dados.unidade, 6).toUpperCase(),
     unidadeLabel: rotularUnidade(dados.unidade, quantidade),
     quantidade,
@@ -145,6 +158,11 @@ export function criarProdutoDeErp(dados: DadosErpProduto): ProdutoCatalogo {
     estoqueDescricao: sanitizarTexto(dados.estoqueDescricao, 80),
     empresa: sanitizarTexto(dados.empresa, 80),
     valorVenda: paraNumero(dados.valorVenda, 0),
+    valorVendaTotal: paraNumero(dados.valorVendaTotal, 0),
+    valorPublicoSugerido: paraNumero(dados.valorPublicoSugerido, 0),
+    valorPublicoSugeridoTotal: paraNumero(dados.valorPublicoSugeridoTotal, 0),
+    valorGarantia: paraNumero(dados.valorGarantia, 0),
+    valorGarantiaTotal: paraNumero(dados.valorGarantiaTotal, 0),
     // Produto novo entra ativado por padrão se houver estoque positivo.
     ativoManual: quantidade > 0,
     ativo: quantidade > 0,
